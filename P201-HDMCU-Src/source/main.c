@@ -105,7 +105,7 @@ int32_t main(void)
     App_LcdCfg();                ///< LCD模块配置
 
     Lcd_ClearDisp();             ///< 清屏
-    Lcd_WriteRam(0,0xffffffff);  ///< 赋值寄存器LCDRAM0
+    Lcd_WriteRam(0,0xfffffff0);  ///< 赋值寄存器LCDRAM0
     Lcd_WriteRam(1,0xffffffff);  ///< 赋值寄存器LCDRAM1
     Lcd_WriteRam(2,0xffffffff);  ///< 赋值寄存器LCDRAM2
     Lcd_WriteRam(3,0xffffffff);  ///< 赋值寄存器LCDRAM3
@@ -190,7 +190,7 @@ void App_LcdCfg(void)
     LcdInitStruct.LcdDuty = LcdDuty8;                              ///< 1/8 Duty
     LcdInitStruct.LcdBias = LcdBias3;                              ///< 1/3 BIAS
     LcdInitStruct.LcdCpClk = LcdClk2k;                             ///< 电压泵时钟频率选择2kHz
-    LcdInitStruct.LcdScanClk = LcdClk512hz;                        ///< LCD扫描频率选择128Hz
+    LcdInitStruct.LcdScanClk = LcdClk512hz;                        ///< LCD扫描频率选择512Hz
     LcdInitStruct.LcdMode = LcdMode0;                              ///< 选择模式0
     LcdInitStruct.LcdClkSrc = LcdRCL;                              ///< LCD时钟选择RCL
     LcdInitStruct.LcdEn   = LcdEnable;                             ///< 使能LCD模块

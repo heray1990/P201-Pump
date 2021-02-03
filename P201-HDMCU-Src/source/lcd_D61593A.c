@@ -1,5 +1,5 @@
 /******************************************************************************/
-/** \file lcd_D6159SA.c
+/** \file lcd_D61593A.c
  **
  ** A detailed description is available at
  ** @link Sample Group Some description @endlink

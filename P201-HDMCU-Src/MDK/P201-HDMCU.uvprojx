@@ -409,9 +409,9 @@
               <FilePath>..\source\main.c</FilePath>
             </File>
             <File>
-              <FileName>lcd_D6159SA.c</FileName>
+              <FileName>lcd_D61593A.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\source\lcd_D6159SA.c</FilePath>
+              <FilePath>..\source\lcd_D61593A.c</FilePath>
             </File>
           </Files>
         </Group>

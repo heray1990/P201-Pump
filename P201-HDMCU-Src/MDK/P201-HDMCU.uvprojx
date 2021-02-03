@@ -408,6 +408,11 @@
               <FileType>1</FileType>
               <FilePath>..\source\main.c</FilePath>
             </File>
+            <File>
+              <FileName>lcd_D6159SA.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\source\lcd_D6159SA.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

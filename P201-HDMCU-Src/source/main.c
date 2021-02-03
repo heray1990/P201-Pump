@@ -55,6 +55,7 @@
 #include "lcd.h"
 #include "lpm.h"
 #include "gpio.h"
+#include "lcd_D61593A.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -95,6 +96,8 @@ void App_LcdCfg(void);
  ******************************************************************************/ 
 int32_t main(void)
 {
+    stc_lcd_d61593a_lcdram_t lcdRamDataStruct;
+
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
 
@@ -105,12 +108,16 @@ int32_t main(void)
     App_LcdCfg();                ///< LCD模块配置
 
     Lcd_ClearDisp();             ///< 清屏
-    Lcd_WriteRam(0,0xfffffff0);  ///< 赋值寄存器LCDRAM0
+    /*
+    Lcd_WriteRam(0,0xffffffff);  ///< 赋值寄存器LCDRAM0
     Lcd_WriteRam(1,0xffffffff);  ///< 赋值寄存器LCDRAM1
     Lcd_WriteRam(2,0xffffffff);  ///< 赋值寄存器LCDRAM2
     Lcd_WriteRam(3,0xffffffff);  ///< 赋值寄存器LCDRAM3
     Lcd_WriteRam(4,0xffffffff);  ///< 赋值寄存器LCDRAM4
     Lcd_WriteRam(5,0x00ffffff);  ///< 赋值寄存器LCDRAM5
+    */
+    lcdRamDataStruct = LCD_D61593A_GenRam_Channel(0, TRUE);
+    Lcd_WriteRam(lcdRamDataStruct.u8LcdRamIdx, lcdRamDataStruct.unRamData.u32_dis);
 
     while(1)
     {

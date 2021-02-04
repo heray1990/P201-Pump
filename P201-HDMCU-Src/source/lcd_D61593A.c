@@ -93,7 +93,6 @@ void Lcd_D61593A_GenRam_Channel(un_Ram_Data* punRamData, uint8_t u8Val, boolean_
  **        u8Val: T2 浇水时长需要显示的数字
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
- **
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
 {
@@ -108,13 +107,18 @@ void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, bo
 
     if(TRUE == bDisplay)
     {
-        // LCDRAM1
         punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x01;    // Display T7.
         punRamData[LCDRAM_INDEX_1].u8_dis[2] = u8Num1To11Table[u8Single] | 0x01;    // Set value for 9 and display T2
-        punRamData[LCDRAM_INDEX_1].u8_dis[3] |= u8Num1To11Table[u8Ten];    // Set value for 8
 
-        // LCDRAM2
-        punRamData[LCDRAM_INDEX_2].u8_dis[0] |= u8Num1To11Table[u8Hundred];    // Set value for 7
+        if(u8Hundred > 0 || (u8Hundred == 0 && u8Ten > 0))
+        {
+            punRamData[LCDRAM_INDEX_1].u8_dis[3] |= u8Num1To11Table[u8Ten];    // Set value for 8
+        }
+
+        if(u8Hundred > 0)
+        {
+            punRamData[LCDRAM_INDEX_2].u8_dis[0] |= u8Num1To11Table[u8Hundred];    // Set value for 7
+        }
     }
 }
 
@@ -125,7 +129,6 @@ void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, bo
  **        u8Val: T8 组数需要显示的数字
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
- **
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Sets(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
 {
@@ -151,7 +154,6 @@ void Lcd_D61593A_GenRam_Sets(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t b
  **        enMode: 智能1的模式
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
- **
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay)
 {
@@ -187,7 +189,6 @@ void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, 
  **        enMode: 智能2的模式
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
- **
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay)
 {
@@ -218,3 +219,33 @@ void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, 
     }
 }
 
+/******************************************************************************
+ ** \brief 生成启动时间显示的 LCDRAM 值
+ **
+ ** \input punRamData: LCDRAM 的值
+ **        u8Val: 启动时间需要显示的数字
+ **        bDisplay - TRUE: 显示
+ **                   FALSE：不显示
+ *****************************************************************************
+void Lcd_D61593A_GenRam_Starting_Time(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
+{
+    uint8_t u8Single, u8Ten, u8Hundred;
+
+    u8Single = u8Val % 10;
+	u8Ten = u8Val / 10 % 10;
+	u8Hundred = u8Val / 100 % 10;
+
+    punRamData[LCDRAM_INDEX_1].u32_dis &= MASK_LCDRAM1_WATER_TIME;    // Clean RAM of T2, T7, 8 and 9 in LCDRAM1.
+    punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_WATER_TIME;    // Clean RAM of 7 in LCDRAM2.
+
+    if(TRUE == bDisplay)
+    {
+        // LCDRAM1
+        punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x01;    // Display T7.
+        punRamData[LCDRAM_INDEX_1].u8_dis[2] = u8Num1To11Table[u8Single] | 0x01;    // Set value for 9 and display T2
+        punRamData[LCDRAM_INDEX_1].u8_dis[3] |= u8Num1To11Table[u8Ten];    // Set value for 8
+
+        // LCDRAM2
+        punRamData[LCDRAM_INDEX_2].u8_dis[0] |= u8Num1To11Table[u8Hundred];    // Set value for 7
+    }
+}*/

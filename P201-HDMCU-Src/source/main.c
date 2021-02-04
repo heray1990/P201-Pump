@@ -86,6 +86,9 @@
  ******************************************************************************/
 void App_PortCfg(void);
 void App_LcdCfg(void);
+void App_LcdRam_Init(un_Ram_Data* pu32Data);
+void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
+
 /**
  ******************************************************************************
  ** \brief  主函数
@@ -96,8 +99,9 @@ void App_LcdCfg(void);
  ******************************************************************************/ 
 int32_t main(void)
 {
-    stc_lcd_d61593a_lcdram_t lcdRamDataStruct;
+    un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 
+    App_LcdRam_Init(u32LcdRamData);
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
 
@@ -116,8 +120,12 @@ int32_t main(void)
     Lcd_WriteRam(4,0xffffffff);  ///< 赋值寄存器LCDRAM4
     Lcd_WriteRam(5,0x00ffffff);  ///< 赋值寄存器LCDRAM5
     */
-    lcdRamDataStruct = LCD_D61593A_GenRam_Channel(0, TRUE);
-    Lcd_WriteRam(lcdRamDataStruct.u8LcdRamIdx, lcdRamDataStruct.unRamData.u32_dis);
+    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
+    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 28, TRUE);
+    Lcd_D61593A_GenRam_T8(u32LcdRamData, 1, TRUE);
+    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
+    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
+    App_Lcd_Display_Update(u32LcdRamData);
 
     while(1)
     {
@@ -204,9 +212,25 @@ void App_LcdCfg(void)
     Lcd_Init(&LcdInitStruct);
 }
 
+void App_LcdRam_Init(un_Ram_Data* pu32Data)
+{
+    uint8_t u8Idx = 0;
 
+    for(u8Idx = 0; u8Idx <= LCDRAM_INDEX_MAX; u8Idx++)
+    {
+        pu32Data[u8Idx].u32_dis = 0x00000000;
+    }
+}
+
+void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
+{
+    uint8_t u8Idx = 0;
+
+    for(u8Idx = 0; u8Idx <= LCDRAM_INDEX_MAX; u8Idx++)
+    {
+        Lcd_WriteRam(u8Idx, pu32Data[u8Idx].u32_dis);
+    }
+}
 /******************************************************************************
  * EOF (not truncated)
  ******************************************************************************/
-
-

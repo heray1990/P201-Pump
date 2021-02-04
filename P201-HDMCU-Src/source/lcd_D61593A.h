@@ -73,14 +73,27 @@
 #define NUM_12_21_CHAR_8    0xf0e0
 #define NUM_12_21_CHAR_9    0xf0c0
 
-#define CHAR_T1    0x01
+#define LCDRAM_INDEX_0      0
+#define LCDRAM_INDEX_1      1
+#define LCDRAM_INDEX_2      2
+#define LCDRAM_INDEX_3      3
+#define LCDRAM_INDEX_4      4
+#define LCDRAM_INDEX_5      5
+#define LCDRAM_INDEX_MAX    5
 
-#define LCDRAM_INDEX_0    0
-#define LCDRAM_INDEX_1    1
-#define LCDRAM_INDEX_2    2
-#define LCDRAM_INDEX_3    3
-#define LCDRAM_INDEX_4    4
-#define LCDRAM_INDEX_5    5
+
+#define MASK_LCDRAM1_WATER_TIME     0x0100feff
+#define MASK_LCDRAM2_WATER_TIME     0xffffff01
+#define MASK_LCDRAM2_CHANNEL        0xffff00ff
+#define MASK_LCDRAM4_T8             0xf0ffffff
+#define MASK_LCDRAM5_T8             0xfffffff0
+#define MASK_LCDRAM3_SMART1         0xff67fffe
+#define MASK_LCDRAM4_SMART1         0xfffffeff
+#define MASK_LCDRAM5_SMART1         0xfffff9ff
+#define MASK_LCDRAM0_SMART2         0xfffefeff
+#define MASK_LCDRAM1_SMART2         0xfeffffff
+#define MASK_LCDRAM2_SMART2         0xfffffffe
+#define MASK_LCDRAM3_SMART2         0xfff8ffff
 
 
 /******************************************************************************
@@ -96,16 +109,6 @@ typedef union{
 }un_Ram_Data;
 
 /******************************************************************************
- ** \brief LCDRAM 返回结构体
- *****************************************************************************/
-typedef struct stc_lcd_d61593a_lcdram
-{
-    uint8_t u8LcdRamIdx;    //LCDRAM index
-    un_Ram_Data unRamData;    //写入到 LCDRAM 的值
-}stc_lcd_d61593a_lcdram_t;
-
-
-/******************************************************************************
  ** \brief 智能模式选择
  *****************************************************************************/
 typedef enum
@@ -119,8 +122,11 @@ typedef enum
 /******************************************************************************
 ** Global function prototypes (definition in C source)
 ******************************************************************************/
-extern stc_lcd_d61593a_lcdram_t LCD_D61593A_GenRam_Channel(uint8_t u8Val, boolean_t bDisplay);
-
+extern void Lcd_D61593A_GenRam_Channel(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_T8(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
 
 //@} // LCDGroup
 

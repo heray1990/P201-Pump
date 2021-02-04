@@ -122,7 +122,7 @@ int32_t main(void)
     */
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 28, TRUE);
-    Lcd_D61593A_GenRam_T8(u32LcdRamData, 1, TRUE);
+    Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
     App_Lcd_Display_Update(u32LcdRamData);

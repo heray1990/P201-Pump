@@ -127,7 +127,7 @@ void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, bo
  **                   FALSE：不显示
  **
  *****************************************************************************/
-void Lcd_D61593A_GenRam_T8(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
+void Lcd_D61593A_GenRam_Sets(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
 {
     // Clean RAM of T8 and 12 in LCDRAM4 and LCDRAM5.
     punRamData[LCDRAM_INDEX_4].u32_dis &= MASK_LCDRAM4_T8;

@@ -51,27 +51,29 @@
 9 = SEG_A+SEG_B+SEG_C+SEG_D+SEG_F+SEG_G
 *****************************************************************************/
 
-#define NUM_1_11_CHAR_0    0xee
-#define NUM_1_11_CHAR_1    0x48
-#define NUM_1_11_CHAR_2    0xba
-#define NUM_1_11_CHAR_3    0xda
-#define NUM_1_11_CHAR_4    0x5c
-#define NUM_1_11_CHAR_5    0xd6
-#define NUM_1_11_CHAR_6    0xf6
-#define NUM_1_11_CHAR_7    0x4a
-#define NUM_1_11_CHAR_8    0xfe
-#define NUM_1_11_CHAR_9    0xde
+#define NUM_1_11_CHAR_0         0xee
+#define NUM_1_11_CHAR_1         0x48
+#define NUM_1_11_CHAR_2         0xba
+#define NUM_1_11_CHAR_3         0xda
+#define NUM_1_11_CHAR_4         0x5c
+#define NUM_1_11_CHAR_5         0xd6
+#define NUM_1_11_CHAR_6         0xf6
+#define NUM_1_11_CHAR_7         0x4a
+#define NUM_1_11_CHAR_8         0xfe
+#define NUM_1_11_CHAR_9         0xde
+#define NUM_1_11_CHAR_ERROR     0xb6
 
-#define NUM_12_21_CHAR_0    0xf0a0
-#define NUM_12_21_CHAR_1    0x6000
-#define NUM_12_21_CHAR_2    0xd060
-#define NUM_12_21_CHAR_3    0xf040
-#define NUM_12_21_CHAR_4    0x60c0
-#define NUM_12_21_CHAR_5    0xb0c0
-#define NUM_12_21_CHAR_6    0xb0e0
-#define NUM_12_21_CHAR_7    0xe000
-#define NUM_12_21_CHAR_8    0xf0e0
-#define NUM_12_21_CHAR_9    0xf0c0
+#define NUM_12_21_CHAR_0        0xf0a0
+#define NUM_12_21_CHAR_1        0x6000
+#define NUM_12_21_CHAR_2        0xd060
+#define NUM_12_21_CHAR_3        0xf040
+#define NUM_12_21_CHAR_4        0x60c0
+#define NUM_12_21_CHAR_5        0xb0c0
+#define NUM_12_21_CHAR_6        0xb0e0
+#define NUM_12_21_CHAR_7        0xe000
+#define NUM_12_21_CHAR_8        0xf0e0
+#define NUM_12_21_CHAR_9        0xf0c0
+#define NUM_12_21_CHAR_ERROR    0x90e0
 
 #define LCDRAM_INDEX_0      0
 #define LCDRAM_INDEX_1      1
@@ -82,6 +84,9 @@
 #define LCDRAM_INDEX_MAX    5
 
 
+// Mask for each components. The bits with value "0" means the seg for that components.
+#define MASK_LCDRAM0_START_TIME     0x0001ffff
+#define MASK_LCDRAM1_START_TIME     0xffff0100
 #define MASK_LCDRAM1_WATER_TIME     0x0100feff
 #define MASK_LCDRAM2_WATER_TIME     0xffffff01
 #define MASK_LCDRAM2_CHANNEL        0xffff00ff
@@ -118,6 +123,15 @@ typedef enum
     SmartModeWet = 2,    //湿
 }en_smart_mode_t;
 
+/******************************************************************************
+ ** \brief 模式选择
+ *****************************************************************************/
+typedef enum
+{
+    Automatic = 0,
+    Manual = 1,
+}en_working_mode_t;
+
 
 /******************************************************************************
 ** Global function prototypes (definition in C source)
@@ -127,7 +141,12 @@ extern void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8
 extern void Lcd_D61593A_GenRam_Sets(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
-
+extern void Lcd_D61593A_GenRam_Starting_Time(
+                                un_Ram_Data* punRamData,
+                                uint8_t u8Hour,
+                                uint8_t u8Minute,
+                                en_working_mode_t enWorkingMode,
+                                boolean_t bDisplay);
 //@} // LCDGroup
 
 #ifdef __cplusplus

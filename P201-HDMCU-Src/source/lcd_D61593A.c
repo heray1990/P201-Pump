@@ -33,29 +33,31 @@
  * Local variable definitions ('const')                                       *
  *****************************************************************************/
 const uint8_t u8Num1To11Table[] = {
-                NUM_1_11_CHAR_0,    // 0
-                NUM_1_11_CHAR_1,    // 1
-                NUM_1_11_CHAR_2,    // 2
-                NUM_1_11_CHAR_3,    // 3
-                NUM_1_11_CHAR_4,    // 4
-                NUM_1_11_CHAR_5,    // 5
-                NUM_1_11_CHAR_6,    // 6
-                NUM_1_11_CHAR_7,    // 7
-                NUM_1_11_CHAR_8,    // 8
-                NUM_1_11_CHAR_9     // 9
+                NUM_1_11_CHAR_0,        // 0
+                NUM_1_11_CHAR_1,        // 1
+                NUM_1_11_CHAR_2,        // 2
+                NUM_1_11_CHAR_3,        // 3
+                NUM_1_11_CHAR_4,        // 4
+                NUM_1_11_CHAR_5,        // 5
+                NUM_1_11_CHAR_6,        // 6
+                NUM_1_11_CHAR_7,        // 7
+                NUM_1_11_CHAR_8,        // 8
+                NUM_1_11_CHAR_9,        // 9
+                NUM_1_11_CHAR_ERROR     // Error
 };
 
 const uint16_t u16Num12To21Table[] = {
-                NUM_12_21_CHAR_0,    // 0
-                NUM_12_21_CHAR_1,    // 1
-                NUM_12_21_CHAR_2,    // 2
-                NUM_12_21_CHAR_3,    // 3
-                NUM_12_21_CHAR_4,    // 4
-                NUM_12_21_CHAR_5,    // 5
-                NUM_12_21_CHAR_6,    // 6
-                NUM_12_21_CHAR_7,    // 7
-                NUM_12_21_CHAR_8,    // 8
-                NUM_12_21_CHAR_9     // 9
+                NUM_12_21_CHAR_0,       // 0
+                NUM_12_21_CHAR_1,       // 1
+                NUM_12_21_CHAR_2,       // 2
+                NUM_12_21_CHAR_3,       // 3
+                NUM_12_21_CHAR_4,       // 4
+                NUM_12_21_CHAR_5,       // 5
+                NUM_12_21_CHAR_6,       // 6
+                NUM_12_21_CHAR_7,       // 7
+                NUM_12_21_CHAR_8,       // 8
+                NUM_12_21_CHAR_9,       // 9
+                NUM_12_21_CHAR_ERROR    // Error
 };
 
 
@@ -80,9 +82,16 @@ void Lcd_D61593A_GenRam_Channel(un_Ram_Data* punRamData, uint8_t u8Val, boolean_
 {
     punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_CHANNEL;    // Clean T1 and 1 in LCDRAM2.
 
-    if(TRUE == bDisplay || u8Val <= 9)
+    if(TRUE == bDisplay)
     {
-        punRamData[LCDRAM_INDEX_2].u8_dis[1] = (u8Num1To11Table[u8Val] | 0x01);    // Set value for 1 and display T1
+        if(u8Val >= 0 && u8Val <= 9)
+        {
+            punRamData[LCDRAM_INDEX_2].u8_dis[1] = (u8Num1To11Table[u8Val] | 0x01);    // Set value for 1 and display T1
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_2].u8_dis[1] = (u8Num1To11Table[10] | 0x01);    // Display "E"(Error)
+        }
     }
 }
 
@@ -136,14 +145,15 @@ void Lcd_D61593A_GenRam_Sets(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t b
     punRamData[LCDRAM_INDEX_4].u32_dis &= MASK_LCDRAM4_T8;
     punRamData[LCDRAM_INDEX_5].u32_dis &= MASK_LCDRAM5_T8;
 
-    if(TRUE == bDisplay || u8Val <= 9)
+    if(TRUE == bDisplay)
     {
-        // LCDRAM4
-        punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x01;    // Display T8.
-        punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8Val] & 0x00f0) << 4;    // Set value for 12 in LCDRAM4
+        if(u8Val >= 0 && u8Val <= 9)
+        {
+            punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x01;    // Display T8.
+            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8Val] & 0x00f0) << 4;    // Set value for 12 in LCDRAM4
 
-        // LCDRAM5
-        punRamData[LCDRAM_INDEX_5].u16_dis[0] |= (u16Num12To21Table[u8Val] & 0xf000) >> 12;    // Set value for 12 in LCDRAM5
+            punRamData[LCDRAM_INDEX_5].u16_dis[0] |= (u16Num12To21Table[u8Val] & 0xf000) >> 12;    // Set value for 12 in LCDRAM5
+        }
     }
 }
 
@@ -190,7 +200,7 @@ void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, 
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
  *****************************************************************************/
-void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay)
+void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enSmartMode, boolean_t bDisplay)
 {
     // Clean RAM of P1 ~ P7 in LCDRAM0 ~ LCDRAM3.
     punRamData[LCDRAM_INDEX_0].u32_dis &= MASK_LCDRAM0_SMART2;
@@ -202,11 +212,11 @@ void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, 
     {
         punRamData[LCDRAM_INDEX_3].u8_dis[2] |= 0x01;    // Display P1.
 
-        if(SmartModeDry == enMode)
+        if(SmartModeDry == enSmartMode)
         {
             punRamData[LCDRAM_INDEX_3].u8_dis[2] |= 0x06;    // Display P2 and P3
         }
-        else if(SmartModeMid == enMode)
+        else if(SmartModeMid == enSmartMode)
         {
             punRamData[LCDRAM_INDEX_1].u8_dis[3] |= 0x01;    // Display P5
             punRamData[LCDRAM_INDEX_2].u8_dis[0] |= 0x01;    // Display P4
@@ -226,26 +236,63 @@ void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, 
  **        u8Val: 启动时间需要显示的数字
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
- *****************************************************************************
-void Lcd_D61593A_GenRam_Starting_Time(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
+ *****************************************************************************/
+void Lcd_D61593A_GenRam_Starting_Time(
+                                un_Ram_Data* punRamData,
+                                uint8_t u8Hour,
+                                uint8_t u8Minute,
+                                en_working_mode_t enWorkingMode,
+                                boolean_t bDisplay)
 {
-    uint8_t u8Single, u8Ten, u8Hundred;
+    uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;
 
-    u8Single = u8Val % 10;
-	u8Ten = u8Val / 10 % 10;
-	u8Hundred = u8Val / 100 % 10;
+    u8HourSingle = u8Hour % 10;
+	u8HourTen = u8Hour / 10 % 10;
+	u8MinuteSingle = u8Minute % 10;
+	u8MinuteTen = u8Minute / 10 % 10;
 
-    punRamData[LCDRAM_INDEX_1].u32_dis &= MASK_LCDRAM1_WATER_TIME;    // Clean RAM of T2, T7, 8 and 9 in LCDRAM1.
-    punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_WATER_TIME;    // Clean RAM of 7 in LCDRAM2.
+    punRamData[LCDRAM_INDEX_0].u32_dis &= MASK_LCDRAM0_START_TIME;    // Clean RAM of 5, 6 and COL3 in LCDRAM0.
+    punRamData[LCDRAM_INDEX_1].u32_dis &= MASK_LCDRAM1_START_TIME;    // Clean RAM of 3, 4 and T3 in LCDRAM1.
 
     if(TRUE == bDisplay)
     {
-        // LCDRAM1
-        punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x01;    // Display T7.
-        punRamData[LCDRAM_INDEX_1].u8_dis[2] = u8Num1To11Table[u8Single] | 0x01;    // Set value for 9 and display T2
-        punRamData[LCDRAM_INDEX_1].u8_dis[3] |= u8Num1To11Table[u8Ten];    // Set value for 8
+        punRamData[LCDRAM_INDEX_0].u8_dis[3] |= 0x01;    // Display COL3.
+        punRamData[LCDRAM_INDEX_1].u8_dis[0] |= 0x01;    // Display T3.
 
-        // LCDRAM2
-        punRamData[LCDRAM_INDEX_2].u8_dis[0] |= u8Num1To11Table[u8Hundred];    // Set value for 7
+        if(Automatic == enWorkingMode)
+        {
+            if(u8Minute >= 0 && u8Minute <= 59)
+            {
+                punRamData[LCDRAM_INDEX_0].u8_dis[2] |= u8Num1To11Table[u8MinuteSingle];    // 6
+                punRamData[LCDRAM_INDEX_0].u8_dis[3] |= u8Num1To11Table[u8MinuteTen];    // 5
+            }
+            else
+            {
+                punRamData[LCDRAM_INDEX_0].u8_dis[2] |= u8Num1To11Table[10];    // Display "E"(Error) in 6
+                punRamData[LCDRAM_INDEX_0].u8_dis[3] |= u8Num1To11Table[10];    // Display "E"(Error) in 5
+            }
+
+            if(u8Hour >= 0 && u8Hour <= 23)
+            {
+                punRamData[LCDRAM_INDEX_1].u8_dis[0] |= u8Num1To11Table[u8HourSingle];    // 4
+                if(u8HourTen > 0)
+                {
+                    punRamData[LCDRAM_INDEX_1].u8_dis[1] |= u8Num1To11Table[u8HourTen];    // 3
+                }
+            }
+            else
+            {
+                punRamData[LCDRAM_INDEX_1].u8_dis[0] = u8Num1To11Table[10];    // Display "E"(Error) in 4
+                punRamData[LCDRAM_INDEX_1].u8_dis[1] = u8Num1To11Table[10];    // Display "E"(Error) in 3
+            }
+        }
+        else
+        {
+            // Display "--:--"
+            punRamData[LCDRAM_INDEX_0].u8_dis[2] |= 0x10;
+            punRamData[LCDRAM_INDEX_0].u8_dis[3] |= 0x10;
+            punRamData[LCDRAM_INDEX_1].u8_dis[0] |= 0x10;
+            punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x10;
+        }
     }
-}*/
+}

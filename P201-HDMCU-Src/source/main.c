@@ -112,19 +112,14 @@ int32_t main(void)
     App_LcdCfg();                ///< LCD模块配置
 
     Lcd_ClearDisp();             ///< 清屏
-    /*
-    Lcd_WriteRam(0,0xffffffff);  ///< 赋值寄存器LCDRAM0
-    Lcd_WriteRam(1,0xffffffff);  ///< 赋值寄存器LCDRAM1
-    Lcd_WriteRam(2,0xffffffff);  ///< 赋值寄存器LCDRAM2
-    Lcd_WriteRam(3,0xffffffff);  ///< 赋值寄存器LCDRAM3
-    Lcd_WriteRam(4,0xffffffff);  ///< 赋值寄存器LCDRAM4
-    Lcd_WriteRam(5,0x00ffffff);  ///< 赋值寄存器LCDRAM5
-    */
+
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 0, TRUE);
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
+    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, Automatic, TRUE);
+
     App_Lcd_Display_Update(u32LcdRamData);
 
     while(1)

@@ -120,6 +120,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, Automatic, TRUE);
     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, Automatic, TRUE);
+    Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
 
     App_Lcd_Display_Update(u32LcdRamData);
 

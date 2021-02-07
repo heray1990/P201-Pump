@@ -151,6 +151,7 @@ extern void Lcd_D61593A_GenRam_WorkingMode(
                                 un_Ram_Data* punRamData,
                                 en_working_mode_t enWrokingMode,
                                 boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop);
 //@} // LCDGroup
 
 #ifdef __cplusplus

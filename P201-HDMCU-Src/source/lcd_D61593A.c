@@ -108,8 +108,8 @@ void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, bo
     uint8_t u8Single, u8Ten, u8Hundred;
 
     u8Single = u8Val % 10;
-	u8Ten = u8Val / 10 % 10;
-	u8Hundred = u8Val / 100 % 10;
+    u8Ten = u8Val / 10 % 10;
+    u8Hundred = u8Val / 100 % 10;
 
     punRamData[LCDRAM_INDEX_1].u32_dis &= MASK_LCDRAM1_WATER_TIME;    // Clean RAM of T2, T7, 8 and 9 in LCDRAM1.
     punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_WATER_TIME;    // Clean RAM of 7 in LCDRAM2.
@@ -247,9 +247,9 @@ void Lcd_D61593A_GenRam_Starting_Time(
     uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;
 
     u8HourSingle = u8Hour % 10;
-	u8HourTen = u8Hour / 10 % 10;
-	u8MinuteSingle = u8Minute % 10;
-	u8MinuteTen = u8Minute / 10 % 10;
+    u8HourTen = u8Hour / 10 % 10;
+    u8MinuteSingle = u8Minute % 10;
+    u8MinuteTen = u8Minute / 10 % 10;
 
     punRamData[LCDRAM_INDEX_0].u32_dis &= MASK_LCDRAM0_START_TIME;    // Clean RAM of 5, 6 and COL3 in LCDRAM0.
     punRamData[LCDRAM_INDEX_1].u32_dis &= MASK_LCDRAM1_START_TIME;    // Clean RAM of 3, 4 and T3 in LCDRAM1.

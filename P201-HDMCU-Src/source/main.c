@@ -114,10 +114,11 @@ int32_t main(void)
     Lcd_ClearDisp();             ///< 清屏
 
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
-    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 0, TRUE);
+    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
+    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, Automatic, TRUE);
     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, Automatic, TRUE);
 
     App_Lcd_Display_Update(u32LcdRamData);

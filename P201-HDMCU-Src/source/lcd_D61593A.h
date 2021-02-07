@@ -147,6 +147,10 @@ extern void Lcd_D61593A_GenRam_Starting_Time(
                                 uint8_t u8Minute,
                                 en_working_mode_t enWorkingMode,
                                 boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_WorkingMode(
+                                un_Ram_Data* punRamData,
+                                en_working_mode_t enWrokingMode,
+                                boolean_t bDisplay);
 //@} // LCDGroup
 
 #ifdef __cplusplus

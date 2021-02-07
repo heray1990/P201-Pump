@@ -196,7 +196,7 @@ void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, 
  ** \brief 生成智能2显示的 LCDRAM 值 P1 ~ P7
  **
  ** \input punRamData: LCDRAM 的值
- **        enMode: 智能2的模式
+ **        enSmartMode: 智能2的模式
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
  *****************************************************************************/
@@ -233,7 +233,9 @@ void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enSmartM
  ** \brief 生成启动时间显示的 LCDRAM 值
  **
  ** \input punRamData: LCDRAM 的值
- **        u8Val: 启动时间需要显示的数字
+ **        u8Hour: 启动时间需要显示的小时
+ **        u8Minute: 启动时间需要显示的分钟
+ **        enWorkingMode: 目前选定的工作模式
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
  *****************************************************************************/
@@ -293,6 +295,36 @@ void Lcd_D61593A_GenRam_Starting_Time(
             punRamData[LCDRAM_INDEX_0].u8_dis[3] |= 0x10;
             punRamData[LCDRAM_INDEX_1].u8_dis[0] |= 0x10;
             punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x10;
+        }
+    }
+}
+
+/******************************************************************************
+ ** \brief 生成工作模式显示的 LCDRAM 值 T16 和 T17
+ **
+ ** \input punRamData: LCDRAM 的值
+ **        enSmartMode: 智能2的模式
+ **        bDisplay - TRUE: 显示
+ **                   FALSE：不显示
+ *****************************************************************************/
+void Lcd_D61593A_GenRam_WorkingMode(
+                                un_Ram_Data* punRamData,
+                                en_working_mode_t enWrokingMode,
+                                boolean_t bDisplay)
+{
+    // Clean RAM of T16 and T17 in LCDRAM5.
+    punRamData[LCDRAM_INDEX_5].u8_dis[1] &= 0xef;    // T17
+    punRamData[LCDRAM_INDEX_5].u8_dis[2] &= 0xdf;    // T16
+
+    if(TRUE == bDisplay)
+    {
+        if(Automatic == enWrokingMode)
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x10;
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x20;
         }
     }
 }

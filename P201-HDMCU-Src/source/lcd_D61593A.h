@@ -128,8 +128,8 @@ typedef enum
  *****************************************************************************/
 typedef enum
 {
-    Automatic = 0,
-    Manual = 1,
+    ModeAutomatic = 0,
+    ModeManual = 1,
 }en_working_mode_t;
 
 /******************************************************************************
@@ -140,6 +140,15 @@ typedef enum
     Unlock = 0,
     Lock = 1,
 }en_lock_status_t;
+
+/******************************************************************************
+ ** \brief Wifi 信号强弱
+ *****************************************************************************/
+typedef enum
+{
+    WifiSignalWeek = 0,
+    WifiSignalStrong = 1,
+}en_wifi_signal_strength_t;
 
 
 
@@ -162,9 +171,13 @@ extern void Lcd_D61593A_GenRam_WorkingMode(
                                 en_working_mode_t enWrokingMode,
                                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop);
-extern void Lcd_D61593A_GenRam_Lock_Status(
+extern void Lcd_D61593A_GenRam_Lock_Icon(
                 un_Ram_Data* punRamData,
                 en_lock_status_t enLockStatus,
+                boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Wifi_Icon(
+                un_Ram_Data* punRamData,
+                en_wifi_signal_strength_t enWifiSignal,
                 boolean_t bDisplay);
 //@} // LCDGroup
 

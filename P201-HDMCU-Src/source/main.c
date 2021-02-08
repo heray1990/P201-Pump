@@ -118,10 +118,11 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
-    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, Automatic, TRUE);
-    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, Automatic, TRUE);
+    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
+    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, ModeAutomatic, TRUE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
-    Lcd_D61593A_GenRam_Lock_Status(u32LcdRamData, Unlock, TRUE);
+    Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
+    Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);
 
     App_Lcd_Display_Update(u32LcdRamData);
 

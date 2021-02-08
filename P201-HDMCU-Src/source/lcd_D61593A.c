@@ -261,7 +261,7 @@ void Lcd_D61593A_GenRam_Starting_Time(
         punRamData[LCDRAM_INDEX_0].u8_dis[3] |= 0x01;    // Display COL3.
         punRamData[LCDRAM_INDEX_1].u8_dis[0] |= 0x01;    // Display T3.
 
-        if(Automatic == enWorkingMode)
+        if(ModeAutomatic == enWorkingMode)
         {
             if(u8Minute >= 0 && u8Minute <= 59)
             {
@@ -318,7 +318,7 @@ void Lcd_D61593A_GenRam_WorkingMode(
 
     if(TRUE == bDisplay)
     {
-        if(Automatic == enWrokingMode)
+        if(ModeAutomatic == enWrokingMode)
         {
             punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x10;
         }
@@ -351,10 +351,11 @@ void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop)
  ** \brief 生成"锁"图标显示状态的 LCDRAM 值 X1~X3
  **
  ** \input punRamData: LCDRAM 的值
- **        bStop - TRUE: 显示"暂停"
- **                FALSE：不显示"暂停"
+ **        enLockStatus: 锁或者解锁
+ **        bDisplay - TRUE: 显示
+ **                   FALSE：不显示
  *****************************************************************************/
-void Lcd_D61593A_GenRam_Lock_Status(
+void Lcd_D61593A_GenRam_Lock_Icon(
                 un_Ram_Data* punRamData,
                 en_lock_status_t enLockStatus,
                 boolean_t bDisplay)
@@ -374,6 +375,34 @@ void Lcd_D61593A_GenRam_Lock_Status(
         else
         {
             punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x40;
+        }
+    }
+}
+
+/******************************************************************************
+ ** \brief 生成WiFi信号强度显示的 LCDRAM 值 S3 S4
+ **
+ ** \input punRamData: LCDRAM 的值
+ **        enWifiSignal: WiFi 信号强弱
+ **        bDisplay - TRUE: 显示
+ **                   FALSE：不显示
+ *****************************************************************************/
+void Lcd_D61593A_GenRam_Wifi_Icon(
+                un_Ram_Data* punRamData,
+                en_wifi_signal_strength_t enWifiSignal,
+                boolean_t bDisplay)
+{
+    // Clean RAM of S3 and S4 in LCDRAM5.
+    punRamData[LCDRAM_INDEX_5].u8_dis[1] &= 0x7f;
+    punRamData[LCDRAM_INDEX_5].u8_dis[2] &= 0x7f;
+
+    if(TRUE == bDisplay)
+    {
+        punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x80;
+
+        if(WifiSignalStrong == enWifiSignal)
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x80;
         }
     }
 }

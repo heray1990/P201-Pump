@@ -123,6 +123,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);
+    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
 
     App_Lcd_Display_Update(u32LcdRamData);
 

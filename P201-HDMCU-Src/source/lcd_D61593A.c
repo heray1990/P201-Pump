@@ -407,3 +407,49 @@ void Lcd_D61593A_GenRam_Wifi_Icon(
     }
 }
 
+/******************************************************************************
+ ** \brief 生成电池图标显示的 LCDRAM 值 Z1~Z5
+ **
+ ** \input punRamData: LCDRAM 的值
+ **        enWifiSignal: WiFi 信号强弱
+ **        bDisplay - TRUE: 显示
+ **                   FALSE：不显示
+ *****************************************************************************/
+void Lcd_D61593A_GenRam_Battery_Icon(
+                un_Ram_Data* punRamData,
+                en_remaining_battery_t enBatteryPercent,
+                boolean_t bDisplay)
+{
+    // Clean RAM of Z1~Z5 in LCDRAM5.
+    punRamData[LCDRAM_INDEX_5].u8_dis[1] &= 0xf7;
+    punRamData[LCDRAM_INDEX_5].u8_dis[2] &= 0xf0;
+
+    if(TRUE == bDisplay)
+    {
+        punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x01;
+
+        if(BatteryPercent25 == enBatteryPercent)
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
+        }
+
+        if(BatteryPercent50 == enBatteryPercent)
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
+            punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x08;
+        }
+
+        if(BatteryPercent75 == enBatteryPercent)
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
+            punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x0C;
+        }
+
+        if(BatteryPercent100 == enBatteryPercent)
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
+            punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x0e;
+        }
+    }
+}
+

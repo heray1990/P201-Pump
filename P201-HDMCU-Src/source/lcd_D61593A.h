@@ -150,6 +150,17 @@ typedef enum
     WifiSignalStrong = 1,
 }en_wifi_signal_strength_t;
 
+/******************************************************************************
+ ** \brief 剩余电量
+ *****************************************************************************/
+typedef enum
+{
+    BatteryPercent0 = 0,
+    BatteryPercent25 = 1,
+    BatteryPercent50 = 2,
+    BatteryPercent75 = 3,
+    BatteryPercent100 = 4,
+}en_remaining_battery_t;
 
 
 /******************************************************************************
@@ -178,6 +189,10 @@ extern void Lcd_D61593A_GenRam_Lock_Icon(
 extern void Lcd_D61593A_GenRam_Wifi_Icon(
                 un_Ram_Data* punRamData,
                 en_wifi_signal_strength_t enWifiSignal,
+                boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Battery_Icon(
+                un_Ram_Data* punRamData,
+                en_remaining_battery_t enBatteryPercent,
                 boolean_t bDisplay);
 //@} // LCDGroup
 

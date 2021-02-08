@@ -132,6 +132,16 @@ typedef enum
     Manual = 1,
 }en_working_mode_t;
 
+/******************************************************************************
+ ** \brief Lock and Unlock
+ *****************************************************************************/
+typedef enum
+{
+    Unlock = 0,
+    Lock = 1,
+}en_lock_status_t;
+
+
 
 /******************************************************************************
 ** Global function prototypes (definition in C source)
@@ -152,6 +162,10 @@ extern void Lcd_D61593A_GenRam_WorkingMode(
                                 en_working_mode_t enWrokingMode,
                                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop);
+extern void Lcd_D61593A_GenRam_Lock_Status(
+                un_Ram_Data* punRamData,
+                en_lock_status_t enLockStatus,
+                boolean_t bDisplay);
 //@} // LCDGroup
 
 #ifdef __cplusplus

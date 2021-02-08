@@ -346,3 +346,35 @@ void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop)
         punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x10;
     }
 }
+
+/******************************************************************************
+ ** \brief 生成"锁"图标显示状态的 LCDRAM 值 X1~X3
+ **
+ ** \input punRamData: LCDRAM 的值
+ **        bStop - TRUE: 显示"暂停"
+ **                FALSE：不显示"暂停"
+ *****************************************************************************/
+void Lcd_D61593A_GenRam_Lock_Status(
+                un_Ram_Data* punRamData,
+                en_lock_status_t enLockStatus,
+                boolean_t bDisplay)
+{
+    // Clean RAM of X1~X3 in LCDRAM5.
+    punRamData[LCDRAM_INDEX_5].u8_dis[1] &= 0x9f;
+    punRamData[LCDRAM_INDEX_5].u8_dis[2] &= 0xbf;
+
+    if(TRUE == bDisplay)
+    {
+        punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x20;
+
+        if(Lock == enLockStatus)
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x40;
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x40;
+        }
+    }
+}
+

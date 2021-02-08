@@ -121,6 +121,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, Automatic, TRUE);
     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, Automatic, TRUE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
+    Lcd_D61593A_GenRam_Lock_Status(u32LcdRamData, Unlock, TRUE);
 
     App_Lcd_Display_Update(u32LcdRamData);
 

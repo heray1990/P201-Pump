@@ -99,6 +99,10 @@
 #define MASK_LCDRAM1_SMART2         0xfeffffff
 #define MASK_LCDRAM2_SMART2         0xfffffffe
 #define MASK_LCDRAM3_SMART2         0xfff8ffff
+#define MASK_LCDRAM2_DATE_TIME      0x0000ffff
+#define MASK_LCDRAM3_DATE_TIME      0x009f0011
+#define MASK_LCDRAM4_DATE_TIME      0x0f000100
+#define MASK_LCDRAM5_DATE_TIME      0xfffffe0f
 
 
 /******************************************************************************
@@ -194,6 +198,14 @@ extern void Lcd_D61593A_GenRam_Battery_Icon(
                 un_Ram_Data* punRamData,
                 en_remaining_battery_t enBatteryPercent,
                 boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Date_And_Time(
+                                un_Ram_Data* punRamData,
+                                uint16_t u16Year,
+                                uint8_t u8Month,
+                                uint8_t u8Day,
+                                uint8_t u8Hour,
+                                uint8_t u8Minute,
+                                boolean_t bDisplay);
 //@} // LCDGroup
 
 #ifdef __cplusplus

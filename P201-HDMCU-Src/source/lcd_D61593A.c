@@ -151,7 +151,6 @@ void Lcd_D61593A_GenRam_Sets(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t b
         {
             punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x01;    // Display T8.
             punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8Val] & 0x00f0) << 4;    // Set value for 12 in LCDRAM4
-
             punRamData[LCDRAM_INDEX_5].u16_dis[0] |= (u16Num12To21Table[u8Val] & 0xf000) >> 12;    // Set value for 12 in LCDRAM5
         }
     }
@@ -449,6 +448,128 @@ void Lcd_D61593A_GenRam_Battery_Icon(
         {
             punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
             punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x0e;
+        }
+    }
+}
+
+/******************************************************************************
+ ** \brief 生成日期和时间显示的 LCDRAM 值. 13~21, T26~T29, COL1, ZZ,
+ **        YY, S1 and S2
+ **
+ ** \input punRamData: LCDRAM 的值
+ **        u8Hour: 启动时间需要显示的小时
+ **        u8Minute: 启动时间需要显示的分钟
+ **        enWorkingMode: 目前选定的工作模式
+ **        bDisplay - TRUE: 显示
+ **                   FALSE：不显示
+ *****************************************************************************/
+void Lcd_D61593A_GenRam_Date_And_Time(
+                                un_Ram_Data* punRamData,
+                                uint16_t u16Year,
+                                uint8_t u8Month,
+                                uint8_t u8Day,
+                                uint8_t u8Hour,
+                                uint8_t u8Minute,
+                                boolean_t bDisplay)
+{
+    uint8_t u16YearSingle, u16YearTen, u8MonthSingle, u8MonthTen, u8DaySingle, u8DayTen;
+    uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;
+
+    u16YearSingle = (u16Year - 2000) % 10;
+    u16YearTen = (u16Year - 2000) / 10 % 10;
+    u8MonthSingle = u8Month % 10;
+    u8MonthTen = u8Month / 10 % 10;
+    u8DaySingle = u8Day % 10;
+    u8DayTen = u8Day / 10 % 10;
+
+    u8HourSingle = u8Hour % 10;
+    u8HourTen = u8Hour / 10 % 10;
+    u8MinuteSingle = u8Minute % 10;
+    u8MinuteTen = u8Minute / 10 % 10;
+
+    punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_DATE_TIME;
+    punRamData[LCDRAM_INDEX_3].u32_dis &= MASK_LCDRAM3_DATE_TIME;
+    punRamData[LCDRAM_INDEX_4].u32_dis &= MASK_LCDRAM4_DATE_TIME;
+    punRamData[LCDRAM_INDEX_5].u32_dis &= MASK_LCDRAM5_DATE_TIME;
+
+    if(TRUE == bDisplay)
+    {
+        punRamData[LCDRAM_INDEX_2].u8_dis[2] |= 0x11;    // Display ZZ and T29.
+        punRamData[LCDRAM_INDEX_3].u16_dis[1] |= 0x0140;    // Display COL1 and T28.
+        punRamData[LCDRAM_INDEX_4].u8_dis[1] |= 0x10;    // Display T27.
+        punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x10;    // Display T26.
+        punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x01;    // Display YY.
+
+        if(u16Year >= 2000 && u16Year <= 2099)
+        {
+            punRamData[LCDRAM_INDEX_2].u16_dis[1] |= u16Num12To21Table[u16YearTen];    // 17
+            punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[u16YearSingle];    // 18
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_2].u16_dis[1] |= u16Num12To21Table[10];    // "E" in 17
+            punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[10];    // "E" in 18
+        }
+
+        if(u8Month >= 1 && u8Month <= 12)
+        {
+            punRamData[LCDRAM_INDEX_3].u16_dis[1] |= (u16Num12To21Table[u8MonthSingle] & 0x00f0) << 8;    // 19
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[u8MonthSingle] & 0xf000) >> 8;    // 19
+            punRamData[LCDRAM_INDEX_3].u8_dis[3] |= 0x10;    // Display S2
+
+            if(0 == u8MonthTen)
+            {
+                punRamData[LCDRAM_INDEX_3].u8_dis[2] |= 0x20;    // Display S1
+            }
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_3].u16_dis[1] |= (u16Num12To21Table[10] & 0x00f0) << 8;    // "E" in 19
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[10] & 0xf000) >> 8;    // "E" in 19
+        }
+
+        if(u8Day >= 1 && u8Day <= 31)
+        {
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[u8DayTen] & 0x00f0) << 8;    // 20
+            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8DayTen] & 0xf000) >> 8;    // 20
+            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8DaySingle] & 0x00f0) << 8;    // 21
+            punRamData[LCDRAM_INDEX_5].u16_dis[0] |= (u16Num12To21Table[u8DaySingle] & 0xf000) >> 8;    // 21
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[10] & 0x00f0) << 8;    // "E" in 20
+            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[10] & 0xf000) >> 8;    // "E" in 20
+            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[10] & 0x00f0) << 8;    // "E" in 21
+            punRamData[LCDRAM_INDEX_5].u16_dis[0] |= (u16Num12To21Table[10] & 0xf000) >> 8;    // "E" in 21
+        }
+
+        if(u8Hour >= 0 && u8Hour <= 23)
+        {
+            punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[u8HourSingle] >> 4;    // 15
+            if(u8HourTen > 0)
+            {
+                punRamData[LCDRAM_INDEX_2].u16_dis[1] |= u16Num12To21Table[u8HourTen] >> 4;    // 16
+            }
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[10] >> 4;    // "E" in 15
+            punRamData[LCDRAM_INDEX_2].u16_dis[1] |= u16Num12To21Table[10] >> 4;    // "E" in 16
+        }
+
+        if(u8Minute >= 0 && u8Minute <= 59)
+        {
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[u8MinuteSingle] & 0x00f0) << 4;    // 13
+            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8MinuteSingle] & 0xf000) >> 12;    // 13
+            punRamData[LCDRAM_INDEX_3].u16_dis[1] |= (u16Num12To21Table[u8MinuteTen] & 0x00f0) << 4;    // 14
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[u8MinuteTen] & 0xf000) >> 12;    // 14
+        }
+        else
+        {
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[10] & 0x00f0) << 4;    // "E" in 13
+            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[10] & 0xf000) >> 12;    // "E" in 13
+            punRamData[LCDRAM_INDEX_3].u16_dis[1] |= (u16Num12To21Table[10] & 0x00f0) << 4;    // "E" in 14
+            punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[10] & 0xf000) >> 12;    // "E" in 14
         }
     }
 }

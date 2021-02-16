@@ -89,7 +89,7 @@ static stc_status_storage_t stcStatusVal = {ModeAutomatic};
 /*****************************************************************************
  * Function implementation - global ('extern') and local ('static')
  ******************************************************************************/
-static void App_KeyInit(void);
+void App_KeyInit(void);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
@@ -108,6 +108,7 @@ int32_t main(void)
     un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 
     App_LcdRam_Init(u32LcdRamData);
+    DDL_ZERO_STRUCT(stcStatusVal);
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
 
@@ -160,7 +161,7 @@ int32_t main(void)
     }
 }
 
-static void App_KeyInit(void)
+void App_KeyInit(void)
 {
     stc_gpio_cfg_t stcGpioCfg;
 

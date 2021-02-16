@@ -68,6 +68,10 @@
 /******************************************************************************
  * Local type definitions ('typedef')                                         
  ******************************************************************************/
+typedef struct
+{
+    en_working_mode_t enWorkingMode;
+}stc_status_storage_t;
 
 /******************************************************************************
  * Local function prototypes ('static')
@@ -76,6 +80,7 @@
 /******************************************************************************
  * Local variable definitions ('static')                                      *
  ******************************************************************************/
+static stc_status_storage_t stcStatusVal = {ModeAutomatic};
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -84,6 +89,7 @@
 /*****************************************************************************
  * Function implementation - global ('extern') and local ('static')
  ******************************************************************************/
+static void App_KeyInit(void);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
@@ -108,6 +114,7 @@ int32_t main(void)
     Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd,TRUE);   ///< 开启LCD时钟
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio,TRUE);  ///< 开启GPIO时钟
 
+    App_KeyInit();
     App_PortCfg();               ///< LCD端口配置
     App_LcdCfg();                ///< LCD模块配置
 
@@ -118,20 +125,56 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
-    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
-    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, ModeAutomatic, TRUE);
+    //Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
+    //Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, ModeAutomatic, TRUE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 2021, 2, 10, 0, 11, TRUE);
 
-    App_Lcd_Display_Update(u32LcdRamData);
+    //App_Lcd_Display_Update(u32LcdRamData);
 
     while(1)
     {
-        ;
+        ///< 检测 MODE 按键是否按下(低电平)
+        if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
+        {
+            if(ModeAutomatic == stcStatusVal.enWorkingMode)
+            {
+                stcStatusVal.enWorkingMode = ModeManual;
+            }
+            else
+            {
+                stcStatusVal.enWorkingMode = ModeAutomatic;
+            }
+            Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, stcStatusVal.enWorkingMode, TRUE);
+            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, stcStatusVal.enWorkingMode, TRUE);
+            App_Lcd_Display_Update(u32LcdRamData);
+        }
     }
+}
+
+static void App_KeyInit(void)
+{
+    stc_gpio_cfg_t stcGpioCfg;
+
+    ///< 打开GPIO外设时钟门控
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+
+    ///< 端口方向配置->输入
+    stcGpioCfg.enDir = GpioDirIn;
+    ///< 端口驱动能力配置->高驱动能力
+    stcGpioCfg.enDrv = GpioDrvL;
+    ///< 端口上下拉配置->无
+    stcGpioCfg.enPu = GpioPuDisable;
+    stcGpioCfg.enPd = GpioPdDisable;
+    ///< 端口开漏输出配置->开漏输出关闭
+    stcGpioCfg.enOD = GpioOdDisable;
+    ///< 端口输入/输出值寄存器总线控制模式配置->AHB
+    stcGpioCfg.enCtrlMode = GpioAHB;
+    ///< GPIO IO MODE KEY初始化
+    Gpio_Init(STK_USER_PORT, STK_XTHO_PIN, &stcGpioCfg);
 }
 
 /**

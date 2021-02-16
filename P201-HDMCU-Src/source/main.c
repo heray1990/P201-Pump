@@ -111,8 +111,7 @@ int32_t main(void)
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
 
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd,TRUE);   ///< 开启LCD时钟
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio,TRUE);  ///< 开启GPIO时钟
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);   ///< 开启LCD时钟
 
     App_KeyInit();
     App_PortCfg();               ///< LCD端口配置
@@ -127,7 +126,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, ModeAutomatic, TRUE);
-    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, stcStatusVal.enWorkingMode, TRUE);
+    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, ModeAutomatic, TRUE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);

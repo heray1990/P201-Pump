@@ -80,7 +80,7 @@ typedef struct
 /******************************************************************************
  * Local variable definitions ('static')                                      *
  ******************************************************************************/
-static stc_status_storage_t stcStatusVal = {ModeAutomatic};
+static stc_status_storage_t stcStatusVal;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             

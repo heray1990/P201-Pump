@@ -299,6 +299,59 @@ void Lcd_D61593A_GenRam_Starting_Time(
 }
 
 /******************************************************************************
+ ** \brief 生成间隔天数显示的 LCDRAM 值 T4, 10 和 11
+ **
+ ** \input punRamData: LCDRAM 的值
+ **        u8Day: 间隔天数
+ **        enWorkingMode: 目前选定的工作模式
+ **        bDisplay - TRUE: 显示
+ **                   FALSE：不显示
+ *****************************************************************************/
+void Lcd_D61593A_GenRam_Days_Apart(
+                                un_Ram_Data* punRamData,
+                                uint8_t u8Day,
+                                en_working_mode_t enWorkingMode,
+                                boolean_t bDisplay)
+{
+    uint8_t u8DaySingle, u8DayTen;
+
+    u8DaySingle = u8Day % 10;
+    u8DayTen = u8Day / 10 % 10;
+
+    punRamData[LCDRAM_INDEX_0].u32_dis &= MASK_LCDRAM0_DAYS_APART;    // Clean RAM of 10, 11 and T4 in LCDRAM0.
+
+    if(TRUE == bDisplay)
+    {
+        punRamData[LCDRAM_INDEX_0].u8_dis[0] |= 0x01;    // Display T4.
+
+        if(ModeAutomatic == enWorkingMode)
+        {
+            if(u8Day >= 0 && u8Day <= 99)
+            {
+                punRamData[LCDRAM_INDEX_0].u8_dis[0] |= u8Num1To11Table[u8DaySingle];    // 11
+
+                if(u8DayTen > 0)
+                {
+                    punRamData[LCDRAM_INDEX_0].u8_dis[1] |= u8Num1To11Table[u8DayTen];    // 10
+                }
+            }
+            else
+            {
+                punRamData[LCDRAM_INDEX_0].u8_dis[0] |= u8Num1To11Table[10];    // Display "E"(Error) in 11
+                punRamData[LCDRAM_INDEX_0].u8_dis[1] |= u8Num1To11Table[10];    // Display "E"(Error) in 10
+            }
+        }
+        else
+        {
+            // Display "--"
+            punRamData[LCDRAM_INDEX_0].u8_dis[0] |= 0x10;
+            punRamData[LCDRAM_INDEX_0].u8_dis[1] |= 0x10;
+        }
+    }
+}
+
+
+/******************************************************************************
  ** \brief 生成工作模式显示的 LCDRAM 值 T16 和 T17
  **
  ** \input punRamData: LCDRAM 的值

@@ -125,15 +125,16 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
-    //Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
-    //Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, ModeAutomatic, TRUE);
+    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
+    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, ModeAutomatic, TRUE);
+    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, stcStatusVal.enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 2021, 2, 10, 0, 11, TRUE);
 
-    //App_Lcd_Display_Update(u32LcdRamData);
+    App_Lcd_Display_Update(u32LcdRamData);
 
     while(1)
     {
@@ -153,6 +154,7 @@ int32_t main(void)
                 }
                 Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, stcStatusVal.enWorkingMode, TRUE);
                 Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, stcStatusVal.enWorkingMode, TRUE);
+                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 5, stcStatusVal.enWorkingMode, TRUE);
                 App_Lcd_Display_Update(u32LcdRamData);
             }
         }

@@ -87,6 +87,7 @@
 // Mask for each components. The bits with value "0" means the seg for that components.
 #define MASK_LCDRAM0_START_TIME     0x0001ffff
 #define MASK_LCDRAM1_START_TIME     0xffff0100
+#define MASK_LCDRAM0_DAYS_APART     0xffff0100
 #define MASK_LCDRAM1_WATER_TIME     0x0100feff
 #define MASK_LCDRAM2_WATER_TIME     0xffffff01
 #define MASK_LCDRAM2_CHANNEL        0xffff00ff
@@ -179,6 +180,11 @@ extern void Lcd_D61593A_GenRam_Starting_Time(
                                 un_Ram_Data* punRamData,
                                 uint8_t u8Hour,
                                 uint8_t u8Minute,
+                                en_working_mode_t enWorkingMode,
+                                boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Days_Apart(
+                                un_Ram_Data* punRamData,
+                                uint8_t u8Day,
                                 en_working_mode_t enWorkingMode,
                                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_WorkingMode(

@@ -140,17 +140,21 @@ int32_t main(void)
         ///< 检测 MODE 按键是否按下(低电平)
         if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
         {
-            if(ModeAutomatic == stcStatusVal.enWorkingMode)
+            delay1ms(5);
+            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
             {
-                stcStatusVal.enWorkingMode = ModeManual;
+                if(ModeAutomatic == stcStatusVal.enWorkingMode)
+                {
+                    stcStatusVal.enWorkingMode = ModeManual;
+                }
+                else
+                {
+                    stcStatusVal.enWorkingMode = ModeAutomatic;
+                }
+                Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, stcStatusVal.enWorkingMode, TRUE);
+                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, stcStatusVal.enWorkingMode, TRUE);
+                App_Lcd_Display_Update(u32LcdRamData);
             }
-            else
-            {
-                stcStatusVal.enWorkingMode = ModeAutomatic;
-            }
-            Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, stcStatusVal.enWorkingMode, TRUE);
-            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, stcStatusVal.enWorkingMode, TRUE);
-            App_Lcd_Display_Update(u32LcdRamData);
         }
     }
 }

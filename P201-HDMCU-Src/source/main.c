@@ -54,7 +54,9 @@
  ******************************************************************************/
 #include "lcd.h"
 #include "lpm.h"
+#include "bt.h"
 #include "gpio.h"
+#include "flash.h"
 #include "lcd_D61593A.h"
 
 /******************************************************************************
@@ -71,6 +73,7 @@
 typedef struct
 {
     en_working_mode_t enWorkingMode;
+    uint8_t u8Second;
 }stc_status_storage_t;
 
 /******************************************************************************
@@ -95,6 +98,63 @@ void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
 
+//时钟初始化配置
+void App_ClkInit(void)
+{
+    stc_sysctrl_clk_cfg_t stcCfg;
+
+    ///< 开启FLASH外设时钟
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralFlash, TRUE);
+
+    ///<========================== 时钟初始化配置 ===================================
+    ///< 因要使用的时钟源HCLK小于24M：此处设置FLASH 读等待周期为0 cycle(默认值也为0 cycle)
+    Flash_WaitCycle(FlashWaitCycle0);
+
+    ///< 时钟初始化前，优先设置要使用的时钟源：此处设置RCH为4MHz
+    Sysctrl_SetRCHTrim(SysctrlRchFreq4MHz);
+
+    ///< 选择内部RCH作为HCLK时钟源;
+    stcCfg.enClkSrc    = SysctrlClkRCH;
+    ///< HCLK SYSCLK/1
+    stcCfg.enHClkDiv   = SysctrlHclkDiv1;
+    ///< PCLK 为HCLK/1
+    stcCfg.enPClkDiv   = SysctrlPclkDiv1;
+    ///< 系统时钟初始化
+    Sysctrl_ClkInit(&stcCfg);
+}
+
+//Timer0配置初始化
+//(周期 = u16Period*(1/内部时钟频率)*256)
+void App_Timer0Cfg(uint16_t u16Period)
+{
+    uint16_t                  u16ArrValue;
+    uint16_t                  u16CntValue;
+    stc_bt_mode0_cfg_t     stcBtBaseCfg;
+
+    DDL_ZERO_STRUCT(stcBtBaseCfg);
+
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralBaseTim, TRUE); //Base Timer外设时钟使能
+
+    stcBtBaseCfg.enWorkMode = BtWorkMode0;                  //定时器模式
+    stcBtBaseCfg.enCT       = BtTimer;                      //定时器功能，计数时钟为内部PCLK
+    stcBtBaseCfg.enPRS      = BtPCLKDiv256;                 //PCLK/256
+    stcBtBaseCfg.enCntMode  = Bt16bitArrMode;               //自动重载16位计数器/定时器
+    stcBtBaseCfg.bEnTog     = FALSE;
+    stcBtBaseCfg.bEnGate    = FALSE;
+    stcBtBaseCfg.enGateP    = BtGatePositive;
+    Bt_Mode0_Init(TIM0, &stcBtBaseCfg);                     //TIM0 的模式0功能初始化
+
+    u16ArrValue = 0x10000 - u16Period;
+    Bt_M0_ARRSet(TIM0, u16ArrValue);                        //设置重载值(ARR = 0x10000 - 周期)
+
+    u16CntValue = 0x10000 - u16Period;
+    Bt_M0_Cnt16Set(TIM0, u16CntValue);                      //设置计数初值
+
+    Bt_ClearIntFlag(TIM0,BtUevIrq);                         //清中断标志
+    Bt_Mode0_EnableIrq(TIM0);                               //使能TIM0中断(模式0时只有一个中断)
+    EnableNvic(TIM0_IRQn, IrqLevel3, TRUE);                 //TIM0中断使能
+}
+
 /**
  ******************************************************************************
  ** \brief  主函数
@@ -109,6 +169,8 @@ int32_t main(void)
 
     App_LcdRam_Init(u32LcdRamData);
     DDL_ZERO_STRUCT(stcStatusVal);
+
+    App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
 
@@ -136,8 +198,12 @@ int32_t main(void)
 
     App_Lcd_Display_Update(u32LcdRamData);
 
+    App_Timer0Cfg(4000);   //Timer0配置初始化(周期 = 4000*(1/4M)*256 = 256ms)
+    Bt_M0_Run(TIM0);    // Timer0 运行
+
     while(1)
     {
+    #if 0
         ///< 检测 MODE 按键是否按下(低电平)
         if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
         {
@@ -158,6 +224,10 @@ int32_t main(void)
                 App_Lcd_Display_Update(u32LcdRamData);
             }
         }
+    #else
+        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, stcStatusVal.u8Second, stcStatusVal.enWorkingMode, TRUE);
+        App_Lcd_Display_Update(u32LcdRamData);
+    #endif
     }
 }
 
@@ -281,6 +351,31 @@ void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
         Lcd_WriteRam(u8Idx, pu32Data[u8Idx].u32_dis);
     }
 }
+
+/*******************************************************************************
+ * TIM0中断服务函数
+ ******************************************************************************/
+void Tim0_IRQHandler(void)
+{
+    static uint8_t i;
+
+    //Timer0 模式0 溢出中断
+    if(TRUE == Bt_GetIntFlag(TIM0, BtUevIrq))
+    {
+        i++;
+        if(i >= 4)
+        {
+            i = 0;
+            if(++stcStatusVal.u8Second > 99)
+            {
+                stcStatusVal.u8Second = 0;
+            }
+        }
+
+        Bt_ClearIntFlag(TIM0,BtUevIrq); //中断标志清零
+    }
+}
+
 /******************************************************************************
  * EOF (not truncated)
  ******************************************************************************/

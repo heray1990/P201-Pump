@@ -39,7 +39,7 @@
 * included with each copy of this software, whether used in part or whole,
 * at all times.
 */
-/******************************************************************************/
+/*****************************************************************************/
 /** \file main.c
  **
  ** A detailed description is available at
@@ -47,11 +47,11 @@
  **
  **   - 2016-02-16  1.0  XYZ First version for Device Driver Library of Module.
  **
- ******************************************************************************/
+ *****************************************************************************/
 
 /******************************************************************************
  * Include files
- ******************************************************************************/
+ *****************************************************************************/
 #include "lcd.h"
 #include "lpm.h"
 #include "bt.h"
@@ -61,15 +61,15 @@
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
- ******************************************************************************/
+ *****************************************************************************/
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
- ******************************************************************************/
+ *****************************************************************************/
 
 /******************************************************************************
  * Local type definitions ('typedef')                                         
- ******************************************************************************/
+ *****************************************************************************/
 typedef struct
 {
     en_working_mode_t enWorkingMode;
@@ -78,91 +78,29 @@ typedef struct
 
 /******************************************************************************
  * Local function prototypes ('static')
- ******************************************************************************/
+ *****************************************************************************/
 
 /******************************************************************************
  * Local variable definitions ('static')                                      *
- ******************************************************************************/
+ *****************************************************************************/
 static stc_status_storage_t stcStatusVal;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
- ******************************************************************************/
+ *****************************************************************************/
 
-/*****************************************************************************
+/******************************************************************************
  * Function implementation - global ('extern') and local ('static')
- ******************************************************************************/
+ *****************************************************************************/
+void App_ClkInit(void);
 void App_KeyInit(void);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
+void App_Timer0Cfg(uint16_t u16Period);
 
-//时钟初始化配置
-void App_ClkInit(void)
-{
-    stc_sysctrl_clk_cfg_t stcCfg;
 
-    ///< 开启FLASH外设时钟
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralFlash, TRUE);
-
-    ///<========================== 时钟初始化配置 ===================================
-    ///< 因要使用的时钟源HCLK小于24M：此处设置FLASH 读等待周期为0 cycle(默认值也为0 cycle)
-    Flash_WaitCycle(FlashWaitCycle0);
-
-    ///< 时钟初始化前，优先设置要使用的时钟源：此处设置RCH为4MHz
-    Sysctrl_SetRCHTrim(SysctrlRchFreq4MHz);
-
-    ///< 选择内部RCH作为HCLK时钟源;
-    stcCfg.enClkSrc    = SysctrlClkRCH;
-    ///< HCLK SYSCLK/1
-    stcCfg.enHClkDiv   = SysctrlHclkDiv1;
-    ///< PCLK 为HCLK/1
-    stcCfg.enPClkDiv   = SysctrlPclkDiv1;
-    ///< 系统时钟初始化
-    Sysctrl_ClkInit(&stcCfg);
-}
-
-//Timer0配置初始化
-//(周期 = u16Period*(1/内部时钟频率)*256)
-void App_Timer0Cfg(uint16_t u16Period)
-{
-    uint16_t                  u16ArrValue;
-    uint16_t                  u16CntValue;
-    stc_bt_mode0_cfg_t     stcBtBaseCfg;
-
-    DDL_ZERO_STRUCT(stcBtBaseCfg);
-
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralBaseTim, TRUE); //Base Timer外设时钟使能
-
-    stcBtBaseCfg.enWorkMode = BtWorkMode0;                  //定时器模式
-    stcBtBaseCfg.enCT       = BtTimer;                      //定时器功能，计数时钟为内部PCLK
-    stcBtBaseCfg.enPRS      = BtPCLKDiv256;                 //PCLK/256
-    stcBtBaseCfg.enCntMode  = Bt16bitArrMode;               //自动重载16位计数器/定时器
-    stcBtBaseCfg.bEnTog     = FALSE;
-    stcBtBaseCfg.bEnGate    = FALSE;
-    stcBtBaseCfg.enGateP    = BtGatePositive;
-    Bt_Mode0_Init(TIM0, &stcBtBaseCfg);                     //TIM0 的模式0功能初始化
-
-    u16ArrValue = 0x10000 - u16Period;
-    Bt_M0_ARRSet(TIM0, u16ArrValue);                        //设置重载值(ARR = 0x10000 - 周期)
-
-    u16CntValue = 0x10000 - u16Period;
-    Bt_M0_Cnt16Set(TIM0, u16CntValue);                      //设置计数初值
-
-    Bt_ClearIntFlag(TIM0,BtUevIrq);                         //清中断标志
-    Bt_Mode0_EnableIrq(TIM0);                               //使能TIM0中断(模式0时只有一个中断)
-    EnableNvic(TIM0_IRQn, IrqLevel3, TRUE);                 //TIM0中断使能
-}
-
-/**
- ******************************************************************************
- ** \brief  主函数
- ** 
- ** @param  无
- ** \retval 无
- **
- ******************************************************************************/ 
 int32_t main(void)
 {
     un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
@@ -198,7 +136,7 @@ int32_t main(void)
 
     App_Lcd_Display_Update(u32LcdRamData);
 
-    App_Timer0Cfg(4000);   //Timer0配置初始化(周期 = 4000*(1/4M)*256 = 256ms)
+    App_Timer0Cfg(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
     Bt_M0_Run(TIM0);    // Timer0 运行
 
     while(1)
@@ -231,6 +169,31 @@ int32_t main(void)
     }
 }
 
+//时钟初始化配置
+void App_ClkInit(void)
+{
+    stc_sysctrl_clk_cfg_t stcCfg;
+
+    ///< 开启FLASH外设时钟
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralFlash, TRUE);
+
+    ///<========================== 时钟初始化配置 ===================================
+    ///< 因要使用的时钟源HCLK小于24M：此处设置FLASH 读等待周期为0 cycle(默认值也为0 cycle)
+    Flash_WaitCycle(FlashWaitCycle0);
+
+    ///< 时钟初始化前，优先设置要使用的时钟源：此处设置RCH为4MHz
+    Sysctrl_SetRCHTrim(SysctrlRchFreq4MHz);
+
+    ///< 选择内部RCH作为HCLK时钟源;
+    stcCfg.enClkSrc    = SysctrlClkRCH;
+    ///< HCLK SYSCLK/1
+    stcCfg.enHClkDiv   = SysctrlHclkDiv1;
+    ///< PCLK 为HCLK/1
+    stcCfg.enPClkDiv   = SysctrlPclkDiv1;
+    ///< 系统时钟初始化
+    Sysctrl_ClkInit(&stcCfg);
+}
+
 void App_KeyInit(void)
 {
     stc_gpio_cfg_t stcGpioCfg;
@@ -253,12 +216,11 @@ void App_KeyInit(void)
     Gpio_Init(STK_USER_PORT, STK_XTHO_PIN, &stcGpioCfg);
 }
 
-/**
- ******************************************************************************
+/******************************************************************************
  ** \brief  初始化外部GPIO引脚
  **
  ** \return 无
- ******************************************************************************/
+ *****************************************************************************/
 void App_PortCfg(void)
 {
     Gpio_SetAnalogMode(GpioPortA, GpioPin9);  //COM0
@@ -299,12 +261,11 @@ void App_PortCfg(void)
     Gpio_SetAnalogMode(GpioPortB, GpioPin6); //SEG35/VLCDH
 }
 
-/**
- ******************************************************************************
+/******************************************************************************
  ** \brief  配置LCD
  **
  ** \return 无
- ******************************************************************************/
+ *****************************************************************************/
 void App_LcdCfg(void)
 {
     stc_lcd_cfg_t LcdInitStruct;
@@ -352,9 +313,41 @@ void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
     }
 }
 
-/*******************************************************************************
- * TIM0中断服务函数
+/******************************************************************************
+ ** \brief  Timer0配置初始化
+ ** 周期 = u16Period*(1/内部时钟频率)*256
+ ** \return 无
  ******************************************************************************/
+void App_Timer0Cfg(uint16_t u16Period)
+{
+    uint16_t                  u16ArrValue;
+    uint16_t                  u16CntValue;
+    stc_bt_mode0_cfg_t     stcBtBaseCfg;
+
+    DDL_ZERO_STRUCT(stcBtBaseCfg);
+
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralBaseTim, TRUE); //Base Timer外设时钟使能
+
+    stcBtBaseCfg.enWorkMode = BtWorkMode0;                  //定时器模式
+    stcBtBaseCfg.enCT       = BtTimer;                      //定时器功能，计数时钟为内部PCLK
+    stcBtBaseCfg.enPRS      = BtPCLKDiv256;                 //PCLK/256
+    stcBtBaseCfg.enCntMode  = Bt16bitArrMode;               //自动重载16位计数器/定时器
+    stcBtBaseCfg.bEnTog     = FALSE;
+    stcBtBaseCfg.bEnGate    = FALSE;
+    stcBtBaseCfg.enGateP    = BtGatePositive;
+    Bt_Mode0_Init(TIM0, &stcBtBaseCfg);                     //TIM0 的模式0功能初始化
+
+    u16ArrValue = 0x10000 - u16Period;
+    Bt_M0_ARRSet(TIM0, u16ArrValue);                        //设置重载值(ARR = 0x10000 - 周期)
+
+    u16CntValue = 0x10000 - u16Period;
+    Bt_M0_Cnt16Set(TIM0, u16CntValue);                      //设置计数初值
+
+    Bt_ClearIntFlag(TIM0,BtUevIrq);                         //清中断标志
+    Bt_Mode0_EnableIrq(TIM0);                               //使能TIM0中断(模式0时只有一个中断)
+    EnableNvic(TIM0_IRQn, IrqLevel3, TRUE);                 //TIM0中断使能
+}
+
 void Tim0_IRQHandler(void)
 {
     static uint8_t i;
@@ -363,7 +356,7 @@ void Tim0_IRQHandler(void)
     if(TRUE == Bt_GetIntFlag(TIM0, BtUevIrq))
     {
         i++;
-        if(i >= 4)
+        if(i >= 100)
         {
             i = 0;
             if(++stcStatusVal.u8Second > 99)
@@ -378,4 +371,4 @@ void Tim0_IRQHandler(void)
 
 /******************************************************************************
  * EOF (not truncated)
- ******************************************************************************/
+ *****************************************************************************/

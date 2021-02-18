@@ -141,24 +141,114 @@ int32_t main(void)
 
     while(1)
     {
-    #if 0
+    #if 1
+        static uint8_t j;
         ///< 检测 MODE 按键是否按下(低电平)
-        if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
+        if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHI_PIN))
+        {
+            delay1ms(5);
+            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHI_PIN))
+            {
+                if(0 == j)
+                {
+                    j = 1;
+                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, FALSE);
+                }
+                else
+                {
+                    j = 0;
+                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
+                }
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
+        }
+        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
         {
             delay1ms(5);
             if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
             {
-                if(ModeAutomatic == stcStatusVal.enWorkingMode)
+                if(0 == j)
                 {
-                    stcStatusVal.enWorkingMode = ModeManual;
+                    j = 1;
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, FALSE);
                 }
                 else
                 {
-                    stcStatusVal.enWorkingMode = ModeAutomatic;
+                    j = 0;
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
                 }
-                Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, stcStatusVal.enWorkingMode, TRUE);
-                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, stcStatusVal.enWorkingMode, TRUE);
-                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 5, stcStatusVal.enWorkingMode, TRUE);
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
+        }
+        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_USER_PIN))
+        {
+            delay1ms(5);
+            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_USER_PIN))
+            {
+                if(0 == j)
+                {
+                    j = 1;
+                    Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, FALSE);
+                }
+                else
+                {
+                    j = 0;
+                    Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
+                }
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
+        }
+        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG4_PIN))
+        {
+            delay1ms(5);
+            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG4_PIN))
+            {
+                if(0 == j)
+                {
+                    j = 1;
+                    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
+                }
+                else
+                {
+                    j = 0;
+                    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
+                }
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
+        }
+        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LED_PIN))
+        {
+            delay1ms(5);
+            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LED_PIN))
+            {
+                if(0 == j)
+                {
+                    j = 1;
+                    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
+                }
+                else
+                {
+                    j = 0;
+                    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
+                }
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
+        }
+        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG3_PIN))
+        {
+            delay1ms(5);
+            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG3_PIN))
+            {
+                if(0 == j)
+                {
+                    j = 1;
+                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, FALSE);
+                }
+                else
+                {
+                    j = 0;
+                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
+                }
                 App_Lcd_Display_Update(u32LcdRamData);
             }
         }
@@ -212,8 +302,13 @@ void App_KeyInit(void)
     stcGpioCfg.enOD = GpioOdDisable;
     ///< 端口输入/输出值寄存器总线控制模式配置->AHB
     stcGpioCfg.enCtrlMode = GpioAHB;
-    ///< GPIO IO MODE KEY初始化
-    Gpio_Init(STK_USER_PORT, STK_XTHO_PIN, &stcGpioCfg);
+    ///< GPIO IO KEY初始化
+    Gpio_Init(STK_USER_PORT, STK_XTHI_PIN, &stcGpioCfg);        // POWER
+    Gpio_Init(STK_USER_PORT, STK_XTHO_PIN, &stcGpioCfg);        // MODE
+    Gpio_Init(STK_USER_PORT, STK_USER_PIN, &stcGpioCfg);        // SET
+    Gpio_Init(STK_USER_PORT, STK_LCD_SEG4_PIN, &stcGpioCfg);    // OK
+    Gpio_Init(STK_USER_PORT, STK_LED_PIN, &stcGpioCfg);         // DW
+    Gpio_Init(STK_USER_PORT, STK_LCD_SEG3_PIN, &stcGpioCfg);    // UP
 }
 
 /******************************************************************************

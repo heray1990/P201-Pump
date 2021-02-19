@@ -62,6 +62,7 @@
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
  *****************************************************************************/
+ #define MIN_KEY_COUNT 0
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -73,8 +74,32 @@
 typedef struct
 {
     en_working_mode_t enWorkingMode;
-    uint8_t u8Second;
 }stc_status_storage_t;
+
+typedef union
+{
+    unsigned char Full;
+    struct
+    {
+        unsigned char Power :1;
+        unsigned char Mode :1;
+        unsigned char Set :1;
+        unsigned char OK :1;
+        unsigned char Down :1;
+        unsigned char Up :1;
+        unsigned char Reserved1 :1;
+        unsigned char Reserved2 :1;
+    };
+}un_key_type;
+
+typedef enum
+{
+    Waiting,
+    Detected,
+    WaitForRelease,
+    Update
+}en_key_states;
+
 
 /******************************************************************************
  * Local function prototypes ('static')
@@ -84,6 +109,7 @@ typedef struct
  * Local variable definitions ('static')                                      *
  *****************************************************************************/
 static stc_status_storage_t stcStatusVal;
+un_key_type unKeyPress;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -94,6 +120,8 @@ static stc_status_storage_t stcStatusVal;
  *****************************************************************************/
 void App_ClkInit(void);
 void App_KeyInit(void);
+un_key_type App_KeyDetect(void);
+void App_KeyStateChkSet(void);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
@@ -103,10 +131,13 @@ void App_Timer0Cfg(uint16_t u16Period);
 
 int32_t main(void)
 {
+    static uint8_t j = 0;
     un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 
     App_LcdRam_Init(u32LcdRamData);
     DDL_ZERO_STRUCT(stcStatusVal);
+
+    unKeyPress.Full = 0x00;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
@@ -141,13 +172,9 @@ int32_t main(void)
 
     while(1)
     {
-    #if 1
-        static uint8_t j;
-        ///< 检测 MODE 按键是否按下(低电平)
-        if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHI_PIN))
+        if(unKeyPress.Full != 0x00)    // Key pressed detected
         {
-            delay1ms(5);
-            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHI_PIN))
+            if(unKeyPress.Power)
             {
                 if(0 == j)
                 {
@@ -159,13 +186,9 @@ int32_t main(void)
                     j = 0;
                     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
                 }
-                App_Lcd_Display_Update(u32LcdRamData);
             }
-        }
-        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
-        {
-            delay1ms(5);
-            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
+
+            if(unKeyPress.Mode)
             {
                 if(0 == j)
                 {
@@ -177,13 +200,9 @@ int32_t main(void)
                     j = 0;
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
                 }
-                App_Lcd_Display_Update(u32LcdRamData);
             }
-        }
-        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_USER_PIN))
-        {
-            delay1ms(5);
-            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_USER_PIN))
+
+            if(unKeyPress.Set)
             {
                 if(0 == j)
                 {
@@ -195,13 +214,9 @@ int32_t main(void)
                     j = 0;
                     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
                 }
-                App_Lcd_Display_Update(u32LcdRamData);
             }
-        }
-        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG4_PIN))
-        {
-            delay1ms(5);
-            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG4_PIN))
+
+            if(unKeyPress.OK)
             {
                 if(0 == j)
                 {
@@ -213,13 +228,9 @@ int32_t main(void)
                     j = 0;
                     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
                 }
-                App_Lcd_Display_Update(u32LcdRamData);
             }
-        }
-        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LED_PIN))
-        {
-            delay1ms(5);
-            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LED_PIN))
+
+            if(unKeyPress.Down)
             {
                 if(0 == j)
                 {
@@ -231,13 +242,9 @@ int32_t main(void)
                     j = 0;
                     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
                 }
-                App_Lcd_Display_Update(u32LcdRamData);
             }
-        }
-        else if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG3_PIN))
-        {
-            delay1ms(5);
-            if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG3_PIN))
+
+            if(unKeyPress.Up)
             {
                 if(0 == j)
                 {
@@ -249,13 +256,11 @@ int32_t main(void)
                     j = 0;
                     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
                 }
-                App_Lcd_Display_Update(u32LcdRamData);
             }
+
+            unKeyPress.Full = 0x00;
+            App_Lcd_Display_Update(u32LcdRamData);
         }
-    #else
-        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, stcStatusVal.u8Second, stcStatusVal.enWorkingMode, TRUE);
-        App_Lcd_Display_Update(u32LcdRamData);
-    #endif
     }
 }
 
@@ -293,7 +298,7 @@ void App_KeyInit(void)
 
     ///< 端口方向配置->输入
     stcGpioCfg.enDir = GpioDirIn;
-    ///< 端口驱动能力配置->高驱动能力
+    ///< 端口驱动能力配置->低驱动能力
     stcGpioCfg.enDrv = GpioDrvL;
     ///< 端口上下拉配置->无
     stcGpioCfg.enPu = GpioPuDisable;
@@ -310,6 +315,108 @@ void App_KeyInit(void)
     Gpio_Init(STK_USER_PORT, STK_LED_PIN, &stcGpioCfg);         // DW
     Gpio_Init(STK_USER_PORT, STK_LCD_SEG3_PIN, &stcGpioCfg);    // UP
 }
+
+un_key_type App_KeyDetect(void)
+{
+    un_key_type unKeyTypeTemp;
+
+    unKeyTypeTemp.Full = 0x00;
+
+    ///< 检测各按键是否按下(低电平)
+    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHI_PIN))
+    {
+        unKeyTypeTemp.Power = 1;
+        return unKeyTypeTemp;
+    }
+
+    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
+    {
+        unKeyTypeTemp.Mode = 1;
+        return unKeyTypeTemp;
+    }
+
+    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_USER_PIN))
+    {
+        unKeyTypeTemp.Set = 1;
+        return unKeyTypeTemp;
+    }
+
+    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG4_PIN))
+    {
+        unKeyTypeTemp.OK = 1;
+        return unKeyTypeTemp;
+    }
+
+    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LED_PIN))
+    {
+        unKeyTypeTemp.Down = 1;
+        return unKeyTypeTemp;
+    }
+
+    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG3_PIN))
+    {
+        unKeyTypeTemp.Up = 1;
+        return unKeyTypeTemp;
+    }
+
+    return unKeyTypeTemp;
+}
+
+// 状态机按键消抖, 每10ms检查或设置1次状态
+void App_KeyStateChkSet(void)
+{
+    static en_key_states enKeyState = Waiting;
+    static uint8_t u8Tim0Cnt = 0;
+    static un_key_type unKeyPressTemp;  //stores temporary key values
+    un_key_type unKeyPressDetected;     //stores which key was pressed
+
+    unKeyPressDetected = App_KeyDetect();
+
+    switch(enKeyState)
+    {
+        case Waiting:
+            if(unKeyPressDetected.Full)   //if any key press detected
+            {
+                enKeyState = Detected;        //change state
+                u8Tim0Cnt = 0;
+                unKeyPressTemp = unKeyPressDetected;  //Record the temporary value
+            }
+            break;
+        case Detected:
+            if(unKeyPressTemp.Full == unKeyPressDetected.Full)
+            {
+                ++u8Tim0Cnt;    //Guarded state action, if same value increase key count
+                if(u8Tim0Cnt > MIN_KEY_COUNT)
+                {
+                    enKeyState = WaitForRelease;   //guarded state transition
+                }
+            }
+            else
+            {
+                enKeyState = Waiting;   //state transition
+            }
+            break;
+        case WaitForRelease:
+            if(!unKeyPressDetected.Full)
+            {
+                enKeyState = Update;   //state transition when all buttons released
+            }
+            break;
+        case Update:
+            unKeyPress = unKeyPressTemp;    //state action    HERE the Key value is updated
+            enKeyState = Waiting;           //state transition
+            u8Tim0Cnt = 0;                  //state action
+            unKeyPressTemp.Full=0;          //state action
+            break;
+        default:
+            enKeyState = Waiting;
+            u8Tim0Cnt = 0;
+            unKeyPressTemp.Full = 0x00;
+            unKeyPress.Full = 0x00;
+            break;
+	}
+}
+
 
 /******************************************************************************
  ** \brief  初始化外部GPIO引脚
@@ -445,22 +552,12 @@ void App_Timer0Cfg(uint16_t u16Period)
 
 void Tim0_IRQHandler(void)
 {
-    static uint8_t i;
-
     //Timer0 模式0 溢出中断
     if(TRUE == Bt_GetIntFlag(TIM0, BtUevIrq))
     {
-        i++;
-        if(i >= 100)
-        {
-            i = 0;
-            if(++stcStatusVal.u8Second > 99)
-            {
-                stcStatusVal.u8Second = 0;
-            }
-        }
+        App_KeyStateChkSet();
 
-        Bt_ClearIntFlag(TIM0,BtUevIrq); //中断标志清零
+        Bt_ClearIntFlag(TIM0, BtUevIrq); //中断标志清零
     }
 }
 

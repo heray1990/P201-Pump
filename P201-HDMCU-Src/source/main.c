@@ -224,12 +224,12 @@ void App_KeyInit(void)
     ///< 端口输入/输出值寄存器总线控制模式配置->AHB
     stcGpioCfg.enCtrlMode = GpioAHB;
     ///< GPIO IO KEY初始化
-    Gpio_Init(STK_USER_PORT, STK_XTHI_PIN, &stcGpioCfg);        // POWER
-    Gpio_Init(STK_USER_PORT, STK_XTHO_PIN, &stcGpioCfg);        // MODE
-    Gpio_Init(STK_USER_PORT, STK_USER_PIN, &stcGpioCfg);        // SET
-    Gpio_Init(STK_USER_PORT, STK_LCD_SEG4_PIN, &stcGpioCfg);    // OK
-    Gpio_Init(STK_USER_PORT, STK_LED_PIN, &stcGpioCfg);         // DW
-    Gpio_Init(STK_USER_PORT, STK_LCD_SEG3_PIN, &stcGpioCfg);    // UP
+    Gpio_Init(GpioPortD, GpioPin0, &stcGpioCfg);        // POWER
+    Gpio_Init(GpioPortD, GpioPin1, &stcGpioCfg);        // MODE
+    Gpio_Init(GpioPortD, GpioPin4, &stcGpioCfg);        // SET
+    Gpio_Init(GpioPortD, GpioPin6, &stcGpioCfg);    // OK
+    Gpio_Init(GpioPortD, GpioPin5, &stcGpioCfg);         // DW
+    Gpio_Init(GpioPortD, GpioPin7, &stcGpioCfg);    // UP
 }
 
 un_key_type App_KeyDetect(void)
@@ -239,37 +239,37 @@ un_key_type App_KeyDetect(void)
     unKeyTypeTemp.Full = 0x00;
 
     ///< 检测各按键是否按下(低电平)
-    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHI_PIN))
+    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin0))
     {
         unKeyTypeTemp.Power = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_XTHO_PIN))
+    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin1))
     {
         unKeyTypeTemp.Mode = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_USER_PIN))
+    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin4))
     {
         unKeyTypeTemp.Set = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG4_PIN))
+    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin6))
     {
         unKeyTypeTemp.OK = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LED_PIN))
+    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin5))
     {
         unKeyTypeTemp.Down = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(STK_USER_PORT, STK_LCD_SEG3_PIN))
+    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin7))
     {
         unKeyTypeTemp.Up = 1;
         return unKeyTypeTemp;

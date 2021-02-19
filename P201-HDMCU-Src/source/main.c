@@ -110,6 +110,7 @@ typedef enum
  *****************************************************************************/
 static stc_status_storage_t stcStatusVal;
 un_key_type unKeyPress;
+un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -122,6 +123,7 @@ void App_ClkInit(void);
 void App_KeyInit(void);
 un_key_type App_KeyDetect(void);
 void App_KeyStateChkSet(void);
+void App_KeyHandler(void);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
@@ -131,9 +133,6 @@ void App_Timer0Cfg(uint16_t u16Period);
 
 int32_t main(void)
 {
-    static uint8_t j = 0;
-    un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
-
     App_LcdRam_Init(u32LcdRamData);
     DDL_ZERO_STRUCT(stcStatusVal);
 
@@ -174,92 +173,7 @@ int32_t main(void)
     {
         if(unKeyPress.Full != 0x00)    // Key pressed detected
         {
-            if(unKeyPress.Power)
-            {
-                if(0 == j)
-                {
-                    j = 1;
-                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, FALSE);
-                }
-                else
-                {
-                    j = 0;
-                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
-                }
-            }
-
-            if(unKeyPress.Mode)
-            {
-                if(0 == j)
-                {
-                    j = 1;
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, FALSE);
-                }
-                else
-                {
-                    j = 0;
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
-                }
-            }
-
-            if(unKeyPress.Set)
-            {
-                if(0 == j)
-                {
-                    j = 1;
-                    Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, FALSE);
-                }
-                else
-                {
-                    j = 0;
-                    Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
-                }
-            }
-
-            if(unKeyPress.OK)
-            {
-                if(0 == j)
-                {
-                    j = 1;
-                    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
-                }
-                else
-                {
-                    j = 0;
-                    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
-                }
-            }
-
-            if(unKeyPress.Down)
-            {
-                if(0 == j)
-                {
-                    j = 1;
-                    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
-                }
-                else
-                {
-                    j = 0;
-                    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
-                }
-            }
-
-            if(unKeyPress.Up)
-            {
-                if(0 == j)
-                {
-                    j = 1;
-                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, FALSE);
-                }
-                else
-                {
-                    j = 0;
-                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
-                }
-            }
-
-            unKeyPress.Full = 0x00;
-            App_Lcd_Display_Update(u32LcdRamData);
+            App_KeyHandler();
         }
     }
 }
@@ -415,6 +329,98 @@ void App_KeyStateChkSet(void)
             unKeyPress.Full = 0x00;
             break;
 	}
+}
+
+void App_KeyHandler(void)
+{
+    static uint8_t j = 0;
+
+    if(unKeyPress.Power)
+    {
+        if(0 == j)
+        {
+            j = 1;
+            Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, FALSE);
+        }
+        else
+        {
+            j = 0;
+            Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
+        }
+    }
+
+    if(unKeyPress.Mode)
+    {
+        if(0 == j)
+        {
+            j = 1;
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, FALSE);
+        }
+        else
+        {
+            j = 0;
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+        }
+    }
+
+    if(unKeyPress.Set)
+    {
+        if(0 == j)
+        {
+            j = 1;
+            Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, FALSE);
+        }
+        else
+        {
+            j = 0;
+            Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
+        }
+    }
+
+    if(unKeyPress.OK)
+    {
+        if(0 == j)
+        {
+            j = 1;
+            Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
+        }
+        else
+        {
+            j = 0;
+            Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
+        }
+    }
+
+    if(unKeyPress.Down)
+    {
+        if(0 == j)
+        {
+            j = 1;
+            Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
+        }
+        else
+        {
+            j = 0;
+            Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
+        }
+    }
+
+    if(unKeyPress.Up)
+    {
+        if(0 == j)
+        {
+            j = 1;
+            Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, FALSE);
+        }
+        else
+        {
+            j = 0;
+            Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
+        }
+    }
+
+    unKeyPress.Full = 0x00;
+    App_Lcd_Display_Update(u32LcdRamData);
 }
 
 

@@ -111,6 +111,7 @@ typedef enum
 static stc_status_storage_t stcStatusVal;
 un_key_type unKeyPress;
 un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
+uint8_t u8PowerOnFlag;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -137,6 +138,7 @@ int32_t main(void)
     DDL_ZERO_STRUCT(stcStatusVal);
 
     unKeyPress.Full = 0x00;
+    u8PowerOnFlag = 1;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
@@ -337,15 +339,17 @@ void App_KeyHandler(void)
 
     if(unKeyPress.Power)
     {
-        if(0 == j)
+        if(0 == u8PowerOnFlag)
         {
-            j = 1;
-            Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, FALSE);
+            u8PowerOnFlag = 1;
+            M0P_LCD->CR0_f.EN = LcdEnable;
+            Gpio_SetIO(GpioPortC, GpioPin0);
         }
         else
         {
-            j = 0;
-            Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
+            u8PowerOnFlag = 0;
+            M0P_LCD->CR0_f.EN = LcdDisable;
+            Gpio_ClrIO(GpioPortC, GpioPin0);
         }
     }
 
@@ -478,6 +482,19 @@ void App_LcdCfg(void)
 {
     stc_lcd_cfg_t LcdInitStruct;
     stc_lcd_segcom_t LcdSegCom;
+    stc_gpio_cfg_t stcLcdBlGpioCfg;
+
+    ///< 打开GPIO外设时钟门控
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+
+    ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
+    stcLcdBlGpioCfg.enDir = GpioDirOut;
+    ///< 端口上下拉配置->下拉
+    stcLcdBlGpioCfg.enPu = GpioPuDisable;
+    stcLcdBlGpioCfg.enPd = GpioPdEnable;
+
+    ///< GPIO IO LCD BL_ON 端口初始化
+    Gpio_Init(GpioPortC, GpioPin0, &stcLcdBlGpioCfg);
 
     LcdSegCom.u32Seg0_31 = 0xff800000;                              ///< 配置LCD_POEN0寄存器 开启SEG0~SEG22
     LcdSegCom.stc_seg32_51_com0_8_t.seg32_51_com0_8 = 0xffffffff;   ///< 初始化LCD_POEN1寄存器 全部关闭输出端口

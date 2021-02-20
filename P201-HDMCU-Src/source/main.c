@@ -109,9 +109,9 @@ typedef enum
  * Local variable definitions ('static')                                      *
  *****************************************************************************/
 static stc_status_storage_t stcStatusVal;
-un_key_type unKeyPress;
+__IO un_key_type unKeyPress;
 un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
-uint8_t u8PowerOnFlag;
+__IO uint8_t u8PowerOnFlag;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -176,6 +176,7 @@ int32_t main(void)
         if(unKeyPress.Full != 0x00)    // Key pressed detected
         {
             App_KeyHandler();
+            unKeyPress.Full = 0x00;
         }
     }
 }
@@ -224,11 +225,11 @@ void App_KeyInit(void)
     ///< 端口输入/输出值寄存器总线控制模式配置->AHB
     stcGpioCfg.enCtrlMode = GpioAHB;
     ///< GPIO IO KEY初始化
-    Gpio_Init(GpioPortD, GpioPin0, &stcGpioCfg);        // POWER
-    Gpio_Init(GpioPortD, GpioPin1, &stcGpioCfg);        // MODE
-    Gpio_Init(GpioPortD, GpioPin4, &stcGpioCfg);        // SET
+    Gpio_Init(GpioPortD, GpioPin0, &stcGpioCfg);    // POWER
+    Gpio_Init(GpioPortD, GpioPin1, &stcGpioCfg);    // MODE
+    Gpio_Init(GpioPortD, GpioPin4, &stcGpioCfg);    // SET
     Gpio_Init(GpioPortD, GpioPin6, &stcGpioCfg);    // OK
-    Gpio_Init(GpioPortD, GpioPin5, &stcGpioCfg);         // DW
+    Gpio_Init(GpioPortD, GpioPin5, &stcGpioCfg);    // DW
     Gpio_Init(GpioPortD, GpioPin7, &stcGpioCfg);    // UP
 }
 
@@ -423,7 +424,6 @@ void App_KeyHandler(void)
         }
     }
 
-    unKeyPress.Full = 0x00;
     App_Lcd_Display_Update(u32LcdRamData);
 }
 
@@ -495,6 +495,7 @@ void App_LcdCfg(void)
 
     ///< GPIO IO LCD BL_ON 端口初始化
     Gpio_Init(GpioPortC, GpioPin0, &stcLcdBlGpioCfg);
+    Gpio_SetIO(GpioPortC, GpioPin0);
 
     LcdSegCom.u32Seg0_31 = 0xff800000;                              ///< 配置LCD_POEN0寄存器 开启SEG0~SEG22
     LcdSegCom.stc_seg32_51_com0_8_t.seg32_51_com0_8 = 0xffffffff;   ///< 初始化LCD_POEN1寄存器 全部关闭输出端口

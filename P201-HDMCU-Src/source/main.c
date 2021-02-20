@@ -138,6 +138,8 @@ void App_Timer0Cfg(uint16_t u16Period);
 
 int32_t main(void)
 {
+    uint32_t u32Addr = 0xff00;
+
     App_LcdRam_Init(u32LcdRamData);
     DDL_ZERO_STRUCT(stcStatusVal);
 
@@ -155,7 +157,7 @@ int32_t main(void)
     Lcd_ClearDisp();             ///< 清屏
 
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
-    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, *((volatile uint8_t*)u32Addr), TRUE);
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
@@ -177,6 +179,18 @@ int32_t main(void)
     Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);//RTC模块时钟打开
     Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);
     App_RtcCfg();
+
+    ///< 确保初始化正确执行后方能进行FLASH编程操作，FLASH初始化（编程时间,休眠模式配置）
+    while(Ok != Flash_Init(1, TRUE))
+    {
+        ;
+    }
+
+    ///< FLASH目标扇区擦除
+    while(Ok != Flash_SectorErase(u32Addr))
+    {
+        ;
+    }
 
     while(1)
     {
@@ -352,6 +366,8 @@ void App_KeyStateChkSet(void)
 void App_KeyHandler(void)
 {
     static uint8_t j = 0;
+    uint32_t u32Addr = 0xff00;
+    uint8_t u8TestData = 0x5a;
 
     if(unKeyPress.Power)
     {
@@ -374,12 +390,19 @@ void App_KeyHandler(void)
         if(0 == j)
         {
             j = 1;
-            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, FALSE);
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
         }
         else
         {
             j = 0;
-            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+            if(Ok == Flash_WriteByte(u32Addr, u8TestData))
+            {
+                if(*((volatile uint8_t*)u32Addr) != u8TestData)  ///< 如果写入的数据不对，在此处死循环
+                {
+                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 10, TRUE);
+                }
+            }
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, *((volatile uint8_t*)u32Addr), TRUE);
         }
     }
 
@@ -445,6 +468,7 @@ void App_KeyHandler(void)
 void App_RtcCfg(void)
 {
     stc_rtc_initstruct_t RtcInitStruct;
+
     RtcInitStruct.rtcAmpm = RtcPm;        //12小时制
     RtcInitStruct.rtcClksrc = RtcClkRcl;  //内部低速时钟
     RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrds;  //周期中断类型PRDS

@@ -57,6 +57,7 @@
 #include "bt.h"
 #include "gpio.h"
 #include "flash.h"
+#include "rtc.h"
 #include "lcd_D61593A.h"
 
 /******************************************************************************
@@ -111,7 +112,8 @@ typedef enum
 static stc_status_storage_t stcStatusVal;
 __IO un_key_type unKeyPress;
 un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
-__IO uint8_t u8PowerOnFlag;
+__IO uint8_t u8PowerOnFlag, u8RtcFlag;
+__IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -125,6 +127,8 @@ void App_KeyInit(void);
 un_key_type App_KeyDetect(void);
 void App_KeyStateChkSet(void);
 void App_KeyHandler(void);
+void App_RtcCfg(void);
+void App_RtcTime(void);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
@@ -141,15 +145,13 @@ int32_t main(void)
     u8PowerOnFlag = 1;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
+    App_KeyInit();
+
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
-
     Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);   ///< 开启LCD时钟
-
-    App_KeyInit();
     App_PortCfg();               ///< LCD端口配置
     App_LcdCfg();                ///< LCD模块配置
-
     Lcd_ClearDisp();             ///< 清屏
 
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
@@ -171,8 +173,21 @@ int32_t main(void)
     App_Timer0Cfg(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
     Bt_M0_Run(TIM0);    // Timer0 运行
 
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio,TRUE);//GPIO外设时钟打开
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);//RTC模块时钟打开
+    Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);
+    App_RtcCfg();
+
     while(1)
     {
+        if(1 == u8RtcFlag)
+        {
+            u8RtcFlag = 0;
+            App_RtcTime();
+            Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 2021, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE);
+            App_Lcd_Display_Update(u32LcdRamData);
+        }
+
         if(unKeyPress.Full != 0x00)    // Key pressed detected
         {
             App_KeyHandler();
@@ -427,6 +442,50 @@ void App_KeyHandler(void)
     App_Lcd_Display_Update(u32LcdRamData);
 }
 
+void App_RtcCfg(void)
+{
+    stc_rtc_initstruct_t RtcInitStruct;
+    RtcInitStruct.rtcAmpm = RtcPm;        //12小时制
+    RtcInitStruct.rtcClksrc = RtcClkRcl;  //内部低速时钟
+    RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrds;  //周期中断类型PRDS
+    RtcInitStruct.rtcPrdsel.rtcPrds = Rtc1S;      //周期中断事件间隔
+    RtcInitStruct.rtcTime.u8Second = 0x55;
+    RtcInitStruct.rtcTime.u8Minute = 0x01;
+    RtcInitStruct.rtcTime.u8Hour   = 0x10;
+    RtcInitStruct.rtcTime.u8Day    = 0x17;
+    RtcInitStruct.rtcTime.u8DayOfWeek = 0x04;
+    RtcInitStruct.rtcTime.u8Month  = 0x04;
+    RtcInitStruct.rtcTime.u8Year   = 0x19;
+    RtcInitStruct.rtcCompen = RtcCompenEnable;
+    RtcInitStruct.rtcCompValue = 0;//补偿值根据实际情况进行补偿
+    Rtc_Init(&RtcInitStruct);
+    Rtc_AlmIeCmd(TRUE);                     //使能闹钟中断
+    EnableNvic(RTC_IRQn, IrqLevel3, TRUE);  //使能RTC中断向量
+    Rtc_Cmd(TRUE);                          //使能RTC开始计数
+    //Rtc_StartWait();                      //启动RTC计数，如果要立即切换到低功耗，需要执行此函数
+}
+
+void App_RtcTime(void)
+{
+    stc_rtc_time_t stcRtcTime;
+
+    Rtc_ReadDateTime(&stcRtcTime);
+    u8RtcSecond = stcRtcTime.u8Second;
+    u8RtcMinute = stcRtcTime.u8Minute;
+    u8RtcHour   = stcRtcTime.u8Hour;
+    u8RtcDay    = stcRtcTime.u8Day;
+    u8RtcMonth  = stcRtcTime.u8Month;
+    u8RtcYear   = stcRtcTime.u8Year;
+}
+
+void Rtc_IRQHandler(void)
+{
+    if(Rtc_GetPridItStatus() == TRUE)
+    {
+        u8RtcFlag = 1;
+        Rtc_ClearPrdfItStatus();             //清除中断标志位
+    }
+}
 
 /******************************************************************************
  ** \brief  初始化外部GPIO引脚
@@ -493,9 +552,9 @@ void App_LcdCfg(void)
     stcLcdBlGpioCfg.enPu = GpioPuDisable;
     stcLcdBlGpioCfg.enPd = GpioPdEnable;
 
+    Gpio_SetIO(GpioPortC, GpioPin0);
     ///< GPIO IO LCD BL_ON 端口初始化
     Gpio_Init(GpioPortC, GpioPin0, &stcLcdBlGpioCfg);
-    Gpio_SetIO(GpioPortC, GpioPin0);
 
     LcdSegCom.u32Seg0_31 = 0xff800000;                              ///< 配置LCD_POEN0寄存器 开启SEG0~SEG22
     LcdSegCom.stc_seg32_51_com0_8_t.seg32_51_com0_8 = 0xffffffff;   ///< 初始化LCD_POEN1寄存器 全部关闭输出端口

@@ -518,18 +518,18 @@ void Lcd_D61593A_GenRam_Battery_Icon(
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Date_And_Time(
                                 un_Ram_Data* punRamData,
-                                uint16_t u16Year,
+                                uint8_t u8Year,
                                 uint8_t u8Month,
                                 uint8_t u8Day,
                                 uint8_t u8Hour,
                                 uint8_t u8Minute,
                                 boolean_t bDisplay)
 {
-    uint8_t u16YearSingle, u16YearTen, u8MonthSingle, u8MonthTen, u8DaySingle, u8DayTen;
+    uint8_t u8YearSingle, u8YearTen, u8MonthSingle, u8MonthTen, u8DaySingle, u8DayTen;
     uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;
 
-    u16YearSingle = (u16Year - 2000) % 10;
-    u16YearTen = (u16Year - 2000) / 10 % 10;
+    u8YearSingle = u8Year % 10;
+    u8YearTen = u8Year / 10 % 10;
     u8MonthSingle = u8Month % 10;
     u8MonthTen = u8Month / 10 % 10;
     u8DaySingle = u8Day % 10;
@@ -553,10 +553,10 @@ void Lcd_D61593A_GenRam_Date_And_Time(
         punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x10;    // Display T26.
         punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x01;    // Display YY.
 
-        if(u16Year >= 2000 && u16Year <= 2099)
+        if(u8Year >= 0 && u8Year <= 99)
         {
-            punRamData[LCDRAM_INDEX_2].u16_dis[1] |= u16Num12To21Table[u16YearTen];    // 17
-            punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[u16YearSingle];    // 18
+            punRamData[LCDRAM_INDEX_2].u16_dis[1] |= u16Num12To21Table[u8YearTen];    // 17
+            punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[u8YearSingle];    // 18
         }
         else
         {

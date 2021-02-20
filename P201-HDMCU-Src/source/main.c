@@ -166,7 +166,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
-    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 2021, 2, 10, 0, 11, TRUE);
+    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 21, 2, 10, 0, 11, TRUE);
 
     App_Lcd_Display_Update(u32LcdRamData);
 
@@ -184,7 +184,7 @@ int32_t main(void)
         {
             u8RtcFlag = 0;
             App_RtcTime();
-            Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 2021, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE);
+            Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE);
             App_Lcd_Display_Update(u32LcdRamData);
         }
 

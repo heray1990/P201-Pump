@@ -207,7 +207,7 @@ extern void Lcd_D61593A_GenRam_Battery_Icon(
                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Date_And_Time(
                                 un_Ram_Data* punRamData,
-                                uint16_t u16Year,
+                                uint8_t u8Year,
                                 uint8_t u8Month,
                                 uint8_t u8Day,
                                 uint8_t u8Hour,

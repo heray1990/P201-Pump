@@ -192,7 +192,11 @@ extern void Lcd_D61593A_GenRam_Channel(
                 uint8_t u8Val,
                 boolean_t bDisplay,
                 en_focus_on enFocusOn);
-extern void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Watering_Time(
+                un_Ram_Data* punRamData,
+                uint8_t u8Val,
+                boolean_t bDisplay,
+                en_focus_on enFocusOn);
 extern void Lcd_D61593A_GenRam_GroupNum(
                 un_Ram_Data* punRamData,
                 uint8_t u8Val,
@@ -200,20 +204,20 @@ extern void Lcd_D61593A_GenRam_GroupNum(
 extern void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Starting_Time(
-                                un_Ram_Data* punRamData,
-                                uint8_t u8Hour,
-                                uint8_t u8Minute,
-                                en_working_mode_t enWorkingMode,
-                                boolean_t bDisplay);
+                un_Ram_Data* punRamData,
+                uint8_t u8Hour,
+                uint8_t u8Minute,
+                en_working_mode_t enWorkingMode,
+                boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Days_Apart(
-                                un_Ram_Data* punRamData,
-                                uint8_t u8Day,
-                                en_working_mode_t enWorkingMode,
-                                boolean_t bDisplay);
+                un_Ram_Data* punRamData,
+                uint8_t u8Day,
+                en_working_mode_t enWorkingMode,
+                boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_WorkingMode(
-                                un_Ram_Data* punRamData,
-                                en_working_mode_t enWrokingMode,
-                                boolean_t bDisplay);
+                un_Ram_Data* punRamData,
+                en_working_mode_t enWrokingMode,
+                boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop);
 extern void Lcd_D61593A_GenRam_Lock_Icon(
                 un_Ram_Data* punRamData,
@@ -228,13 +232,13 @@ extern void Lcd_D61593A_GenRam_Battery_Icon(
                 en_remaining_battery_t enBatteryPercent,
                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Date_And_Time(
-                                un_Ram_Data* punRamData,
-                                uint8_t u8Year,
-                                uint8_t u8Month,
-                                uint8_t u8Day,
-                                uint8_t u8Hour,
-                                uint8_t u8Minute,
-                                boolean_t bDisplay);
+                un_Ram_Data* punRamData,
+                uint8_t u8Year,
+                uint8_t u8Month,
+                uint8_t u8Day,
+                uint8_t u8Hour,
+                uint8_t u8Minute,
+                boolean_t bDisplay);
 //@} // LCDGroup
 
 #ifdef __cplusplus

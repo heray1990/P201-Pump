@@ -114,7 +114,11 @@ void Lcd_D61593A_GenRam_Channel(
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
  *****************************************************************************/
-void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
+void Lcd_D61593A_GenRam_Watering_Time(
+                un_Ram_Data* punRamData,
+                uint8_t u8Val,
+                boolean_t bDisplay,
+                en_focus_on enFocusOn)
 {
     uint8_t u8Single, u8Ten, u8Hundred;
 
@@ -128,7 +132,7 @@ void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, bo
     if(TRUE == bDisplay)
     {
         punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x01;    // Display T7.
-        punRamData[LCDRAM_INDEX_1].u8_dis[2] = u8Num1To11Table[u8Single] | 0x01;    // Set value for 9 and display T2
+        punRamData[LCDRAM_INDEX_1].u8_dis[2] |= u8Num1To11Table[u8Single] | 0x01;    // Set value for 9 and display T2
 
         if(u8Hundred > 0 || (u8Hundred == 0 && u8Ten > 0))
         {
@@ -138,6 +142,14 @@ void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, bo
         if(u8Hundred > 0)
         {
             punRamData[LCDRAM_INDEX_2].u8_dis[0] |= u8Num1To11Table[u8Hundred];    // Set value for 7
+        }
+    }
+    else
+    {
+        if(WateringTime == enFocusOn)
+        {
+            punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x01;    // Display T7.
+            punRamData[LCDRAM_INDEX_1].u8_dis[2] |= 0x01;    // Display T2.
         }
     }
 }
@@ -253,11 +265,11 @@ void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enSmartM
  **                   FALSE：不显示
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Starting_Time(
-                                un_Ram_Data* punRamData,
-                                uint8_t u8Hour,
-                                uint8_t u8Minute,
-                                en_working_mode_t enWorkingMode,
-                                boolean_t bDisplay)
+                un_Ram_Data* punRamData,
+                uint8_t u8Hour,
+                uint8_t u8Minute,
+                en_working_mode_t enWorkingMode,
+                boolean_t bDisplay)
 {
     uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;
 
@@ -322,10 +334,10 @@ void Lcd_D61593A_GenRam_Starting_Time(
  **                   FALSE：不显示
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Days_Apart(
-                                un_Ram_Data* punRamData,
-                                uint8_t u8Day,
-                                en_working_mode_t enWorkingMode,
-                                boolean_t bDisplay)
+                un_Ram_Data* punRamData,
+                uint8_t u8Day,
+                en_working_mode_t enWorkingMode,
+                boolean_t bDisplay)
 {
     uint8_t u8DaySingle, u8DayTen;
 
@@ -374,9 +386,9 @@ void Lcd_D61593A_GenRam_Days_Apart(
  **                   FALSE：不显示
  *****************************************************************************/
 void Lcd_D61593A_GenRam_WorkingMode(
-                                un_Ram_Data* punRamData,
-                                en_working_mode_t enWrokingMode,
-                                boolean_t bDisplay)
+                un_Ram_Data* punRamData,
+                en_working_mode_t enWrokingMode,
+                boolean_t bDisplay)
 {
     // Clean RAM of T16 and T17 in LCDRAM5.
     punRamData[LCDRAM_INDEX_5].u8_dis[1] &= 0xef;    // T17
@@ -531,13 +543,13 @@ void Lcd_D61593A_GenRam_Battery_Icon(
  **                   FALSE：不显示
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Date_And_Time(
-                                un_Ram_Data* punRamData,
-                                uint8_t u8Year,
-                                uint8_t u8Month,
-                                uint8_t u8Day,
-                                uint8_t u8Hour,
-                                uint8_t u8Minute,
-                                boolean_t bDisplay)
+                un_Ram_Data* punRamData,
+                uint8_t u8Year,
+                uint8_t u8Month,
+                uint8_t u8Day,
+                uint8_t u8Hour,
+                uint8_t u8Minute,
+                boolean_t bDisplay)
 {
     uint8_t u8YearSingle, u8YearTen, u8MonthSingle, u8MonthTen, u8DaySingle, u8DayTen;
     uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;

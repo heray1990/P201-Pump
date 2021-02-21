@@ -157,7 +157,7 @@ int32_t main(void)
     Lcd_ClearDisp();             ///< 清屏
 
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
-    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
@@ -435,7 +435,7 @@ void App_KeyHandler(void)
 
                     case WateringTime:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
                         break;
 
                     case StartingTimeH:
@@ -463,7 +463,7 @@ void App_KeyHandler(void)
                 else
                 {
                     enFocusOn = Nothing;
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
                 }
             }
         }
@@ -475,15 +475,62 @@ void App_KeyHandler(void)
 
     if(unKeyPress.OK)
     {
-        if(0 == j)
+        if(0 == u8KeyLongPressCnt)
         {
-            j = 1;
-            Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
+            if(ModeAutomatic == enWorkingMode)
+            {
+                switch(enFocusOn)
+                {
+                    case Nothing:
+                        enFocusOn = Channel;
+                        break;
+
+                    case Channel:
+                        enFocusOn = WateringTime;
+                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
+                        break;
+
+                    case WateringTime:
+                        enFocusOn = StartingTimeH;
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                        break;
+
+                    case StartingTimeH:
+                        enFocusOn = StartingTimeM;
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+                        break;
+
+                    case StartingTimeM:
+                        enFocusOn = DaysApart;
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+                        break;
+
+                    case DaysApart:
+                        enFocusOn = Nothing;
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
+                        break;
+
+                    default:
+                        enFocusOn = Nothing;
+                        break;
+                }
+            }
+            else
+            {
+                if(Nothing == enFocusOn)
+                {
+                    enFocusOn = WateringTime;
+                }
+                else
+                {
+                    enFocusOn = Nothing;
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                }
+            }
         }
         else
         {
-            j = 0;
-            Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
+            // 长按锁定
         }
     }
 
@@ -683,11 +730,23 @@ void App_LcdStrobeControl(void)
     if(++u8LcdContentSDCnt > LCD_CONTENT_STROBE_DURATION)
     {
         u8LcdContentSDCnt = 0;
-        if(Channel == enFocusOn)
+
+        switch(enFocusOn)
         {
-            bFlipFlag = !bFlipFlag;
-            Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, bFlipFlag, enFocusOn);
-            App_Lcd_Display_Update(u32LcdRamData);
+            case Channel:
+                bFlipFlag = !bFlipFlag;
+                Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, bFlipFlag, enFocusOn);
+                App_Lcd_Display_Update(u32LcdRamData);
+                break;
+
+            case WateringTime:
+                bFlipFlag = !bFlipFlag;
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, bFlipFlag, enFocusOn);
+                App_Lcd_Display_Update(u32LcdRamData);
+                break;
+
+            default:
+                break;
         }
     }
 }

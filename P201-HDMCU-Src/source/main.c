@@ -162,7 +162,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
-    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
@@ -410,9 +410,10 @@ void App_KeyHandler(void)
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
         }
         Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
         Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
-        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
     }
 
@@ -441,7 +442,7 @@ void App_KeyHandler(void)
                     case StartingTimeH:
                     case StartingTimeM:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
                         break;
 
                     case DaysApart:
@@ -497,12 +498,12 @@ void App_KeyHandler(void)
 
                     case StartingTimeH:
                         enFocusOn = StartingTimeM;
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
                         break;
 
                     case StartingTimeM:
                         enFocusOn = DaysApart;
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
                         break;
 
                     case DaysApart:
@@ -742,6 +743,13 @@ void App_LcdStrobeControl(void)
             case WateringTime:
                 bFlipFlag = !bFlipFlag;
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, bFlipFlag, enFocusOn);
+                App_Lcd_Display_Update(u32LcdRamData);
+                break;
+
+            case StartingTimeH:
+            case StartingTimeM:
+                bFlipFlag = !bFlipFlag;
+                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 

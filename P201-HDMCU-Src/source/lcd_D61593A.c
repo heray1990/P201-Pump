@@ -269,7 +269,8 @@ void Lcd_D61593A_GenRam_Starting_Time(
                 uint8_t u8Hour,
                 uint8_t u8Minute,
                 en_working_mode_t enWorkingMode,
-                boolean_t bDisplay)
+                boolean_t bDisplay,
+                en_focus_on enFocusOn)
 {
     uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;
 
@@ -320,6 +321,48 @@ void Lcd_D61593A_GenRam_Starting_Time(
             punRamData[LCDRAM_INDEX_0].u8_dis[3] |= 0x10;
             punRamData[LCDRAM_INDEX_1].u8_dis[0] |= 0x10;
             punRamData[LCDRAM_INDEX_1].u8_dis[1] |= 0x10;
+        }
+    }
+    else
+    {
+        if(ModeAutomatic == enWorkingMode)
+        {
+            if(StartingTimeH == enFocusOn)
+            {
+                punRamData[LCDRAM_INDEX_0].u8_dis[3] |= 0x01;    // Display COL3.
+                punRamData[LCDRAM_INDEX_1].u8_dis[0] |= 0x01;    // Display T3.
+
+                if(u8Minute >= 0 && u8Minute <= 59)
+                {
+                    punRamData[LCDRAM_INDEX_0].u8_dis[2] |= u8Num1To11Table[u8MinuteSingle];    // 6
+                    punRamData[LCDRAM_INDEX_0].u8_dis[3] |= u8Num1To11Table[u8MinuteTen];    // 5
+                }
+                else
+                {
+                    punRamData[LCDRAM_INDEX_0].u8_dis[2] |= u8Num1To11Table[10];    // Display "E"(Error) in 6
+                    punRamData[LCDRAM_INDEX_0].u8_dis[3] |= u8Num1To11Table[10];    // Display "E"(Error) in 5
+                }
+            }
+
+            if(StartingTimeM == enFocusOn)
+            {
+                punRamData[LCDRAM_INDEX_0].u8_dis[3] |= 0x01;    // Display COL3.
+                punRamData[LCDRAM_INDEX_1].u8_dis[0] |= 0x01;    // Display T3.
+
+                if(u8Hour >= 0 && u8Hour <= 23)
+                {
+                    punRamData[LCDRAM_INDEX_1].u8_dis[0] |= u8Num1To11Table[u8HourSingle];    // 4
+                    if(u8HourTen > 0)
+                    {
+                        punRamData[LCDRAM_INDEX_1].u8_dis[1] |= u8Num1To11Table[u8HourTen];    // 3
+                    }
+                }
+                else
+                {
+                    punRamData[LCDRAM_INDEX_1].u8_dis[0] = u8Num1To11Table[10];    // Display "E"(Error) in 4
+                    punRamData[LCDRAM_INDEX_1].u8_dis[1] = u8Num1To11Table[10];    // Display "E"(Error) in 3
+                }
+            }
         }
     }
 }

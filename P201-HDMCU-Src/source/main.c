@@ -86,7 +86,7 @@ typedef union
         unsigned char Down :1;
         unsigned char Up :1;
         unsigned char Lock :1;
-        unsigned char Reserved2 :1;
+        unsigned char SetHold :1;
     };
 }un_key_type;
 
@@ -172,7 +172,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, FALSE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
-    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 21, 2, 10, 0, 11, TRUE);
+    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
 
     App_Lcd_Display_Update(u32LcdRamData);
 
@@ -190,7 +190,7 @@ int32_t main(void)
         {
             u8RtcFlag = 0;
             App_RtcTime();
-            Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE);
+            Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
             App_Lcd_Display_Update(u32LcdRamData);
         }
 
@@ -347,6 +347,12 @@ void App_KeyStateChkSet(void)
                     u8Tim0Cnt = 0;
                     enKeyState = WaitForRelease;
                 }
+                else if(unKeyPressTemp.SetHold && unKeyPressDetected.Set)
+                {
+                    // 识别为SetHold键, 等待Set键松开
+                    u8Tim0Cnt = 0;
+                    enKeyState = WaitForRelease;
+                }
                 else
                 {
                     if(unKeyPressTemp.Full == unKeyPressDetected.Full)
@@ -380,6 +386,14 @@ void App_KeyStateChkSet(void)
                 // 长按OK, 即触发"Lock"键, 跳转到WaitForRelease等待OK键释放
                 unKeyPressTemp.OK = 0;
                 unKeyPressTemp.Lock = 1;
+                u8Tim0Cnt = 0;
+                enKeyState = WaitForRelease;
+            }
+            else if(unKeyPressTemp.Set)
+            {
+                // 长按Set, 即触发"SetHold"键, 跳转到WaitForRelease等待Set键释放
+                unKeyPressTemp.Set = 0;
+                unKeyPressTemp.SetHold = 1;
                 u8Tim0Cnt = 0;
                 enKeyState = WaitForRelease;
             }
@@ -440,6 +454,7 @@ void App_KeyHandler(void)
         Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
+        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
     }
 
     if(Unlock == enLockStatus && unKeyPress.Set)
@@ -487,6 +502,8 @@ void App_KeyHandler(void)
 
                     default:
                         enFocusOn = Nothing;
+                        bStopFlag = FALSE;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
                 }
             }
@@ -505,43 +522,39 @@ void App_KeyHandler(void)
                 }
             }
         }
-        else
-        {
-            // 长按设置年月日时间
-        }
     }
 
     if(Unlock == enLockStatus && unKeyPress.OK)
     {
         if(0 == u8KeyLongPressCnt)
         {
-            if(ModeAutomatic == enWorkingMode)
+            if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
             {
                 switch(enFocusOn)
                 {
-                    case Channel:
-                        enFocusOn = WateringTime;
-                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
+                    case RtcYear:
+                        enFocusOn = RtcMonth;
+                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
                         break;
 
-                    case WateringTime:
-                        enFocusOn = StartingTimeH;
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                    case RtcMonth:
+                        enFocusOn = RtcDay;
+                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
                         break;
 
-                    case StartingTimeH:
-                        enFocusOn = StartingTimeM;
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
+                    case RtcDay:
+                        enFocusOn = RtcHour;
+                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
                         break;
 
-                    case StartingTimeM:
-                        enFocusOn = DaysApart;
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
+                    case RtcHour:
+                        enFocusOn = RtcMin;
+                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
                         break;
 
-                    case DaysApart:
+                    case RtcMin:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
                         bStopFlag = FALSE;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
@@ -553,16 +566,55 @@ void App_KeyHandler(void)
             }
             else
             {
-                if(WateringTime == enFocusOn)
+                if(ModeAutomatic == enWorkingMode)
                 {
-                    enFocusOn = Nothing;
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                    switch(enFocusOn)
+                    {
+                        case Channel:
+                            enFocusOn = WateringTime;
+                            Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
+                            break;
+
+                        case WateringTime:
+                            enFocusOn = StartingTimeH;
+                            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                            break;
+
+                        case StartingTimeH:
+                            enFocusOn = StartingTimeM;
+                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
+                            break;
+
+                        case StartingTimeM:
+                            enFocusOn = DaysApart;
+                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
+                            break;
+
+                        case DaysApart:
+                            enFocusOn = Nothing;
+                            Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
+                            bStopFlag = FALSE;
+                            Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
+                            break;
+
+                        default:
+                            enFocusOn = Nothing;
+                            break;
+                    }
                 }
                 else
                 {
-                    enFocusOn = Nothing;
-                    bStopFlag = !bStopFlag;
-                    Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
+                    if(WateringTime == enFocusOn)
+                    {
+                        enFocusOn = Nothing;
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                    }
+                    else
+                    {
+                        enFocusOn = Nothing;
+                        bStopFlag = !bStopFlag;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
+                    }
                 }
             }
         }
@@ -601,6 +653,16 @@ void App_KeyHandler(void)
         // 长按"确定"锁定/解锁按键
         enLockStatus = !enLockStatus;
         Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
+    }
+
+    if(Unlock == enLockStatus && unKeyPress.SetHold)
+    {
+        if(enFocusOn != RtcYear)
+        {
+            enFocusOn = RtcYear;
+            bStopFlag = TRUE;
+            Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
+        }
     }
 
     App_Lcd_Display_Update(u32LcdRamData);
@@ -796,6 +858,16 @@ void App_LcdStrobeControl(void)
             case DaysApart:
                 bFlipFlag = !bFlipFlag;
                 Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, bFlipFlag, enFocusOn);
+                App_Lcd_Display_Update(u32LcdRamData);
+                break;
+
+            case RtcYear:
+            case RtcMonth:
+            case RtcDay:
+            case RtcHour:
+            case RtcMin:
+                bFlipFlag = !bFlipFlag;
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 

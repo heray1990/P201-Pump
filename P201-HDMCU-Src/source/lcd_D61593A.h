@@ -240,7 +240,8 @@ extern void Lcd_D61593A_GenRam_Date_And_Time(
                 uint8_t u8Day,
                 uint8_t u8Hour,
                 uint8_t u8Minute,
-                boolean_t bDisplay);
+                boolean_t bDisplay,
+                en_focus_on enFocusOn);
 //@} // LCDGroup
 
 #ifdef __cplusplus

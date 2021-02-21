@@ -327,8 +327,8 @@ void App_KeyStateChkSet(void)
                 ++u8Tim0Cnt;    //Guarded state action, if same value increase key count
                 if(u8Tim0Cnt > MIN_KEY_COUNT)
                 {
-                    enKeyState = WaitForRelease;   //guarded state transition
                     u8Tim0Cnt = 0;
+                    enKeyState = WaitForRelease;   //guarded state transition
                 }
             }
             else
@@ -343,8 +343,9 @@ void App_KeyStateChkSet(void)
             {
                 if(unKeyPressTemp.Lock && unKeyPressDetected.OK)
                 {
-                    enKeyState = WaitForRelease;
+                    // 识别为Lock键, 等待OK键松开
                     u8Tim0Cnt = 0;
+                    enKeyState = WaitForRelease;
                 }
                 else
                 {
@@ -376,16 +377,17 @@ void App_KeyStateChkSet(void)
         case UpdateForLongPress:
             if(unKeyPressTemp.OK)
             {
-                // 长按OK, 即触发"Lock"键, 跳转到WaitForRelease 等待OK键释放
+                // 长按OK, 即触发"Lock"键, 跳转到WaitForRelease等待OK键释放
                 unKeyPressTemp.OK = 0;
                 unKeyPressTemp.Lock = 1;
+                u8Tim0Cnt = 0;
                 enKeyState = WaitForRelease;
             }
             else
             {
                 unKeyPress = unKeyPressTemp;    //state action    HERE the Key value is updated
+                u8Tim0Cnt = 0;
                 enKeyState = WaitForRelease;    //state transition
-                u8Tim0Cnt = 0;                  //state action
                 u8KeyLongPressCnt++;
             }
             break;

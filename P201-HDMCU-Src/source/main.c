@@ -132,6 +132,7 @@ void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
+void App_LcdStrobeControl(void);
 void App_Timer0Cfg(uint16_t u16Period);
 
 
@@ -646,6 +647,23 @@ void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
     }
 }
 
+void App_LcdStrobeControl(void)
+{
+    static uint8_t u8LcdContentSDCnt = 0;
+    static boolean_t bFlipFlag = TRUE;
+
+    if(++u8LcdContentSDCnt > LCD_CONTENT_STROBE_DURATION)
+    {
+        u8LcdContentSDCnt = 0;
+        if(Channel == enFocusOn)
+        {
+            bFlipFlag = !bFlipFlag;
+            Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, bFlipFlag, enFocusOn);
+            App_Lcd_Display_Update(u32LcdRamData);
+        }
+    }
+}
+
 /******************************************************************************
  ** \brief  Timer0配置初始化
  ** 周期 = u16Period*(1/内部时钟频率)*256
@@ -683,24 +701,12 @@ void App_Timer0Cfg(uint16_t u16Period)
 
 void Tim0_IRQHandler(void)
 {
-    static uint8_t u8LcdContentSDCnt = 0;
-    static boolean_t bFlipFlag = TRUE;
-
     //Timer0 模式0 溢出中断
     if(TRUE == Bt_GetIntFlag(TIM0, BtUevIrq))
     {
         App_KeyStateChkSet();
 
-        if(++u8LcdContentSDCnt > LCD_CONTENT_STROBE_DURATION)
-        {
-            u8LcdContentSDCnt = 0;
-            if(Channel == enFocusOn)
-            {
-                bFlipFlag = !bFlipFlag;
-                Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, bFlipFlag, enFocusOn);
-                App_Lcd_Display_Update(u32LcdRamData);
-            }
-        }
+        App_LcdStrobeControl();
 
         Bt_ClearIntFlag(TIM0, BtUevIrq); //中断标志清零
     }

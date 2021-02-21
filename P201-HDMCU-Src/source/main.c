@@ -420,29 +420,57 @@ void App_KeyHandler(void)
     {
         if(0 == u8KeyLongPressCnt)
         {
-            if(Nothing == enFocusOn)
+            if(ModeAutomatic == enWorkingMode)
             {
-                if(ModeAutomatic == enWorkingMode)
+                switch(enFocusOn)
                 {
-                    enFocusOn = Channel;
-                }
-                else
-                {
-                    enFocusOn = WateringTime;
+                    case Nothing:
+                        enFocusOn = Channel;
+                        break;
+
+                    case Channel:
+                        enFocusOn = Nothing;
+                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
+                        break;
+
+                    case WateringTime:
+                        enFocusOn = Nothing;
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+                        break;
+
+                    case StartingTimeH:
+                    case StartingTimeM:
+                        enFocusOn = Nothing;
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+                        break;
+
+                    case DaysApart:
+                        enFocusOn = Nothing;
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
+                        break;
+
+                    default:
+                        enFocusOn = Nothing;
+                        break;
                 }
             }
             else
             {
-                enFocusOn = Nothing;
+                if(Nothing == enFocusOn)
+                {
+                    enFocusOn = WateringTime;
+                }
+                else
+                {
+                    enFocusOn = Nothing;
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+                }
             }
         }
-    #if 0
         else
         {
-            j = 0;
-            Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
+            // 长按设置年月日时间
         }
-    #endif
     }
 
     if(unKeyPress.OK)

@@ -555,8 +555,11 @@ void App_KeyHandler(void)
                     case RtcMin:
                         enFocusOn = Nothing;
                         Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
-                        bStopFlag = FALSE;
-                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
+                        if(ModeAutomatic == enWorkingMode)
+                        {
+                            bStopFlag = FALSE;
+                            Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
+                        }
                         break;
 
                     default:

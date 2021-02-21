@@ -113,6 +113,7 @@ __IO en_working_mode_t enWorkingMode;
 __IO en_focus_on enFocusOn;
 __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
+__IO boolean_t bStopFlag;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -145,6 +146,7 @@ int32_t main(void)
     enWorkingMode = ModeAutomatic;
     enFocusOn = Nothing;
     u8KeyLongPressCnt = 0;
+    bStopFlag = FALSE;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();
@@ -164,7 +166,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
-    Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
+    Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, FALSE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
@@ -402,12 +404,12 @@ void App_KeyHandler(void)
         if(ModeAutomatic == enWorkingMode)
         {
             enWorkingMode = ModeManual;
-            Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
+            bStopFlag = TRUE;
         }
         else
         {
             enWorkingMode = ModeAutomatic;
-            Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
+            bStopFlag = FALSE;
         }
         Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
@@ -415,6 +417,7 @@ void App_KeyHandler(void)
         Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
         Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
     }
 
     if(unKeyPress.Set)
@@ -514,14 +517,16 @@ void App_KeyHandler(void)
             }
             else
             {
-                if(Nothing == enFocusOn)
+                if(WateringTime == enFocusOn)
                 {
-                    enFocusOn = WateringTime;
+                    enFocusOn = Nothing;
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
                 }
                 else
                 {
                     enFocusOn = Nothing;
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                    bStopFlag = !bStopFlag;
+                    Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                 }
             }
         }
@@ -756,6 +761,7 @@ void App_LcdStrobeControl(void)
                 break;
 
             default:
+                bFlipFlag = TRUE;
                 break;
         }
     }

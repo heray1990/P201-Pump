@@ -64,7 +64,7 @@
  * Local pre-processor symbols/macros ('#define')                            
  *****************************************************************************/
 #define MIN_KEY_COUNT 0
-#define MIN_KEY_LONG_PRESS_COUNT 25
+#define KEY_LONG_PRESS_CNT 25 // 250ms
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -140,6 +140,7 @@ int32_t main(void)
     unKeyPress.Full = 0x00;
     u8PowerOnFlag = 1;
     enWorkingMode = ModeAutomatic;
+    u8KeyLongPressCnt = 0;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();
@@ -329,8 +330,8 @@ void App_KeyStateChkSet(void)
             break;
         case WaitForRelease:
             ++u8Tim0Cnt;
-            // 长按超过 (MIN_KEY_LONG_PRESS_COUNT * 10)ms, 响应一次长按操作
-            if(u8Tim0Cnt > MIN_KEY_LONG_PRESS_COUNT)
+            // 长按超过 (KEY_LONG_PRESS_CNT * 10)ms, 响应一次长按操作
+            if(u8Tim0Cnt > KEY_LONG_PRESS_CNT)
             {
                 if(unKeyPressTemp.Full == unKeyPressDetected.Full)
                 {

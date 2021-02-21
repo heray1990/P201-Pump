@@ -168,11 +168,30 @@ typedef enum
     BatteryPercent100 = 4,
 }en_remaining_battery_t;
 
+typedef enum
+{
+    Nothing = 0u,
+    Channel = 1u,
+    WateringTime = 2u,
+    StartingTimeH = 3u,
+    StartingTimeM = 4u,
+    DaysApart = 5u,
+    RtcYear = 6u,
+    RtcMonth = 7u,
+    RtcDay = 8u,
+    RtcHour = 9u,
+    RtcMin = 10u
+}en_focus_on;
+
 
 /******************************************************************************
 ** Global function prototypes (definition in C source)
 ******************************************************************************/
-extern void Lcd_D61593A_GenRam_Channel(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay);
+extern void Lcd_D61593A_GenRam_Channel(
+                un_Ram_Data* punRamData,
+                uint8_t u8Val,
+                boolean_t bDisplay,
+                en_focus_on enFocusOn);
 extern void Lcd_D61593A_GenRam_Watering_Time(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_GroupNum(
                 un_Ram_Data* punRamData,

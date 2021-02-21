@@ -65,6 +65,7 @@
  *****************************************************************************/
 #define MIN_KEY_COUNT 0
 #define KEY_LONG_PRESS_CNT 25 // 250ms
+#define LCD_CONTENT_STROBE_DURATION 50  // 500ms
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -109,6 +110,7 @@ typedef enum
 un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 __IO un_key_type unKeyPress;
 __IO en_working_mode_t enWorkingMode;
+__IO en_focus_on enFocusOn;
 __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 
@@ -140,6 +142,7 @@ int32_t main(void)
     unKeyPress.Full = 0x00;
     u8PowerOnFlag = 1;
     enWorkingMode = ModeAutomatic;
+    enFocusOn = Nothing;
     u8KeyLongPressCnt = 0;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
@@ -152,7 +155,7 @@ int32_t main(void)
     App_LcdCfg();                ///< LCD模块配置
     Lcd_ClearDisp();             ///< 清屏
 
-    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
+    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
@@ -394,6 +397,7 @@ void App_KeyHandler(void)
 
     if(unKeyPress.Mode && 0 == u8KeyLongPressCnt)
     {
+        enFocusOn = Nothing;
         if(ModeAutomatic == enWorkingMode)
         {
             enWorkingMode = ModeManual;
@@ -404,6 +408,7 @@ void App_KeyHandler(void)
             enWorkingMode = ModeAutomatic;
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
         }
+        Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
         Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
         Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
@@ -412,16 +417,31 @@ void App_KeyHandler(void)
 
     if(unKeyPress.Set)
     {
-        if(0 == j)
+        if(0 == u8KeyLongPressCnt)
         {
-            j = 1;
-            Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
+            if(Nothing == enFocusOn)
+            {
+                if(ModeAutomatic == enWorkingMode)
+                {
+                    enFocusOn = Channel;
+                }
+                else
+                {
+                    enFocusOn = WateringTime;
+                }
+            }
+            else
+            {
+                enFocusOn = Nothing;
+            }
         }
+    #if 0
         else
         {
             j = 0;
             Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
         }
+    #endif
     }
 
     if(unKeyPress.OK)
@@ -663,10 +683,24 @@ void App_Timer0Cfg(uint16_t u16Period)
 
 void Tim0_IRQHandler(void)
 {
+    static uint8_t u8LcdContentSDCnt = 0;
+    static boolean_t bFlipFlag = TRUE;
+
     //Timer0 模式0 溢出中断
     if(TRUE == Bt_GetIntFlag(TIM0, BtUevIrq))
     {
         App_KeyStateChkSet();
+
+        if(++u8LcdContentSDCnt > LCD_CONTENT_STROBE_DURATION)
+        {
+            u8LcdContentSDCnt = 0;
+            if(Channel == enFocusOn)
+            {
+                bFlipFlag = !bFlipFlag;
+                Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, bFlipFlag, enFocusOn);
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
+        }
 
         Bt_ClearIntFlag(TIM0, BtUevIrq); //中断标志清零
     }

@@ -78,7 +78,11 @@ const uint16_t u16Num12To21Table[] = {
  **
  ** \retval LCDRAM 的内容
  *****************************************************************************/
-void Lcd_D61593A_GenRam_Channel(un_Ram_Data* punRamData, uint8_t u8Val, boolean_t bDisplay)
+void Lcd_D61593A_GenRam_Channel(
+                un_Ram_Data* punRamData,
+                uint8_t u8Val,
+                boolean_t bDisplay,
+                en_focus_on enFocusOn)
 {
     punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_CHANNEL;    // Clean T1 and 1 in LCDRAM2.
 
@@ -86,11 +90,18 @@ void Lcd_D61593A_GenRam_Channel(un_Ram_Data* punRamData, uint8_t u8Val, boolean_
     {
         if(u8Val >= 0 && u8Val <= 9)
         {
-            punRamData[LCDRAM_INDEX_2].u8_dis[1] = (u8Num1To11Table[u8Val] | 0x01);    // Set value for 1 and display T1
+            punRamData[LCDRAM_INDEX_2].u8_dis[1] |= (u8Num1To11Table[u8Val] | 0x01);    // Set value for 1 and display T1
         }
         else
         {
-            punRamData[LCDRAM_INDEX_2].u8_dis[1] = (u8Num1To11Table[10] | 0x01);    // Display "E"(Error)
+            punRamData[LCDRAM_INDEX_2].u8_dis[1] |= (u8Num1To11Table[10] | 0x01);    // Display "E"(Error)
+        }
+    }
+    else
+    {
+        if(Channel == enFocusOn)
+        {
+            punRamData[LCDRAM_INDEX_2].u8_dis[1] |= 0x01;
         }
     }
 }

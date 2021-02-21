@@ -73,11 +73,6 @@
 /******************************************************************************
  * Local type definitions ('typedef')                                         
  *****************************************************************************/
-typedef struct
-{
-    en_working_mode_t enWorkingMode;
-}stc_status_storage_t;
-
 typedef union
 {
     unsigned char Full;
@@ -111,9 +106,9 @@ typedef enum
 /******************************************************************************
  * Local variable definitions ('static')                                      *
  *****************************************************************************/
-static stc_status_storage_t stcStatusVal;
-__IO un_key_type unKeyPress;
 un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
+__IO un_key_type unKeyPress;
+__IO en_working_mode_t enWorkingMode;
 __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 
@@ -141,10 +136,10 @@ void App_Timer0Cfg(uint16_t u16Period);
 int32_t main(void)
 {
     App_LcdRam_Init(u32LcdRamData);
-    DDL_ZERO_STRUCT(stcStatusVal);
 
     unKeyPress.Full = 0x00;
     u8PowerOnFlag = 1;
+    enWorkingMode = ModeAutomatic;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();
@@ -161,10 +156,10 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
-    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
-    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, ModeAutomatic, TRUE);
-    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, ModeAutomatic, TRUE);
-    Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
+    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
+    Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
@@ -396,16 +391,21 @@ void App_KeyHandler(void)
         }
     }
 
-    if(unKeyPress.Mode)
+    if(unKeyPress.Mode && 0 == u8KeyLongPressCnt)
     {
-        if(0 == u8KeyLongPressCnt)
+        if(ModeAutomatic == enWorkingMode)
         {
-            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215 + 1, TRUE);
+            enWorkingMode = ModeManual;
+            Lcd_D61593A_GenRam_Stop(u32LcdRamData, TRUE);
         }
         else
         {
-            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215 + 1 + u8KeyLongPressCnt, TRUE);
+            enWorkingMode = ModeAutomatic;
+            Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
         }
+        Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
+        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
     }
 
     if(unKeyPress.Set)

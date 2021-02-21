@@ -153,15 +153,15 @@ int32_t main(void)
 
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
-    Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
-    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
-    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
+    Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
+    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
+    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
-    Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, TRUE);
+    Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, FALSE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 21, 2, 10, 0, 11, TRUE);
 
@@ -403,6 +403,7 @@ void App_KeyHandler(void)
             enWorkingMode = ModeAutomatic;
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, FALSE);
         }
+        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
         Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
         Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE);
         Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE);
@@ -413,12 +414,12 @@ void App_KeyHandler(void)
         if(0 == j)
         {
             j = 1;
-            Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, FALSE);
+            Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
         }
         else
         {
             j = 0;
-            Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
+            Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, 1, enWorkingMode);
         }
     }
 

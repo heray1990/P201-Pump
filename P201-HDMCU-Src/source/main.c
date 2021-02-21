@@ -63,7 +63,8 @@
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
  *****************************************************************************/
- #define MIN_KEY_COUNT 0
+#define MIN_KEY_COUNT 0
+#define MIN_KEY_LONG_PRESS_COUNT 25
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -98,7 +99,8 @@ typedef enum
     Waiting,
     Detected,
     WaitForRelease,
-    Update
+    Update,
+    UpdateForLongPress
 }en_key_states;
 
 
@@ -112,7 +114,7 @@ typedef enum
 static stc_status_storage_t stcStatusVal;
 __IO un_key_type unKeyPress;
 un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
-__IO uint8_t u8PowerOnFlag, u8RtcFlag;
+__IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 
 /******************************************************************************
@@ -138,8 +140,6 @@ void App_Timer0Cfg(uint16_t u16Period);
 
 int32_t main(void)
 {
-    uint32_t u32Addr = 0xff00;
-
     App_LcdRam_Init(u32LcdRamData);
     DDL_ZERO_STRUCT(stcStatusVal);
 
@@ -157,7 +157,7 @@ int32_t main(void)
     Lcd_ClearDisp();             ///< 清屏
 
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE);
-    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, *((volatile uint8_t*)u32Addr), TRUE);
+    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
     Lcd_D61593A_GenRam_Sets(u32LcdRamData, 1, TRUE);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, TRUE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, TRUE);
@@ -179,18 +179,6 @@ int32_t main(void)
     Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);//RTC模块时钟打开
     Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);
     App_RtcCfg();
-
-    ///< 确保初始化正确执行后方能进行FLASH编程操作，FLASH初始化（编程时间,休眠模式配置）
-    while(Ok != Flash_Init(1, TRUE))
-    {
-        ;
-    }
-
-    ///< FLASH目标扇区擦除
-    while(Ok != Flash_SectorErase(u32Addr))
-    {
-        ;
-    }
 
     while(1)
     {
@@ -325,6 +313,7 @@ void App_KeyStateChkSet(void)
             {
                 enKeyState = Detected;        //change state
                 u8Tim0Cnt = 0;
+                u8KeyLongPressCnt = 0;
                 unKeyPressTemp = unKeyPressDetected;  //Record the temporary value
             }
             break;
@@ -335,6 +324,7 @@ void App_KeyStateChkSet(void)
                 if(u8Tim0Cnt > MIN_KEY_COUNT)
                 {
                     enKeyState = WaitForRelease;   //guarded state transition
+                    u8Tim0Cnt = 0;
                 }
             }
             else
@@ -343,16 +333,39 @@ void App_KeyStateChkSet(void)
             }
             break;
         case WaitForRelease:
-            if(!unKeyPressDetected.Full)
+            ++u8Tim0Cnt;
+            // 长按超过 (MIN_KEY_LONG_PRESS_COUNT * 10)ms, 响应一次长按操作
+            if(u8Tim0Cnt > MIN_KEY_LONG_PRESS_COUNT)
             {
-                enKeyState = Update;   //state transition when all buttons released
+                if(unKeyPressTemp.Full == unKeyPressDetected.Full)
+                {
+                    enKeyState = UpdateForLongPress;
+                }
+                else
+                {
+                    enKeyState = Update;
+                }
+            }
+            else
+            {
+                if(!unKeyPressDetected.Full)
+                {
+                    enKeyState = Update;   //state transition when all buttons released
+                }
             }
             break;
         case Update:
             unKeyPress = unKeyPressTemp;    //state action    HERE the Key value is updated
             enKeyState = Waiting;           //state transition
             u8Tim0Cnt = 0;                  //state action
-            unKeyPressTemp.Full=0;          //state action
+            unKeyPressTemp.Full = 0x00;     //state action
+            u8KeyLongPressCnt = 0;
+            break;
+        case UpdateForLongPress:
+            unKeyPress = unKeyPressTemp;    //state action    HERE the Key value is updated
+            enKeyState = WaitForRelease;    //state transition
+            u8Tim0Cnt = 0;                  //state action
+            u8KeyLongPressCnt++;
             break;
         default:
             enKeyState = Waiting;
@@ -366,10 +379,8 @@ void App_KeyStateChkSet(void)
 void App_KeyHandler(void)
 {
     static uint8_t j = 0;
-    uint32_t u32Addr = 0xff00;
-    uint8_t u8TestData = 0x5a;
 
-    if(unKeyPress.Power)
+    if(unKeyPress.Power && 0 == u8KeyLongPressCnt)
     {
         if(0 == u8PowerOnFlag)
         {
@@ -387,22 +398,13 @@ void App_KeyHandler(void)
 
     if(unKeyPress.Mode)
     {
-        if(0 == j)
+        if(0 == u8KeyLongPressCnt)
         {
-            j = 1;
-            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE);
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215 + 1, TRUE);
         }
         else
         {
-            j = 0;
-            if(Ok == Flash_WriteByte(u32Addr, u8TestData))
-            {
-                if(*((volatile uint8_t*)u32Addr) != u8TestData)  ///< 如果写入的数据不对，在此处死循环
-                {
-                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, 10, TRUE);
-                }
-            }
-            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, *((volatile uint8_t*)u32Addr), TRUE);
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215 + 1 + u8KeyLongPressCnt, TRUE);
         }
     }
 

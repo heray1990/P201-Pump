@@ -360,7 +360,7 @@ void App_KeyStateChkSet(void)
             }
             else
             {
-                if(!unKeyPressTemp.Full)
+                if(!unKeyPressDetected.Full)
                 {
                     enKeyState = Update;   //state transition when all buttons released
                 }

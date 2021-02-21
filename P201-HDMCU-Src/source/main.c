@@ -430,27 +430,37 @@ void App_KeyHandler(void)
                 {
                     case Nothing:
                         enFocusOn = Channel;
+                        bStopFlag = TRUE;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
 
                     case Channel:
                         enFocusOn = Nothing;
                         Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);
+                        bStopFlag = FALSE;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
 
                     case WateringTime:
                         enFocusOn = Nothing;
                         Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, 215, TRUE, enFocusOn);
+                        bStopFlag = FALSE;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
 
                     case StartingTimeH:
                     case StartingTimeM:
                         enFocusOn = Nothing;
                         Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
+                        bStopFlag = FALSE;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
 
                     case DaysApart:
                         enFocusOn = Nothing;
                         Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
+                        bStopFlag = FALSE;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
 
                     default:
@@ -460,6 +470,8 @@ void App_KeyHandler(void)
             }
             else
             {
+                bStopFlag = TRUE;
+                Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                 if(Nothing == enFocusOn)
                 {
                     enFocusOn = WateringTime;
@@ -508,6 +520,8 @@ void App_KeyHandler(void)
                     case DaysApart:
                         enFocusOn = Nothing;
                         Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
+                        bStopFlag = FALSE;
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
                         break;
 
                     default:

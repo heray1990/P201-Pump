@@ -214,7 +214,8 @@ extern void Lcd_D61593A_GenRam_Days_Apart(
                 un_Ram_Data* punRamData,
                 uint8_t u8Day,
                 en_working_mode_t enWorkingMode,
-                boolean_t bDisplay);
+                boolean_t bDisplay,
+                en_focus_on enFocusOn);
 extern void Lcd_D61593A_GenRam_WorkingMode(
                 un_Ram_Data* punRamData,
                 en_working_mode_t enWrokingMode,

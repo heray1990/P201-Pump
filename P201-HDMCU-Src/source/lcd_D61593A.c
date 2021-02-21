@@ -380,7 +380,8 @@ void Lcd_D61593A_GenRam_Days_Apart(
                 un_Ram_Data* punRamData,
                 uint8_t u8Day,
                 en_working_mode_t enWorkingMode,
-                boolean_t bDisplay)
+                boolean_t bDisplay,
+                en_focus_on enFocusOn)
 {
     uint8_t u8DaySingle, u8DayTen;
 
@@ -415,6 +416,16 @@ void Lcd_D61593A_GenRam_Days_Apart(
             // Display "--"
             punRamData[LCDRAM_INDEX_0].u8_dis[0] |= 0x10;
             punRamData[LCDRAM_INDEX_0].u8_dis[1] |= 0x10;
+        }
+    }
+    else
+    {
+        if(ModeAutomatic == enWorkingMode)
+        {
+            if(DaysApart == enFocusOn)
+            {
+                punRamData[LCDRAM_INDEX_0].u8_dis[0] |= 0x01;    // Display T4.
+            }
         }
     }
 }

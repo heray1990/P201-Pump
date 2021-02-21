@@ -85,7 +85,7 @@ typedef union
         unsigned char OK :1;
         unsigned char Down :1;
         unsigned char Up :1;
-        unsigned char Reserved1 :1;
+        unsigned char Lock :1;
         unsigned char Reserved2 :1;
     };
 }un_key_type;
@@ -111,6 +111,7 @@ un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 __IO un_key_type unKeyPress;
 __IO en_working_mode_t enWorkingMode;
 __IO en_focus_on enFocusOn;
+__IO en_lock_status_t enLockStatus;
 __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 __IO boolean_t bStopFlag;
@@ -145,6 +146,7 @@ int32_t main(void)
     u8PowerOnFlag = 1;
     enWorkingMode = ModeAutomatic;
     enFocusOn = Nothing;
+    enLockStatus = Unlock;
     u8KeyLongPressCnt = 0;
     bStopFlag = FALSE;
 
@@ -167,7 +169,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, 4, 30, enWorkingMode, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, 99, enWorkingMode, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
-    Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, Unlock, TRUE);
+    Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, FALSE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, 21, 2, 10, 0, 11, TRUE);
@@ -339,18 +341,26 @@ void App_KeyStateChkSet(void)
             // 长按超过 (KEY_LONG_PRESS_CNT * 10)ms, 响应一次长按操作
             if(u8Tim0Cnt > KEY_LONG_PRESS_CNT)
             {
-                if(unKeyPressTemp.Full == unKeyPressDetected.Full)
+                if(unKeyPressTemp.Lock && unKeyPressDetected.OK)
                 {
-                    enKeyState = UpdateForLongPress;
+                    enKeyState = WaitForRelease;
+                    u8Tim0Cnt = 0;
                 }
                 else
                 {
-                    enKeyState = Update;
+                    if(unKeyPressTemp.Full == unKeyPressDetected.Full)
+                    {
+                        enKeyState = UpdateForLongPress;
+                    }
+                    else
+                    {
+                        enKeyState = Update;
+                    }
                 }
             }
             else
             {
-                if(!unKeyPressDetected.Full)
+                if(!unKeyPressTemp.Full)
                 {
                     enKeyState = Update;   //state transition when all buttons released
                 }
@@ -364,10 +374,20 @@ void App_KeyStateChkSet(void)
             u8KeyLongPressCnt = 0;
             break;
         case UpdateForLongPress:
-            unKeyPress = unKeyPressTemp;    //state action    HERE the Key value is updated
-            enKeyState = WaitForRelease;    //state transition
-            u8Tim0Cnt = 0;                  //state action
-            u8KeyLongPressCnt++;
+            if(unKeyPressTemp.OK)
+            {
+                // 长按OK, 即触发"Lock"键, 跳转到WaitForRelease 等待OK键释放
+                unKeyPressTemp.OK = 0;
+                unKeyPressTemp.Lock = 1;
+                enKeyState = WaitForRelease;
+            }
+            else
+            {
+                unKeyPress = unKeyPressTemp;    //state action    HERE the Key value is updated
+                enKeyState = WaitForRelease;    //state transition
+                u8Tim0Cnt = 0;                  //state action
+                u8KeyLongPressCnt++;
+            }
             break;
         default:
             enKeyState = Waiting;
@@ -382,7 +402,7 @@ void App_KeyHandler(void)
 {
     static uint8_t j = 0;
 
-    if(unKeyPress.Power && 0 == u8KeyLongPressCnt)
+    if(Unlock == enLockStatus && unKeyPress.Power && 0 == u8KeyLongPressCnt)
     {
         if(0 == u8PowerOnFlag)
         {
@@ -398,7 +418,7 @@ void App_KeyHandler(void)
         }
     }
 
-    if(unKeyPress.Mode && 0 == u8KeyLongPressCnt)
+    if(Unlock == enLockStatus && unKeyPress.Mode && 0 == u8KeyLongPressCnt)
     {
         enFocusOn = Nothing;
         if(ModeAutomatic == enWorkingMode)
@@ -420,7 +440,7 @@ void App_KeyHandler(void)
         Lcd_D61593A_GenRam_Stop(u32LcdRamData, bStopFlag);
     }
 
-    if(unKeyPress.Set)
+    if(Unlock == enLockStatus && unKeyPress.Set)
     {
         if(0 == u8KeyLongPressCnt)
         {
@@ -489,7 +509,7 @@ void App_KeyHandler(void)
         }
     }
 
-    if(unKeyPress.OK)
+    if(Unlock == enLockStatus && unKeyPress.OK)
     {
         if(0 == u8KeyLongPressCnt)
         {
@@ -544,13 +564,9 @@ void App_KeyHandler(void)
                 }
             }
         }
-        else
-        {
-            // 长按锁定
-        }
     }
 
-    if(unKeyPress.Down)
+    if(Unlock == enLockStatus && unKeyPress.Down)
     {
         if(0 == j)
         {
@@ -564,7 +580,7 @@ void App_KeyHandler(void)
         }
     }
 
-    if(unKeyPress.Up)
+    if(Unlock == enLockStatus && unKeyPress.Up)
     {
         if(0 == j)
         {
@@ -576,6 +592,13 @@ void App_KeyHandler(void)
             j = 0;
             Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
         }
+    }
+
+    if(unKeyPress.Lock)
+    {
+        // 长按"确定"锁定/解锁按键
+        enLockStatus = !enLockStatus;
+        Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
     }
 
     App_Lcd_Display_Update(u32LcdRamData);

@@ -482,10 +482,6 @@ void App_KeyHandler(void)
             {
                 switch(enFocusOn)
                 {
-                    case Nothing:
-                        enFocusOn = Channel;
-                        break;
-
                     case Channel:
                         enFocusOn = WateringTime;
                         Lcd_D61593A_GenRam_Channel(u32LcdRamData, 0, TRUE, enFocusOn);

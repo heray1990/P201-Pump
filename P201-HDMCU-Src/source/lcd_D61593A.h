@@ -194,7 +194,7 @@ extern void Lcd_D61593A_GenRam_Channel(
                 en_focus_on enFocusOn);
 extern void Lcd_D61593A_GenRam_Watering_Time(
                 un_Ram_Data* punRamData,
-                uint8_t u8Val,
+                uint16_t u16Val,
                 boolean_t bDisplay,
                 en_focus_on enFocusOn);
 extern void Lcd_D61593A_GenRam_GroupNum(

@@ -116,15 +116,15 @@ void Lcd_D61593A_GenRam_Channel(
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Watering_Time(
                 un_Ram_Data* punRamData,
-                uint8_t u8Val,
+                uint16_t u16Val,
                 boolean_t bDisplay,
                 en_focus_on enFocusOn)
 {
     uint8_t u8Single, u8Ten, u8Hundred;
 
-    u8Single = u8Val % 10;
-    u8Ten = u8Val / 10 % 10;
-    u8Hundred = u8Val / 100 % 10;
+    u8Single = u16Val % 10;
+    u8Ten = u16Val / 10 % 10;
+    u8Hundred = u16Val / 100 % 10;
 
     punRamData[LCDRAM_INDEX_1].u32_dis &= MASK_LCDRAM1_WATER_TIME;    // Clean RAM of T2, T7, 8 and 9 in LCDRAM1.
     punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_WATER_TIME;    // Clean RAM of 7 in LCDRAM2.

@@ -147,6 +147,7 @@ int32_t main(void)
 #ifdef CLEAR_FALSH
     Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_0_HEAD_ADDR);
     Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_1_HEAD_ADDR);
+    Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_2_HEAD_ADDR);
 #endif
     uint8_t u8PartIdx = 0;
 
@@ -166,9 +167,14 @@ int32_t main(void)
             stcFlashManager.u8FlashManagerData[1] = 0x11;
             stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
         }
+        bStopFlag = FALSE;
     #ifndef CLEAR_FALSH
         Flash_Manager_Update();
     #endif
+    }
+    else
+    {
+        bStopFlag = TRUE;
     }
 
     App_LcdRam_Init(u32LcdRamData);
@@ -179,17 +185,11 @@ int32_t main(void)
     enFocusOn = Nothing;
     enLockStatus = Unlock;
     u8KeyLongPressCnt = 0;
-    bStopFlag = FALSE;
+    //bStopFlag = FALSE;
 
 #if 1
-    if(FLASH_MANAGER_DATA_SECTOR_0_HEAD_ADDR == stcFlashManager.u32DataStoredHeadAddr)
-        u8GroupNum = 0;
-    else
-        u8GroupNum = 1;
-    if(((stcFlashManager.u32DataStoredHeadAddr - 0xE000)/512) > 0)
-        u16WateringTime = (uint8_t)((stcFlashManager.u32DataStoredHeadAddr - 0xE000)/512);
-    else
-        u16WateringTime = (uint8_t)(stcFlashManager.u32DataStoredHeadAddr - 0xE000);
+    u8GroupNum = stcFlashManager.bFlashEmpty;
+    u16WateringTime = (uint16_t)(stcFlashManager.u32DataStoredHeadAddr - 0xE400);
     u8Channel = stcFlashManager.bFlashEmpty;
     u8StartHour = *((volatile uint8_t*)(stcFlashManager.u32DataStoredHeadAddr + 1));
     u8StartMin = *((volatile uint8_t*)(stcFlashManager.u32DataStoredHeadAddr + 2));

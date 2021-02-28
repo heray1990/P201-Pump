@@ -128,13 +128,6 @@ en_result_t Flash_Manager_Init(void)
 
     for(u8SectorIdx = 0; u8SectorIdx < FLASH_MANAGER_SECTORS_QUANTITY; u8SectorIdx++)
     {
-    #if 0
-        if(TRUE == bValidPartFound)
-        {
-            break;
-        }
-    #endif
-
         u8DataHeadSector[u8SectorIdx] = *((volatile uint8_t*)u32SectorHeadAddrTable[u8SectorIdx]);
         u8DataTailSector[u8SectorIdx] = *((volatile uint8_t*)u32SectorTailAddrTable[u8SectorIdx]);
 
@@ -225,6 +218,25 @@ en_result_t Flash_Manager_Update(void)
             if(Ok != Flash_WriteByte(u32SectorTailAddrTable[u8Idx], FLASH_DATA_END_CODE_SECTOR))
             {
                 enRetVal = Error;
+            }
+        }
+
+        if(stcFlashManager.u32DataStoredHeadAddr == u32SectorHeadAddrTable[u8Idx] && Ok == enRetVal)
+        {
+            // 写完数据之后, 当该Partition是Sector的第一个时, 判断是否需要把上一个Sector擦除
+            if(0 == u8Idx)
+            {
+                if(FLASH_DATA_END_CODE_SECTOR == *((volatile uint8_t*)u32SectorTailAddrTable[FLASH_MANAGER_SECTORS_QUANTITY - 1]))
+                {
+                    Flash_SectorErase(u32SectorHeadAddrTable[FLASH_MANAGER_SECTORS_QUANTITY - 1]);
+                }
+            }
+            else
+            {
+                if(FLASH_DATA_END_CODE_SECTOR == *((volatile uint8_t*)u32SectorTailAddrTable[u8Idx - 1]))
+                {
+                    Flash_SectorErase(u32SectorHeadAddrTable[u8Idx - 1]);
+                }
             }
         }
     }

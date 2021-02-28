@@ -67,6 +67,7 @@
 #define MIN_KEY_COUNT 0
 #define KEY_LONG_PRESS_CNT 25 // 250ms
 #define LCD_CONTENT_STROBE_DURATION 50  // 500ms
+//#define CLEAR_FALSH
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -143,7 +144,10 @@ void App_Timer0Cfg(uint16_t u16Period);
 
 int32_t main(void)
 {
-    //Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_0_HEAD_ADDR);
+#ifdef CLEAR_FALSH
+    Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_0_HEAD_ADDR);
+    Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_1_HEAD_ADDR);
+#endif
     uint8_t u8PartIdx = 0;
 
     if(Ok == Flash_Manager_Init())
@@ -162,7 +166,9 @@ int32_t main(void)
             stcFlashManager.u8FlashManagerData[1] = 0x11;
             stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
         }
+    #ifndef CLEAR_FALSH
         Flash_Manager_Update();
+    #endif
     }
 
     App_LcdRam_Init(u32LcdRamData);

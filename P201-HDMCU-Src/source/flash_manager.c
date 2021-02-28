@@ -154,7 +154,7 @@ en_result_t Flash_Manager_Init(void)
                 {
                     stcFlashManager.u32DataStoredHeadAddr = u32ValidPartHeadAddr;
                 }
-                Flash_Manager_Load_Latest_Data(u8DataTailSector[u8SectorIdx] - FLASH_MANAGER_DATA_LEN - 1);
+                Flash_Manager_Load_Latest_Data(u32SectorTailAddrTable[u8SectorIdx] - FLASH_MANAGER_DATA_LEN);
                 return Ok;
             }
             else
@@ -169,7 +169,7 @@ en_result_t Flash_Manager_Init(void)
                 {
                     stcFlashManager.u32DataStoredHeadAddr = u32ValidPartHeadAddr;
                 }
-                Flash_Manager_Load_Latest_Data(u8DataTailSector[u8SectorIdx] - FLASH_MANAGER_DATA_LEN - 1);
+                Flash_Manager_Load_Latest_Data(u32SectorTailAddrTable[u8SectorIdx] - FLASH_MANAGER_DATA_LEN);
                 return Ok;
             }
         }
@@ -206,23 +206,28 @@ en_result_t Flash_Manager_Init(void)
 
 en_result_t Flash_Manager_Update(void)
 {
-#if 0
-    if(Ok != Flash_WriteByte(FLASH_MANAGER_DATA_SECTOR_0_HEAD_ADDR, stcFlashManager.u8FlashManagerData[0]))
-    {
-        return Error;
-    }
-#else
-    uint8_t u8PartIdx;
+    uint8_t u8Idx;
+    en_result_t enRetVal = Ok;
 
-    for(u8PartIdx = 0; u8PartIdx < FLASH_MANAGER_DATA_LEN; u8PartIdx++)
+    for(u8Idx = 0; u8Idx < FLASH_MANAGER_DATA_LEN; u8Idx++)
     {
-        ///< FLASH 字节写、校验
-        if(Ok != Flash_WriteByte((stcFlashManager.u32DataStoredHeadAddr + u8PartIdx), stcFlashManager.u8FlashManagerData[u8PartIdx]))
+        if(Ok != Flash_WriteByte((stcFlashManager.u32DataStoredHeadAddr + u8Idx), stcFlashManager.u8FlashManagerData[u8Idx]))
         {
-            return Error;
+            enRetVal = Error;
         }
     }
-#endif
 
-    return Ok;
+    for(u8Idx = 0; u8Idx < FLASH_MANAGER_SECTORS_QUANTITY; u8Idx++)
+    {
+        if(stcFlashManager.u32DataStoredHeadAddr + FLASH_MANAGER_DATA_LEN == u32SectorTailAddrTable[u8Idx])
+        {
+            // 该Sector写满了, 则在最后一位写入0xA5
+            if(Ok != Flash_WriteByte(u32SectorTailAddrTable[u8Idx], FLASH_DATA_END_CODE_SECTOR))
+            {
+                enRetVal = Error;
+            }
+        }
+    }
+
+    return enRetVal;
 }

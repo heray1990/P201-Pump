@@ -59,6 +59,7 @@
 #include "flash.h"
 #include "rtc.h"
 #include "lcd_D61593A.h"
+#include "flash_manager.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -142,6 +143,28 @@ void App_Timer0Cfg(uint16_t u16Period);
 
 int32_t main(void)
 {
+    //Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_0_HEAD_ADDR);
+    uint8_t u8PartIdx = 0;
+
+    if(Ok == Flash_Manager_Init())
+    {
+        if(stcFlashManager.bFlashEmpty)
+        {
+            stcFlashManager.u8FlashManagerData[0] = FLASH_DATA_START_CODE;
+            for(u8PartIdx = 1; u8PartIdx < FLASH_MANAGER_DATA_LEN - 1; u8PartIdx++)
+            {
+                stcFlashManager.u8FlashManagerData[u8PartIdx] = 0x01;
+            }
+            stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
+        }
+        else
+        {
+            stcFlashManager.u8FlashManagerData[1] = 0x11;
+            stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
+        }
+        Flash_Manager_Update();
+    }
+
     App_LcdRam_Init(u32LcdRamData);
 
     unKeyPress.Full = 0x00;
@@ -151,6 +174,20 @@ int32_t main(void)
     enLockStatus = Unlock;
     u8KeyLongPressCnt = 0;
     bStopFlag = FALSE;
+
+#if 1
+    if(FLASH_MANAGER_DATA_SECTOR_0_HEAD_ADDR == stcFlashManager.u32DataStoredHeadAddr)
+        u8GroupNum = 0;
+    else
+        u8GroupNum = 1;
+    if(((stcFlashManager.u32DataStoredHeadAddr - 0xE000)/512) > 0)
+        u16WateringTime = (uint8_t)((stcFlashManager.u32DataStoredHeadAddr - 0xE000)/512);
+    else
+        u16WateringTime = (uint8_t)(stcFlashManager.u32DataStoredHeadAddr - 0xE000);
+    u8Channel = stcFlashManager.bFlashEmpty;
+    u8StartHour = *((volatile uint8_t*)(stcFlashManager.u32DataStoredHeadAddr + 1));
+    u8StartMin = *((volatile uint8_t*)(stcFlashManager.u32DataStoredHeadAddr + 2));
+#else
     u8GroupNum = 0;
     u8Channel = 0;
     u16WateringTime = 0;
@@ -161,6 +198,7 @@ int32_t main(void)
     u8RtcDay = 22;
     u8RtcHour = 17;
     u8RtcMinute = 21;
+#endif
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();

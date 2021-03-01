@@ -33,8 +33,8 @@ extern "C"
 #endif
 
 #define FLASH_MANAGER_BYTES_ONE_SECTOR 512
-#define FLASH_MANAGER_DATA_LEN 73   // 1bytes起始码 + 68bytes数据 + 3bytes预留空间 + 1bytes校验码(末尾)
-#define FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR 7
+#define FLASH_MANAGER_DATA_LEN 51   // 1bytes起始码 + 39bytes数据 + 10bytes预留空间 + 1bytes校验码(末尾)
+#define FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR 10
 
 // Using 16 sectors of flash to store data. Addresses are frome 0xE000 to 0xFFFF
 #define FLASH_MANAGER_SECTORS_QUANTITY 16
@@ -75,7 +75,7 @@ extern "C"
 #define FLASH_DATA_END_CODE_SECTOR 0xA5
 #define FLASH_DATA_INIT_CODE 0xFF
 
-#define FLASH_MANAGER_GROUP_NUMS_MAX 10
+#define FLASH_MANAGER_GROUP_NUMS_MAX 6
 
 
 typedef struct stc_flash_manager
@@ -90,35 +90,7 @@ typedef struct stc_flash_manager
     uint32_t u32DataStoredHeadAddr;
 } stc_flash_manager_t;
 
-// sizeof(stc_flash_data_t) = 74
-typedef struct stc_flash_datat
-{
-    uint8_t u8StartCode :8u;
-    uint8_t u8GropuNum :4u;
-    uint8_t u8WorkingMode :1u;
-    uint8_t u8StopFlag :1u;
-    uint8_t u8Reserved :2u;
-    uint16_t u16WateringTimeManul :16u;
-    struct stc_group_data_auto
-    {
-        uint8_t u8Channel :8u;        
-        uint8_t u8StartHour :8u;
-        uint8_t u8StartMin :8u;
-        uint8_t u8DaysApart :8u;
-        uint16_t u16WateringTimeAuto :16u;
-    } stcGroupDataAuto[FLASH_MANAGER_GROUP_NUMS_MAX];
-    uint8_t u8RtcMinute :8u;
-    uint8_t u8RtcHour :8u;
-    uint8_t u8RtcDay :8u;
-    uint8_t u8RtcMonth :8u;
-    uint8_t u8RtcYear :8u;
-    uint8_t u8Reserved1Byte :8u;        // 0xFF
-    uint16_t u16Reserved2Bytes :16u;    // 0xFFFF    
-    uint8_t u8CheckSumBCC :8u;
-} stc_flash_data_t;
-
 extern stc_flash_manager_t stcFlashManager;
-extern stc_flash_data_t stcFlashData;
 
 extern uint8_t Flash_Manager_Data_BCC_Checksum(uint8_t *u8pData, uint16_t u16DataLen);
 extern en_result_t Flash_Manager_Update(void);

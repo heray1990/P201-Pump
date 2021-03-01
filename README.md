@@ -17,3 +17,12 @@
 * [《Keil MDK 5.33 运行华大官方示例无法进入 Timer0 中断》](https://blog.csdn.net/heray1990/article/details/113838794)
 * 状态机按键消抖：[《Debouncing Push-Buttons Using a State Machine Approach》](https://www.eeweb.com/debouncing-push-buttons-using-a-state-machine-approach/)，参考代码：[https://github.com/tommygartlan/Buttons_Debounce_State_Mch](https://github.com/tommygartlan/Buttons_Debounce_State_Mch)
 
+### Flash 数据存储结构
+
+HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯片用户手册）。本项目利用 0x0000E000~0x0000FFFF 这个区域来保存数据，共 6 个 Sector，每个 Sector 512 Bytes，共 8192 Bytes。
+
+![](C:\Users\sam\Documents\Code\P201-Pump\Sectors_Addresses.PNG)
+
+![](C:\Users\sam\Documents\Code\P201-Pump\Data_in_one_Sector.PNG)
+
+![](C:\Users\sam\Documents\Code\P201-Pump\Data_in_one_Partition.PNG)

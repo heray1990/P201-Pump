@@ -101,6 +101,26 @@ typedef enum
     UpdateForLongPress
 }en_key_states;
 
+// sizeof(stc_user_data_t) = 52
+typedef struct stc_user_datat
+{
+    uint8_t u8StartCode :8u;
+    uint8_t u8GropuNum :4u;
+    uint8_t u8WorkingMode :1u;
+    uint8_t u8StopFlag :1u;
+    uint8_t u8Reserved :2u;
+    uint16_t u16WateringTimeManul :16u;
+    struct stc_group_data_auto
+    {
+        uint8_t u8Channel :8u;
+        uint8_t u8StartHour :8u;
+        uint8_t u8StartMin :8u;
+        uint8_t u8DaysApart :8u;
+        uint16_t u16WateringTimeAuto :16u;
+    } stcGroupDataAuto[FLASH_MANAGER_GROUP_NUMS_MAX];
+    uint16_t u16ReservedBytes[5];        // 预留区域
+    uint8_t u8CheckSumBCC :8u;
+} stc_user_data_t;
 
 /******************************************************************************
  * Local function prototypes ('static')
@@ -119,6 +139,7 @@ __IO uint8_t u8GroupNum, u8Channel, u8StartHour, u8StartMin, u8DaysApart;
 __IO uint16_t u16WateringTime;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 __IO boolean_t bStopFlag;
+stc_user_data_t stcUserData;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -150,6 +171,8 @@ int32_t main(void)
     Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_2_HEAD_ADDR);
 #endif
     uint8_t u8PartIdx = 0;
+
+    DDL_ZERO_STRUCT(stcUserData);
 
     if(Ok == Flash_Manager_Init())
     {
@@ -1225,6 +1248,51 @@ void Tim0_IRQHandler(void)
     }
 }
 
+void App_ConvertFlashData2UserData(void)
+{
+    uint8_t u8Idx = 0;
+
+    stcUserData.u8StartCode = stcFlashManager.u8FlashManagerData[0];
+    stcUserData.u8GropuNum = stcFlashManager.u8FlashManagerData[1] & 0x0F;
+    stcUserData.u8WorkingMode = (stcFlashManager.u8FlashManagerData[1] & 0x10) >> 4;
+    stcUserData.u8StopFlag = (stcFlashManager.u8FlashManagerData[1] & 0x20) >> 5;
+    stcUserData.u16WateringTimeManul = stcFlashManager.u8FlashManagerData[2] | (stcFlashManager.u8FlashManagerData[3] << 8);
+
+    for(u8Idx = 0; u8Idx < FLASH_MANAGER_GROUP_NUMS_MAX; u8Idx++)
+    {
+        stcUserData.stcGroupDataAuto[u8Idx].u8Channel = stcFlashManager.u8FlashManagerData[4 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx];
+        stcUserData.stcGroupDataAuto[u8Idx].u8StartHour = stcFlashManager.u8FlashManagerData[5 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx];
+        stcUserData.stcGroupDataAuto[u8Idx].u8StartMin = stcFlashManager.u8FlashManagerData[6 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx];
+        stcUserData.stcGroupDataAuto[u8Idx].u8DaysApart = stcFlashManager.u8FlashManagerData[7 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx];
+        stcUserData.stcGroupDataAuto[u8Idx].u16WateringTimeAuto = stcFlashManager.u8FlashManagerData[8 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx]
+                                                        | (stcFlashManager.u8FlashManagerData[9 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx] << 8);
+    }
+
+    stcUserData.u8CheckSumBCC = stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1];
+}
+
+void App_ConvertUserData2FlashData(void)
+{
+    uint8_t u8Idx = 0;
+
+    stcFlashManager.u8FlashManagerData[0] = FLASH_DATA_START_CODE;
+    stcFlashManager.u8FlashManagerData[1] = (stcUserData.u8GropuNum | (stcUserData.u8WorkingMode << 4) | (stcUserData.u8StopFlag << 5)) & 0x3F;
+    stcFlashManager.u8FlashManagerData[2] = (uint8_t)(stcUserData.u16WateringTimeManul & 0x00FF);
+    stcFlashManager.u8FlashManagerData[3] = (uint8_t)(stcUserData.u16WateringTimeManul & 0xFF00 >> 8);
+
+    for(u8Idx = 0; u8Idx < FLASH_MANAGER_GROUP_NUMS_MAX; u8Idx++)
+    {
+        stcFlashManager.u8FlashManagerData[4 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx] = stcUserData.stcGroupDataAuto[u8Idx].u8Channel;
+        stcFlashManager.u8FlashManagerData[5 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx] = stcUserData.stcGroupDataAuto[u8Idx].u8StartHour;
+        stcFlashManager.u8FlashManagerData[6 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx] = stcUserData.stcGroupDataAuto[u8Idx].u8StartMin;
+        stcFlashManager.u8FlashManagerData[7 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx] = stcUserData.stcGroupDataAuto[u8Idx].u8DaysApart;
+        stcFlashManager.u8FlashManagerData[8 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx] = (uint8_t)(stcUserData.stcGroupDataAuto[u8Idx].u16WateringTimeAuto & 0x00FF);
+        stcFlashManager.u8FlashManagerData[9 + FLASH_MANAGER_GROUP_NUMS_MAX * u8Idx] = (uint8_t)(stcUserData.stcGroupDataAuto[u8Idx].u16WateringTimeAuto & 0xFF00 >> 8);
+    }
+
+    stcUserData.u8CheckSumBCC = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
+    stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = stcUserData.u8CheckSumBCC;
+}
 /******************************************************************************
  * EOF (not truncated)
  *****************************************************************************/

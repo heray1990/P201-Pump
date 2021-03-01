@@ -21,8 +21,8 @@
 
 HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯片用户手册）。本项目利用 0x0000E000~0x0000FFFF 这个区域来保存数据，共 6 个 Sector，每个 Sector 512 Bytes，共 8192 Bytes。
 
-![](C:\Users\sam\Documents\Code\P201-Pump\Sectors_Addresses.PNG)
+![](./Sectors_Addresses.PNG)
 
-![](C:\Users\sam\Documents\Code\P201-Pump\Data_in_one_Sector.PNG)
+![](./Data_in_one_Sector.PNG)
 
-![](C:\Users\sam\Documents\Code\P201-Pump\Data_in_one_Partition.PNG)
+![](./Data_in_one_Partition.PNG)

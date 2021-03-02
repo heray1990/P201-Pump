@@ -468,12 +468,12 @@ void Lcd_D61593A_GenRam_WorkingMode(
  **        bStop - TRUE: 显示"暂停"
  **                FALSE：不显示"暂停"
  *****************************************************************************/
-void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop)
+void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, uint8_t u8StopFlag)
 {
     // Clean RAM of T18 in LCDRAM5.
     punRamData[LCDRAM_INDEX_5].u8_dis[2] &= 0xef;
 
-    if(TRUE == bStop)
+    if(1 == u8StopFlag)
     {
         punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x10;
     }

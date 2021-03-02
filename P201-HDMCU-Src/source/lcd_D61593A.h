@@ -220,7 +220,7 @@ extern void Lcd_D61593A_GenRam_WorkingMode(
                 un_Ram_Data* punRamData,
                 en_working_mode_t enWrokingMode,
                 boolean_t bDisplay);
-extern void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, boolean_t bStop);
+extern void Lcd_D61593A_GenRam_Stop(un_Ram_Data* punRamData, uint8_t u8StopFlag);
 extern void Lcd_D61593A_GenRam_Lock_Icon(
                 un_Ram_Data* punRamData,
                 en_lock_status_t enLockStatus,

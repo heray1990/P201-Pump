@@ -161,6 +161,9 @@ void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
 void App_LcdStrobeControl(void);
 void App_Timer0Cfg(uint16_t u16Period);
+void App_UserDataSetDefaultVal(void);
+void App_ConvertFlashData2UserData(void);
+void App_ConvertUserData2FlashData(void);
 
 
 int32_t main(void)
@@ -178,12 +181,8 @@ int32_t main(void)
     {
         if(stcFlashManager.bFlashEmpty)
         {
-            stcFlashManager.u8FlashManagerData[0] = FLASH_DATA_START_CODE;
-            for(u8PartIdx = 1; u8PartIdx < FLASH_MANAGER_DATA_LEN - 1; u8PartIdx++)
-            {
-                stcFlashManager.u8FlashManagerData[u8PartIdx] = 0x01;
-            }
-            stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
+            // Flash分区都为空, 则设置默认值
+            App_UserDataSetDefaultVal();
         }
         else
         {
@@ -1247,6 +1246,29 @@ void Tim0_IRQHandler(void)
         Bt_ClearIntFlag(TIM0, BtUevIrq); //中断标志清零
     }
 }
+
+void App_UserDataSetDefaultVal(void)
+{
+    uint8_t u8Idx = 0;
+
+    stcUserData.u8StartCode = FLASH_DATA_START_CODE;
+    stcUserData.u8GropuNum = 0;
+    stcUserData.u8WorkingMode = ModeAutomatic;
+    stcUserData.u8StopFlag = FALSE;
+    stcUserData.u16WateringTimeManul = 0;
+
+    for(u8Idx = 0; u8Idx < FLASH_MANAGER_GROUP_NUMS_MAX; u8Idx++)
+    {
+        stcUserData.stcGroupDataAuto[u8Idx].u8Channel = 0;
+        stcUserData.stcGroupDataAuto[u8Idx].u8StartHour = 0;
+        stcUserData.stcGroupDataAuto[u8Idx].u8StartMin = 0;
+        stcUserData.stcGroupDataAuto[u8Idx].u8DaysApart = 0;
+        stcUserData.stcGroupDataAuto[u8Idx].u16WateringTimeAuto = 0;
+    }
+
+    App_ConvertUserData2FlashData();
+}
+
 
 void App_ConvertFlashData2UserData(void)
 {

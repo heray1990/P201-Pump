@@ -60,6 +60,7 @@
 #include "rtc.h"
 #include "lcd_D61593A.h"
 #include "flash_manager.h"
+#include "general_define.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -199,7 +200,7 @@ int32_t main(void)
     enLockStatus = Unlock;
     u8KeyLongPressCnt = 0;
 
-    u8GroupNum = 0;
+    u8GroupNum = GROUP_NUM_DEFAULT;
     u8Channel = 0;
     u16WateringTime = 0;
     u8StartHour = 4;
@@ -478,17 +479,19 @@ void App_KeyHandler(void)
 {
     static uint8_t j = 0;
 
-    if(Unlock == enLockStatus && unKeyPress.Power && 0 == u8KeyLongPressCnt)
+    if(enLockStatus < Lock  && unKeyPress.Power && 0 == u8KeyLongPressCnt)
     {
         if(0 == u8PowerOnFlag)
         {
             u8PowerOnFlag = 1;
+            enLockStatus = Unlock;
             M0P_LCD->CR0_f.EN = LcdEnable;
             Gpio_SetIO(GpioPortC, GpioPin0);
         }
         else
         {
             u8PowerOnFlag = 0;
+            enLockStatus = LockExceptPowerKey;
             M0P_LCD->CR0_f.EN = LcdDisable;
             Gpio_ClrIO(GpioPortC, GpioPin0);
         }
@@ -692,14 +695,15 @@ void App_KeyHandler(void)
                 case Nothing:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(u8GroupNum == 0)
+                        if(u8GroupNum <= GROUP_NUM_MIN)
                         {
-                            u8GroupNum = 9;
+                            u8GroupNum = GROUP_NUM_MAX;
                         }
                         else
                         {
                             --u8GroupNum;
                         }
+                        // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
                         Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, enWorkingMode);
                     }
                     break;
@@ -844,10 +848,11 @@ void App_KeyHandler(void)
                 case Nothing:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(++u8GroupNum > 9)
+                        if(++u8GroupNum > GROUP_NUM_MAX)
                         {
-                            u8GroupNum = 0;
+                            u8GroupNum = GROUP_NUM_MIN;
                         }
+                        // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
                         Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, enWorkingMode);
                     }
                     break;
@@ -951,10 +956,17 @@ void App_KeyHandler(void)
         }
     }
 
-    if(unKeyPress.Lock)
+    if(enLockStatus != LockExceptPowerKey && unKeyPress.Lock)
     {
-        // 长按"确定"锁定/解锁按键
-        enLockStatus = !enLockStatus;
+        // 开机状态下长按"确定"锁定/解锁按键
+        if(Unlock == enLockStatus)
+        {
+            enLockStatus = Lock;
+        }
+        else
+        {
+            enLockStatus = Unlock;
+        }
         Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
     }
 

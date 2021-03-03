@@ -3,19 +3,18 @@
  * 
  * 1. Data stored in one Sector
  *    Total: 512 Bytes
- *    | 73 Bytes | 73 Bytes | 73 Bytes | 73 Bytes | 73 Bytes | 73 Bytes | 73 Bytes |  1 Byte  |
- *    |   data   |   data   |   data   |   data   |   data   |   data   |   data   |   0xA5   |
+ *    | 51 Bytes | 51 Bytes | 51 Bytes | 51 Bytes | 51 Bytes | 51 Bytes | 51 Bytes | 51 Bytes | 51 Bytes | 51 Bytes |  1 Byte  |  1 Byte  |
+ *    |   data   |   data   |   data   |   data   |   data   |   data   |   data   |   data   |   data   |   data   | reserved |   0xA5   |
  * 2. Data stored in one partition
- *    Total: 73 Bytes
- *    | start code | 68 Bytes data | 3 Bytes Reserved | checksum |
- *    |    0x5A    | 68 Bytes data |     0xFFFFFF     |   BCC    |
+ *    Total: 51 Bytes
+ *    | start code | 40 Bytes data | 10 Bytes Reserved | checksum |
+ *    |    0x5A    | 40 Bytes data |        0xFF       |   BCC    |
  *    Detail
  *    | 0x5A | <- start code, 1 Byte
  *    | u8GropuNum(4 bites) enWorkingMode(1 bit) bStopFlag(1 bits) reserved(2 bits) | <- 1 Byte
  *    | u16WateringTimeManul(16bits) | <- 2 Bytes
- *    | u8Channel | u8StartHour | u8StartMin | u8DaysApart | u16WateringTimeAuto(16 bits) | <- 10 groups, 60 Bytes
- *    | u8RtcMinute | u8RtcHour | u8RtcDay | u8RtcMonth | u8RtcYear | <- 5 Bytes
- *    | reserved | reserved | reserved | <- 3 Bytes
+ *    | u8Channel | u8StartHour | u8StartMin | u8DaysApart | u16WateringTimeAuto(16 bits) | <- 6 groups, 60 Bytes
+ *    | reserved | <- 10 Bytes
  *    | checksum | <- checksum code, 1 Byte 
  */
 
@@ -83,10 +82,7 @@ typedef struct stc_flash_manager
     boolean_t bFlashEmpty;
     /*存储用户数据,用户把数据存储在此数组*/
     uint8_t u8FlashManagerData[FLASH_MANAGER_DATA_LEN];
-    /*保存每Sector首地址和尾地址*/
-    //uint32_t u32FlashManagerSectorHeadAddr[FLASH_MANAGER_SECTORS_QUANTITY];
-    //uint32_t u32FlashManagerSectorTailAddr[FLASH_MANAGER_SECTORS_QUANTITY];
-    /*记录当前操作的地址*/	
+    /*记录数据要保存到新Partition的首地址*/
     uint32_t u32DataStoredHeadAddr;
 } stc_flash_manager_t;
 

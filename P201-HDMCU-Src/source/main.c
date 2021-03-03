@@ -104,22 +104,20 @@ typedef enum
 // sizeof(stc_user_data_t) = 52
 typedef struct stc_user_datat
 {
-    uint8_t u8StartCode :8u;
-    uint8_t u8GropuNum :4u;
-    uint8_t u8WorkingMode :1u;
-    uint8_t u8StopFlag :1u;
-    uint8_t u8Reserved :2u;
-    uint16_t u16WateringTimeManul :16u;
+    uint8_t u8StartCode;
+    uint8_t u8GropuNum;
+    uint8_t u8WorkingMode;
+    uint8_t u8StopFlag;
+    uint16_t u16WateringTimeManul;
     struct stc_group_data_auto
     {
-        uint8_t u8Channel :8u;
-        uint8_t u8StartHour :8u;
-        uint8_t u8StartMin :8u;
-        uint8_t u8DaysApart :8u;
-        uint16_t u16WateringTimeAuto :16u;
+        uint8_t u8Channel;
+        uint8_t u8StartHour;
+        uint8_t u8StartMin;
+        uint8_t u8DaysApart;
+        uint16_t u16WateringTimeAuto;
     } stcGroupDataAuto[FLASH_MANAGER_GROUP_NUMS_MAX];
-    uint16_t u16ReservedBytes[5];        // 预留区域
-    uint8_t u8CheckSumBCC :8u;
+    uint8_t u8CheckSumBCC;
 } stc_user_data_t;
 
 /******************************************************************************
@@ -138,7 +136,7 @@ __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8GroupNum, u8Channel, u8StartHour, u8StartMin, u8DaysApart;
 __IO uint16_t u16WateringTime;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
-stc_user_data_t stcUserData;
+__IO stc_user_data_t stcUserData;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -201,13 +199,6 @@ int32_t main(void)
     enLockStatus = Unlock;
     u8KeyLongPressCnt = 0;
 
-#if 1
-    u8GroupNum = stcFlashManager.bFlashEmpty;
-    u16WateringTime = (uint16_t)(stcFlashManager.u32DataStoredHeadAddr - 0xE400);
-    u8Channel = stcFlashManager.bFlashEmpty;
-    u8StartHour = *((volatile uint8_t*)(stcFlashManager.u32DataStoredHeadAddr + 1));
-    u8StartMin = *((volatile uint8_t*)(stcFlashManager.u32DataStoredHeadAddr + 2));
-#else
     u8GroupNum = 0;
     u8Channel = 0;
     u16WateringTime = 0;
@@ -218,7 +209,6 @@ int32_t main(void)
     u8RtcDay = 22;
     u8RtcHour = 17;
     u8RtcMinute = 21;
-#endif
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();

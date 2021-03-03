@@ -89,7 +89,6 @@ typedef struct stc_user_datat
  *****************************************************************************/
 un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 __IO un_key_type unKeyPress;
-__IO en_working_mode_t enWorkingMode;
 __IO en_focus_on enFocusOn;
 __IO en_lock_status_t enLockStatus;
 __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
@@ -154,7 +153,6 @@ int32_t main(void)
 
     unKeyPress.Full = 0x00;
     u8PowerOnFlag = 1;
-    //enWorkingMode = ModeAutomatic;
     enFocusOn = Nothing;
     enLockStatus = Unlock;
     u8KeyLongPressCnt = 0;

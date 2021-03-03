@@ -11,7 +11,7 @@
  *    |    0x5A    | 40 Bytes data |        0xFF       |   BCC    |
  *    Detail
  *    | 0x5A | <- start code, 1 Byte
- *    | u8GropuNum(4 bites) enWorkingMode(1 bit) bStopFlag(1 bits) reserved(2 bits) | <- 1 Byte
+ *    | u8GroupNum(4 bites) enWorkingMode(1 bit) bStopFlag(1 bits) reserved(2 bits) | <- 1 Byte
  *    | u16WateringTimeManul(16bits) | <- 2 Bytes
  *    | u8Channel | u8StartHour | u8StartMin | u8DaysApart | u16WateringTimeAuto(16 bits) | <- 6 groups, 60 Bytes
  *    | reserved | <- 10 Bytes

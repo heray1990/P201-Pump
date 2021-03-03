@@ -65,7 +65,7 @@ typedef enum
 typedef struct stc_user_datat
 {
     uint8_t u8StartCode;
-    uint8_t u8GropuNum;
+    uint8_t u8GroupNum;
     en_working_mode_t enWorkingMode;
     uint8_t u8StopFlag;
     uint16_t u16WateringTimeManul;
@@ -1203,7 +1203,7 @@ void App_UserDataSetDefaultVal(void)
     uint8_t u8Idx = 0;
 
     stcUserData.u8StartCode = FLASH_DATA_START_CODE;
-    stcUserData.u8GropuNum = 0;
+    stcUserData.u8GroupNum = 0;
     stcUserData.enWorkingMode = ModeAutomatic;
     stcUserData.u8StopFlag = 0;
     stcUserData.u16WateringTimeManul = 0;
@@ -1226,7 +1226,7 @@ void App_ConvertFlashData2UserData(void)
     uint8_t u8Idx = 0;
 
     stcUserData.u8StartCode = stcFlashManager.u8FlashManagerData[0];
-    stcUserData.u8GropuNum = stcFlashManager.u8FlashManagerData[1] & 0x0F;
+    stcUserData.u8GroupNum = stcFlashManager.u8FlashManagerData[1] & 0x0F;
     stcUserData.enWorkingMode = (stcFlashManager.u8FlashManagerData[1] & 0x10) >> 4;
     stcUserData.u8StopFlag = (stcFlashManager.u8FlashManagerData[1] & 0x20) >> 5;
     stcUserData.u16WateringTimeManul = stcFlashManager.u8FlashManagerData[2] | (stcFlashManager.u8FlashManagerData[3] << 8);
@@ -1249,7 +1249,7 @@ void App_ConvertUserData2FlashData(void)
     uint8_t u8Idx = 0;
 
     stcFlashManager.u8FlashManagerData[0] = FLASH_DATA_START_CODE;
-    stcFlashManager.u8FlashManagerData[1] = (stcUserData.u8GropuNum | (stcUserData.enWorkingMode << 4) | (stcUserData.u8StopFlag << 5)) & 0x3F;
+    stcFlashManager.u8FlashManagerData[1] = (stcUserData.u8GroupNum | (stcUserData.enWorkingMode << 4) | (stcUserData.u8StopFlag << 5)) & 0x3F;
     stcFlashManager.u8FlashManagerData[2] = (uint8_t)(stcUserData.u16WateringTimeManul & 0x00FF);
     stcFlashManager.u8FlashManagerData[3] = (uint8_t)(stcUserData.u16WateringTimeManul & 0xFF00 >> 8);
 

@@ -123,8 +123,6 @@ int32_t main(void)
     Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_1_HEAD_ADDR);
     Flash_SectorErase(FLASH_MANAGER_DATA_SECTOR_2_HEAD_ADDR);
 #endif
-    uint8_t u8PartIdx = 0;
-
     DDL_ZERO_STRUCT(stcUserData);
 
     if(Ok == Flash_Manager_Init())
@@ -1240,7 +1238,6 @@ void App_UserDataSetDefaultVal(void)
 {
     uint8_t u8Idx = 0;
 
-    stcUserData.u8StartCode = FLASH_DATA_START_CODE;
     u8GroupNum = 0;
     enWorkingMode = ModeAutomatic;
     u8StopFlag = 0;
@@ -1263,7 +1260,6 @@ void App_ConvertFlashData2UserData(void)
 {
     uint8_t u8Idx = 0;
 
-    stcUserData.u8StartCode = stcFlashManager.u8FlashManagerData[0];
     u8GroupNum = stcFlashManager.u8FlashManagerData[1] & 0x0F;
     enWorkingMode = (stcFlashManager.u8FlashManagerData[1] & 0x10) >> 4;
     u8StopFlag = (stcFlashManager.u8FlashManagerData[1] & 0x20) >> 5;
@@ -1278,8 +1274,6 @@ void App_ConvertFlashData2UserData(void)
         stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] = stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx]
                                                         | (stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] << 8);
     }
-
-    stcUserData.u8CheckSumBCC = stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1];
 }
 
 void App_ConvertUserData2FlashData(void)
@@ -1301,8 +1295,7 @@ void App_ConvertUserData2FlashData(void)
         stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0xFF00 >> 8);
     }
 
-    stcUserData.u8CheckSumBCC = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
-    stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = stcUserData.u8CheckSumBCC;
+    stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);
 }
 /******************************************************************************
  * EOF (not truncated)

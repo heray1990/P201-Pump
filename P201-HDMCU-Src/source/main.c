@@ -123,9 +123,6 @@ int32_t main(void)
         {
             App_ConvertFlashData2UserData();
         }
-    #if 0//ndef CLEAR_FALSH
-        Flash_Manager_Update();
-    #endif
     }
 
     App_LcdRam_Init(u32LcdRamData);
@@ -602,6 +599,8 @@ void App_KeyHandler(void)
                             Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
                             u8StopFlag = 0;
                             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+                            App_ConvertUserData2FlashData();
+                            Flash_Manager_Update();
                             break;
 
                         default:
@@ -1276,16 +1275,18 @@ void App_ConvertFlashData2UserData(void)
     u8GroupNum = stcFlashManager.u8FlashManagerData[1] & 0x0F;
     enWorkingMode = (stcFlashManager.u8FlashManagerData[1] & 0x10) >> 4;
     u8StopFlag = (stcFlashManager.u8FlashManagerData[1] & 0x20) >> 5;
+    u8ChannelManual = (stcFlashManager.u8FlashManagerData[1] & 0x40) >> 6;
     u16WateringTimeManual[0] = stcFlashManager.u8FlashManagerData[2] | (stcFlashManager.u8FlashManagerData[3] << 8);
+    u16WateringTimeManual[1] = stcFlashManager.u8FlashManagerData[4] | (stcFlashManager.u8FlashManagerData[5] << 8);
 
     for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
     {
-        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL] = stcFlashManager.u8FlashManagerData[4 + GROUP_NUM_MAX * u8Idx];
-        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR] = stcFlashManager.u8FlashManagerData[5 + GROUP_NUM_MAX * u8Idx];
-        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN] = stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx];
-        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] = stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx];
-        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] = stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx]
-                                                        | (stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] << 8);
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL] = stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR] = stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN] = stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] = stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] = stcFlashManager.u8FlashManagerData[10 + GROUP_NUM_MAX * u8Idx]
+                                                        | (stcFlashManager.u8FlashManagerData[11 + GROUP_NUM_MAX * u8Idx] << 8);
     }
 }
 
@@ -1294,18 +1295,20 @@ void App_ConvertUserData2FlashData(void)
     uint8_t u8Idx = 0;
 
     stcFlashManager.u8FlashManagerData[0] = FLASH_DATA_START_CODE;
-    stcFlashManager.u8FlashManagerData[1] = (u8GroupNum | (enWorkingMode << 4) | (u8StopFlag << 5)) & 0x3F;
+    stcFlashManager.u8FlashManagerData[1] = (u8GroupNum | (enWorkingMode << 4) | (u8StopFlag << 5) | (u8ChannelManual << 6)) & 0x7F;
     stcFlashManager.u8FlashManagerData[2] = (uint8_t)(u16WateringTimeManual[0] & 0x00FF);
     stcFlashManager.u8FlashManagerData[3] = (uint8_t)(u16WateringTimeManual[0] & 0xFF00 >> 8);
+    stcFlashManager.u8FlashManagerData[4] = (uint8_t)(u16WateringTimeManual[1] & 0x00FF);
+    stcFlashManager.u8FlashManagerData[5] = (uint8_t)(u16WateringTimeManual[1] & 0xFF00 >> 8);
 
     for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
     {
-        stcFlashManager.u8FlashManagerData[4 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL];
-        stcFlashManager.u8FlashManagerData[5 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR];
-        stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN];
-        stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART];
-        stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0x00FF);
-        stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0xFF00 >> 8);
+        stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL];
+        stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR];
+        stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN];
+        stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART];
+        stcFlashManager.u8FlashManagerData[10 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0x00FF);
+        stcFlashManager.u8FlashManagerData[11 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0xFF00 >> 8);
     }
 
     stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);

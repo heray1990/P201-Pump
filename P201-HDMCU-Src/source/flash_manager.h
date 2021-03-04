@@ -78,7 +78,7 @@ typedef struct stc_flash_manager
 {
     boolean_t bFlashEmpty;
     /*存储用户数据,用户把数据存储在此数组*/
-    uint8_t u8FlashManagerData[FLASH_MANAGER_DATA_LEN];
+    uint32_t u8FlashManagerData[FLASH_MANAGER_DATA_LEN];
     /*记录数据要保存到新Partition的首地址*/
     uint32_t u32DataStoredHeadAddr;
 } stc_flash_manager_t;

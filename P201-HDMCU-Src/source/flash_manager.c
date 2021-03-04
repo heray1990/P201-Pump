@@ -201,6 +201,7 @@ en_result_t Flash_Manager_Update(void)
 {
     uint8_t u8Idx;
     en_result_t enRetVal = Ok;
+    boolean_t bIsTailOfSector = FALSE;
 
     for(u8Idx = 0; u8Idx < FLASH_MANAGER_DATA_LEN; u8Idx++)
     {
@@ -214,10 +215,20 @@ en_result_t Flash_Manager_Update(void)
     {
         if(stcFlashManager.u32DataStoredHeadAddr + FLASH_MANAGER_DATA_LEN + 1 == u32SectorTailAddrTable[u8Idx])
         {
+            bIsTailOfSector = TRUE;
             // 该Sector写满了, 则在最后一位写入0xA5
             if(Ok != Flash_WriteByte(u32SectorTailAddrTable[u8Idx], FLASH_DATA_END_CODE_SECTOR))
             {
                 enRetVal = Error;
+            }
+            // 新的数据写到下个Sector的首地址
+            if(u8Idx == FLASH_MANAGER_SECTORS_QUANTITY - 1)
+            {
+                stcFlashManager.u32DataStoredHeadAddr = u32SectorHeadAddrTable[0];
+            }
+            else
+            {
+                stcFlashManager.u32DataStoredHeadAddr = u32SectorHeadAddrTable[u8Idx + 1];
             }
         }
 
@@ -239,6 +250,12 @@ en_result_t Flash_Manager_Update(void)
                 }
             }
         }
+    }
+
+    if(FALSE == bIsTailOfSector)
+    {
+        // 该Sector未写满, 则新的数据写到该Sector的下一个Partition中
+        stcFlashManager.u32DataStoredHeadAddr += FLASH_MANAGER_DATA_LEN;
     }
 
     return enRetVal;

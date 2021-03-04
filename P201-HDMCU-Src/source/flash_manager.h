@@ -74,9 +74,6 @@ extern "C"
 #define FLASH_DATA_END_CODE_SECTOR 0xA5
 #define FLASH_DATA_INIT_CODE 0xFF
 
-#define FLASH_MANAGER_GROUP_NUMS_MAX 6
-
-
 typedef struct stc_flash_manager
 {
     boolean_t bFlashEmpty;

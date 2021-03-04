@@ -10,9 +10,15 @@
 #ifndef  __GENERAL_DEFINE_H__
 #define  __GENERAL_DEFINE_H__
 
-#define GROUP_NUM_MIN       1
-#define GROUP_NUM_MAX       6
-#define GROUP_NUM_DEFAULT   0
+#define GROUP_NUM_MIN   0
+#define GROUP_NUM_MAX   6
+#define AUTOMODE_GROUP_DATA_ELEMENT_MAX         5
+#define AUTOMODE_GROUP_DATA_ELEMENT_CHANNEL     0
+#define AUTOMODE_GROUP_DATA_ELEMENT_STARTHOUR   1
+#define AUTOMODE_GROUP_DATA_ELEMENT_STARTMIN    2
+#define AUTOMODE_GROUP_DATA_ELEMENT_DAYSAPART   3
+#define AUTOMODE_GROUP_DATA_ELEMENT_WATER_TIME  4
+
 
 /******************************************************************************
  ** \brief 智能模式选择

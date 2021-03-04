@@ -75,7 +75,7 @@ __IO en_lock_status_t enLockStatus;
 __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8StopFlag, u8GroupNum, u8ChannelManual;
 __IO en_working_mode_t enWorkingMode;
-__IO uint32_t stcGroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
+__IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[MANUAL_GROUP_NUM_MAX] = {0, 0};
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 
@@ -156,16 +156,16 @@ int32_t main(void)
     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode);
     if(ModeAutomatic == enWorkingMode)
     {
-        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
-        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
     }
     else
     {
         Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8ChannelManual + 1, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
     }
-    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
-    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
@@ -450,13 +450,13 @@ void App_KeyHandler(void)
         {
             enWorkingMode = ModeAutomatic;
             u8StopFlag = 0;
-            Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
-            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+            Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
         }
         Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
         Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode);
-        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
-        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
         Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
     }
@@ -477,7 +477,7 @@ void App_KeyHandler(void)
 
                     case Channel:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                         break;
@@ -486,20 +486,20 @@ void App_KeyHandler(void)
                         enFocusOn = Nothing;
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
                         break;
 
                     case StartingTimeH:
                     case StartingTimeM:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                         break;
 
                     case DaysApart:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                         break;
@@ -579,27 +579,27 @@ void App_KeyHandler(void)
                     {
                         case Channel:
                             enFocusOn = WateringTime;
-                            Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
                             break;
 
                         case WateringTime:
                             enFocusOn = StartingTimeH;
-                            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
                             break;
 
                         case StartingTimeH:
                             enFocusOn = StartingTimeM;
-                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
                             break;
 
                         case StartingTimeM:
                             enFocusOn = DaysApart;
-                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
                             break;
 
                         case DaysApart:
                             enFocusOn = Nothing;
-                            Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
                             u8StopFlag = 0;
                             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                             break;
@@ -646,10 +646,10 @@ void App_KeyHandler(void)
                         }
                         // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
                         Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode);
-                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
                     }
                     else
                     {
@@ -667,29 +667,29 @@ void App_KeyHandler(void)
                     break;
 
                 case Channel:
-                    if(stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] == 0)
+                    if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] == 0)
                     {
-                        stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] = 9;
+                        u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] = 9;
                     }
                     else
                     {
-                        --stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL];
+                        --u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL];
                     }
-                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
                     break;
 
                 case WateringTime:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] == 0)
+                        if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] == 0)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = 999;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = 999;
                         }
                         else
                         {
-                            --stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME];
+                            --u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME];
                         }
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
                     }
                     else
                     {
@@ -708,45 +708,45 @@ void App_KeyHandler(void)
                 case StartingTimeH:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] == 0)
+                        if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] == 0)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] = 23;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] = 23;
                         }
                         else
                         {
-                            --stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR];
+                            --u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR];
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case StartingTimeM:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] == 0)
+                        if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] == 0)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] = 59;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] = 59;
                         }
                         else
                         {
-                            --stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN];
+                            --u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN];
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case DaysApart:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] == 0)
+                        if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] == 0)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] = 99;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] = 99;
                         }
                         else
                         {
-                            --stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART];
+                            --u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART];
                         }
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
@@ -827,10 +827,10 @@ void App_KeyHandler(void)
                         }
                         // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
                         Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode);
-                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
                     }
                     else
                     {
@@ -844,21 +844,21 @@ void App_KeyHandler(void)
                     break;
 
                 case Channel:
-                    if(++stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] > 9)
+                    if(++u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] > 9)
                     {
-                        stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] = 0;
+                        u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] = 0;
                     }
-                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], TRUE, enFocusOn);
                     break;
 
                 case WateringTime:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(++stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] > 999)
+                        if(++u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] > 999)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = 0;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = 0;
                         }
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], TRUE, enFocusOn);
                     }
                     else
                     {
@@ -873,33 +873,33 @@ void App_KeyHandler(void)
                 case StartingTimeH:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(++stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] > 23)
+                        if(++u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] > 23)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] = 0;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR] = 0;
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case StartingTimeM:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(++stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] > 59)
+                        if(++u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] > 59)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] = 0;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN] = 0;
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case DaysApart:
                     if(ModeAutomatic == enWorkingMode)
                     {
-                        if(++stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] > 99)
+                        if(++u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] > 99)
                         {
-                            stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] = 0;
+                            u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] = 0;
                         }
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
@@ -1150,7 +1150,7 @@ void App_LcdStrobeControl(void)
         {
             case Channel:
                 bFlipFlag = !bFlipFlag;
-                Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], bFlipFlag, enFocusOn);
+                Lcd_D61593A_GenRam_Channel(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL], bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
@@ -1158,7 +1158,7 @@ void App_LcdStrobeControl(void)
                 bFlipFlag = !bFlipFlag;
                 if(ModeAutomatic == enWorkingMode)
                 {
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], bFlipFlag, enFocusOn);
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME], bFlipFlag, enFocusOn);
                 }
                 else
                 {
@@ -1170,13 +1170,13 @@ void App_LcdStrobeControl(void)
             case StartingTimeH:
             case StartingTimeM:
                 bFlipFlag = !bFlipFlag;
-                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, bFlipFlag, enFocusOn);
+                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
             case DaysApart:
                 bFlipFlag = !bFlipFlag;
-                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)stcGroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, bFlipFlag, enFocusOn);
+                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
@@ -1258,11 +1258,11 @@ void App_UserDataSetDefaultVal(void)
 
     for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
     {
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL] = 0;
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR] = 0;
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN] = 0;
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] = 0;
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] = 0;
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL] = 0;
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR] = 0;
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN] = 0;
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] = 0;
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] = 0;
     }
 
     App_ConvertUserData2FlashData();
@@ -1280,11 +1280,11 @@ void App_ConvertFlashData2UserData(void)
 
     for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
     {
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL] = stcFlashManager.u8FlashManagerData[4 + GROUP_NUM_MAX * u8Idx];
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR] = stcFlashManager.u8FlashManagerData[5 + GROUP_NUM_MAX * u8Idx];
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN] = stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx];
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] = stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx];
-        stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] = stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx]
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL] = stcFlashManager.u8FlashManagerData[4 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR] = stcFlashManager.u8FlashManagerData[5 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN] = stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] = stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx];
+        u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] = stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx]
                                                         | (stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] << 8);
     }
 }
@@ -1300,12 +1300,12 @@ void App_ConvertUserData2FlashData(void)
 
     for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
     {
-        stcFlashManager.u8FlashManagerData[4 + GROUP_NUM_MAX * u8Idx] = (uint8_t)stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL];
-        stcFlashManager.u8FlashManagerData[5 + GROUP_NUM_MAX * u8Idx] = (uint8_t)stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR];
-        stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx] = (uint8_t)stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN];
-        stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx] = (uint8_t)stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART];
-        stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0x00FF);
-        stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(stcGroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0xFF00 >> 8);
+        stcFlashManager.u8FlashManagerData[4 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL];
+        stcFlashManager.u8FlashManagerData[5 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR];
+        stcFlashManager.u8FlashManagerData[6 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN];
+        stcFlashManager.u8FlashManagerData[7 + GROUP_NUM_MAX * u8Idx] = (uint8_t)u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART];
+        stcFlashManager.u8FlashManagerData[8 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0x00FF);
+        stcFlashManager.u8FlashManagerData[9 + GROUP_NUM_MAX * u8Idx] = (uint8_t)(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0xFF00 >> 8);
     }
 
     stcFlashManager.u8FlashManagerData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u8FlashManagerData, FLASH_MANAGER_DATA_LEN);

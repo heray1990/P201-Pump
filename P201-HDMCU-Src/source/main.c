@@ -93,6 +93,7 @@ __IO en_focus_on enFocusOn;
 __IO en_lock_status_t enLockStatus;
 __IO uint8_t u8PowerOnFlag, u8RtcFlag, u8KeyLongPressCnt;
 __IO uint8_t u8StopFlag, u8GroupNum, u8Channel, u8StartHour, u8StartMin, u8DaysApart;
+en_working_mode_t enWorkingMode;
 __IO uint16_t u16WateringTime;
 __IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
 __IO stc_user_data_t stcUserData;
@@ -179,12 +180,12 @@ int32_t main(void)
 
     Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8Channel, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTime, TRUE, enFocusOn);
-    Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, stcUserData.enWorkingMode);
+    Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, enWorkingMode);
     Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
     Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
-    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, stcUserData.enWorkingMode, TRUE);
-    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
-    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, stcUserData.enWorkingMode, TRUE, enFocusOn);
+    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
+    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, enWorkingMode, TRUE, enFocusOn);
     Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, FALSE);
@@ -456,22 +457,22 @@ void App_KeyHandler(void)
     if(Unlock == enLockStatus && unKeyPress.Mode && 0 == u8KeyLongPressCnt)
     {
         enFocusOn = Nothing;
-        if(ModeAutomatic == stcUserData.enWorkingMode)
+        if(ModeAutomatic == enWorkingMode)
         {
-            stcUserData.enWorkingMode = ModeManual;
+            enWorkingMode = ModeManual;
             u8StopFlag = 1;
         }
         else
         {
-            stcUserData.enWorkingMode = ModeAutomatic;
+            enWorkingMode = ModeAutomatic;
             u8StopFlag = 0;
         }
         Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8Channel, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTime, TRUE, enFocusOn);
-        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, stcUserData.enWorkingMode);
-        Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, stcUserData.enWorkingMode, TRUE);
-        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
-        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, stcUserData.enWorkingMode, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, enWorkingMode);
+        Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
         Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
     }
@@ -480,7 +481,7 @@ void App_KeyHandler(void)
     {
         if(0 == u8KeyLongPressCnt)
         {
-            if(ModeAutomatic == stcUserData.enWorkingMode)
+            if(ModeAutomatic == enWorkingMode)
             {
                 switch(enFocusOn)
                 {
@@ -507,14 +508,14 @@ void App_KeyHandler(void)
                     case StartingTimeH:
                     case StartingTimeM:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                         break;
 
                     case DaysApart:
                         enFocusOn = Nothing;
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, enWorkingMode, TRUE, enFocusOn);
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                         break;
@@ -574,7 +575,7 @@ void App_KeyHandler(void)
                     case RtcMin:
                         enFocusOn = Nothing;
                         Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
-                        if(ModeAutomatic == stcUserData.enWorkingMode)
+                        if(ModeAutomatic == enWorkingMode)
                         {
                             u8StopFlag = 0;
                             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
@@ -588,7 +589,7 @@ void App_KeyHandler(void)
             }
             else
             {
-                if(ModeAutomatic == stcUserData.enWorkingMode)
+                if(ModeAutomatic == enWorkingMode)
                 {
                     switch(enFocusOn)
                     {
@@ -604,17 +605,17 @@ void App_KeyHandler(void)
 
                         case StartingTimeH:
                             enFocusOn = StartingTimeM;
-                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
                             break;
 
                         case StartingTimeM:
                             enFocusOn = DaysApart;
-                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
                             break;
 
                         case DaysApart:
                             enFocusOn = Nothing;
-                            Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                            Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, enWorkingMode, TRUE, enFocusOn);
                             u8StopFlag = 0;
                             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                             break;
@@ -649,7 +650,7 @@ void App_KeyHandler(void)
             switch(enFocusOn)
             {
                 case Nothing:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(u8GroupNum <= GROUP_NUM_MIN)
                         {
@@ -660,7 +661,7 @@ void App_KeyHandler(void)
                             --u8GroupNum;
                         }
                         // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
-                        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, stcUserData.enWorkingMode);
+                        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, enWorkingMode);
                     }
                     break;
 
@@ -689,7 +690,7 @@ void App_KeyHandler(void)
                     break;
 
                 case StartingTimeH:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(u8StartHour == 0)
                         {
@@ -699,12 +700,12 @@ void App_KeyHandler(void)
                         {
                             --u8StartHour;
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case StartingTimeM:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(u8StartMin == 0)
                         {
@@ -714,12 +715,12 @@ void App_KeyHandler(void)
                         {
                             --u8StartMin;
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case DaysApart:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(u8DaysApart == 0)
                         {
@@ -729,7 +730,7 @@ void App_KeyHandler(void)
                         {
                             --u8DaysApart;
                         }
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
@@ -802,14 +803,14 @@ void App_KeyHandler(void)
             switch(enFocusOn)
             {
                 case Nothing:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(++u8GroupNum > GROUP_NUM_MAX)
                         {
                             u8GroupNum = GROUP_NUM_MIN;
                         }
                         // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
-                        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, stcUserData.enWorkingMode);
+                        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum, enWorkingMode);
                     }
                     break;
 
@@ -830,35 +831,35 @@ void App_KeyHandler(void)
                     break;
 
                 case StartingTimeH:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(++u8StartHour > 23)
                         {
                             u8StartHour = 0;
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case StartingTimeM:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(++u8StartMin > 59)
                         {
                             u8StartMin = 0;
                         }
-                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
                 case DaysApart:
-                    if(ModeAutomatic == stcUserData.enWorkingMode)
+                    if(ModeAutomatic == enWorkingMode)
                     {
                         if(++u8DaysApart > 99)
                         {
                             u8DaysApart = 0;
                         }
-                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, stcUserData.enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, enWorkingMode, TRUE, enFocusOn);
                     }
                     break;
 
@@ -1122,13 +1123,13 @@ void App_LcdStrobeControl(void)
             case StartingTimeH:
             case StartingTimeM:
                 bFlipFlag = !bFlipFlag;
-                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, stcUserData.enWorkingMode, bFlipFlag, enFocusOn);
+                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, u8StartHour, u8StartMin, enWorkingMode, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
             case DaysApart:
                 bFlipFlag = !bFlipFlag;
-                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, stcUserData.enWorkingMode, bFlipFlag, enFocusOn);
+                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, u8DaysApart, enWorkingMode, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
@@ -1203,7 +1204,7 @@ void App_UserDataSetDefaultVal(void)
 
     stcUserData.u8StartCode = FLASH_DATA_START_CODE;
     u8GroupNum = 0;
-    stcUserData.enWorkingMode = ModeAutomatic;
+    enWorkingMode = ModeAutomatic;
     u8StopFlag = 0;
     stcUserData.u16WateringTimeManul = 0;
 
@@ -1226,7 +1227,7 @@ void App_ConvertFlashData2UserData(void)
 
     stcUserData.u8StartCode = stcFlashManager.u8FlashManagerData[0];
     u8GroupNum = stcFlashManager.u8FlashManagerData[1] & 0x0F;
-    stcUserData.enWorkingMode = (stcFlashManager.u8FlashManagerData[1] & 0x10) >> 4;
+    enWorkingMode = (stcFlashManager.u8FlashManagerData[1] & 0x10) >> 4;
     u8StopFlag = (stcFlashManager.u8FlashManagerData[1] & 0x20) >> 5;
     stcUserData.u16WateringTimeManul = stcFlashManager.u8FlashManagerData[2] | (stcFlashManager.u8FlashManagerData[3] << 8);
 
@@ -1248,7 +1249,7 @@ void App_ConvertUserData2FlashData(void)
     uint8_t u8Idx = 0;
 
     stcFlashManager.u8FlashManagerData[0] = FLASH_DATA_START_CODE;
-    stcFlashManager.u8FlashManagerData[1] = (u8GroupNum | (stcUserData.enWorkingMode << 4) | (u8StopFlag << 5)) & 0x3F;
+    stcFlashManager.u8FlashManagerData[1] = (u8GroupNum | (enWorkingMode << 4) | (u8StopFlag << 5)) & 0x3F;
     stcFlashManager.u8FlashManagerData[2] = (uint8_t)(stcUserData.u16WateringTimeManul & 0x00FF);
     stcFlashManager.u8FlashManagerData[3] = (uint8_t)(stcUserData.u16WateringTimeManul & 0xFF00 >> 8);
 

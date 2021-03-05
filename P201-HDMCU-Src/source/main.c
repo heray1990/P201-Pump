@@ -125,7 +125,7 @@ int32_t main(void)
 
     App_LcdRam_Init(u32LcdRamData);
 
-    unKeyPress.Full = 0x00;
+    unKeyPress.Full = 0x0000;
     u8PowerOnFlag = 1;
     enFocusOn = Nothing;
     enLockStatus = Unlock;
@@ -189,10 +189,10 @@ int32_t main(void)
             App_Lcd_Display_Update(u32LcdRamData);
         }
 
-        if(unKeyPress.Full != 0x00)    // Key pressed detected
+        if(unKeyPress.Full != 0x0000)    // Key pressed detected
         {
             App_KeyHandler();
-            unKeyPress.Full = 0x00;
+            unKeyPress.Full = 0x0000;
         }
     }
 }
@@ -253,7 +253,7 @@ un_key_type App_KeyDetect(void)
 {
     un_key_type unKeyTypeTemp;
 
-    unKeyTypeTemp.Full = 0x00;
+    unKeyTypeTemp.Full = 0x0000;
 
     ///< 检测各按键是否按下(低电平)
     if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin0))
@@ -382,7 +382,7 @@ void App_KeyStateChkSet(void)
                     {
                         enKeyState = Waiting;
                         u32Tim0Cnt = 0;
-                        unKeyPressTemp.Full = 0x00;
+                        unKeyPressTemp.Full = 0x0000;
                     }
                     else
                     {
@@ -399,7 +399,7 @@ void App_KeyStateChkSet(void)
                     {
                         enKeyState = Waiting;
                         u32Tim0Cnt = 0;
-                        unKeyPressTemp.Full = 0x00;
+                        unKeyPressTemp.Full = 0x0000;
                     }
                     else
                     {
@@ -436,7 +436,7 @@ void App_KeyStateChkSet(void)
                 else
                 {
                     enKeyState = Waiting;
-                    unKeyPressTemp.Full = 0x00;
+                    unKeyPressTemp.Full = 0x0000;
                 }
             }
             break;
@@ -444,8 +444,8 @@ void App_KeyStateChkSet(void)
             enKeyState = Waiting;
             u32Tim0Cnt = 0;
             u32UpDownCnt = 0;
-            unKeyPressTemp.Full = 0x00;
-            unKeyPress.Full = 0x00;
+            unKeyPressTemp.Full = 0x0000;
+            unKeyPress.Full = 0x0000;
             break;
 	}
 }

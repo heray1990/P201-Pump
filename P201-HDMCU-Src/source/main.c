@@ -39,17 +39,19 @@
  *****************************************************************************/
 typedef union
 {
-    unsigned char Full;
+    uint16_t Full;
     struct
     {
-        unsigned char Power :1;
-        unsigned char Mode :1;
-        unsigned char Set :1;
-        unsigned char OK :1;
-        unsigned char Down :1;
-        unsigned char Up :1;
-        unsigned char Lock :1;
-        unsigned char SetHold :1;
+        uint8_t Power   :1;
+        uint8_t Mode    :1;
+        uint8_t Set     :1;
+        uint8_t OK      :1;
+        uint8_t Down    :1;
+        uint8_t Up      :1;
+        uint8_t Lock    :1;
+        uint8_t SetHold :1;
+        uint8_t Reset   :1;
+        uint8_t         :7;
     };
 }un_key_type;
 

@@ -260,3 +260,20 @@ en_result_t Flash_Manager_Update(void)
 
     return enRetVal;
 }
+
+en_result_t Flash_Manager_Erase_All_Data(void)
+{
+    uint8_t u8Idx;
+    en_result_t enRetVal = Ok;
+
+    for(u8Idx = 0; u8Idx < FLASH_MANAGER_SECTORS_QUANTITY; u8Idx++)
+    {
+        enRetVal = Flash_SectorErase(u32SectorHeadAddrTable[u8Idx]);
+        if(enRetVal != Ok)
+        {
+            return enRetVal;
+        }
+    }
+
+    return enRetVal;
+}

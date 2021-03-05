@@ -370,24 +370,9 @@ void App_KeyStateChkSet(void)
                 }
                 else if(unKeyPressDetected.Up || unKeyPressDetected.Down)
                 {
-                    // 识别到长按上/下键, 按的时间越长, 执行动作的速度越快, 最终以最快的速度匀速执行
+                    // 识别到长按上/下键
                     u32UpDownCnt++;
-
-                    if(u32UpDownCnt >= 8 && u32UpDownCnt <= 16 && (u32UpDownCnt % 4) == 0)
-                    {
-                        // 每隔 (8 * KEY_LONG_PRESS_CNT * 10)ms 执行一次按键动作
-                        enKeyState = Update;
-                    }
-                    else if(u32UpDownCnt > 16 && u32UpDownCnt <= 32 && (u32UpDownCnt % 2) == 0)
-                    {
-                        // 每隔 (4 * KEY_LONG_PRESS_CNT * 10)ms 执行一次按键动作
-                        enKeyState = Update;
-                    }
-                    else if(u32UpDownCnt > 32)
-                    {
-                        // 每隔 (2 * KEY_LONG_PRESS_CNT * 10)ms 执行一次按键动作
-                        enKeyState = Update;
-                    }
+                    enKeyState = Update;
                 }
                 else if(!unKeyPressDetected.Full)
                 {
@@ -424,6 +409,7 @@ void App_KeyStateChkSet(void)
             break;
         case Update:
             unKeyPress = unKeyPressTemp;    // HERE the Key value is updated
+            u32Tim0Cnt = 0;
             if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold)
             {
                 enKeyState = WaitForRelease;
@@ -433,6 +419,17 @@ void App_KeyStateChkSet(void)
                 if(u32UpDownCnt > 0)
                 {
                     enKeyState = WaitForRelease;
+                    /* 识别到长按上/下键, 按的时间越长, 执行动作的速度越快, 最终以最快的速度匀速执行
+                     * 在 (30 * KEY_LONG_PRESS_CNT * 10)ms 时达到最快速度.
+                     * u32Tim0Cnt = 15 表示每隔 ((KEY_LONG_PRESS_CNT - 15) * 10)ms 就响应一次按键*/
+                    if(u32UpDownCnt <= 30)
+                    {
+                        u32Tim0Cnt = u32UpDownCnt / 2;
+                    }
+                    else
+                    {
+                        u32Tim0Cnt = 15;
+                    }
                 }
                 else
                 {
@@ -440,7 +437,6 @@ void App_KeyStateChkSet(void)
                     unKeyPressTemp.Full = 0x00;
                 }
             }
-            u32Tim0Cnt = 0;
             break;
         default:
             enKeyState = Waiting;

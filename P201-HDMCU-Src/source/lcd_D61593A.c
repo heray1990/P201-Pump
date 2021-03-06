@@ -590,36 +590,31 @@ void Lcd_D61593A_GenRam_Battery_Icon(
  **        YY, S1 and S2
  **
  ** \input punRamData: LCDRAM 的值
- **        u8Hour: 启动时间需要显示的小时
- **        u8Minute: 启动时间需要显示的分钟
- **        enWorkingMode: 目前选定的工作模式
+ **        time: rtc时钟年、月、日、时、分、秒结构体
  **        bDisplay - TRUE: 显示
  **                   FALSE：不显示
+ **        enFocusOn: 当前在哪个 LCD 控件
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Date_And_Time(
-                un_Ram_Data* punRamData,
-                uint8_t u8Year,
-                uint8_t u8Month,
-                uint8_t u8Day,
-                uint8_t u8Hour,
-                uint8_t u8Minute,
+                un_Ram_Data *punRamData,
+                stc_rtc_time_t *time,
                 boolean_t bDisplay,
                 en_focus_on enFocusOn)
 {
     uint8_t u8YearSingle, u8YearTen, u8MonthSingle, u8MonthTen, u8DaySingle, u8DayTen;
     uint8_t u8HourSingle, u8HourTen, u8MinuteSingle, u8MinuteTen;
 
-    u8YearSingle = u8Year % 10;
-    u8YearTen = u8Year / 10 % 10;
-    u8MonthSingle = u8Month % 10;
-    u8MonthTen = u8Month / 10 % 10;
-    u8DaySingle = u8Day % 10;
-    u8DayTen = u8Day / 10 % 10;
+    u8YearSingle = time->u8Year % 10;
+    u8YearTen = time->u8Year / 10 % 10;
+    u8MonthSingle = time->u8Month % 10;
+    u8MonthTen = time->u8Month / 10 % 10;
+    u8DaySingle = time->u8Day % 10;
+    u8DayTen = time->u8Day / 10 % 10;
 
-    u8HourSingle = u8Hour % 10;
-    u8HourTen = u8Hour / 10 % 10;
-    u8MinuteSingle = u8Minute % 10;
-    u8MinuteTen = u8Minute / 10 % 10;
+    u8HourSingle = time->u8Hour % 10;
+    u8HourTen = time->u8Hour / 10 % 10;
+    u8MinuteSingle = time->u8Minute % 10;
+    u8MinuteTen = time->u8Minute / 10 % 10;
 
     punRamData[LCDRAM_INDEX_2].u32_dis &= MASK_LCDRAM2_DATE_TIME;
     punRamData[LCDRAM_INDEX_3].u32_dis &= MASK_LCDRAM3_DATE_TIME;
@@ -636,7 +631,7 @@ void Lcd_D61593A_GenRam_Date_And_Time(
 
         if(TRUE == bDisplay || (FALSE == bDisplay && enFocusOn != RtcYear))
         {
-            if(u8Year >= 0 && u8Year <= 99)
+            if(time->u8Year >= 0 && time->u8Year <= 99)
             {
                 punRamData[LCDRAM_INDEX_2].u16_dis[1] |= u16Num12To21Table[u8YearTen];    // 17
                 punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[u8YearSingle];    // 18
@@ -650,7 +645,7 @@ void Lcd_D61593A_GenRam_Date_And_Time(
 
         if(TRUE == bDisplay || (FALSE == bDisplay && enFocusOn != RtcMonth))
         {
-            if(u8Month >= 1 && u8Month <= 12)
+            if(time->u8Month >= 0 && time->u8Month <= 12)
             {
                 punRamData[LCDRAM_INDEX_3].u16_dis[1] |= (u16Num12To21Table[u8MonthSingle] & 0x00f0) << 8;    // 19
                 punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[u8MonthSingle] & 0xf000) >> 8;    // 19
@@ -670,7 +665,7 @@ void Lcd_D61593A_GenRam_Date_And_Time(
 
         if(TRUE == bDisplay || (FALSE == bDisplay && enFocusOn != RtcDay))
         {
-            if(u8Day >= 1 && u8Day <= 31)
+            if(time->u8Day >= 0 && time->u8Day <= 31)
             {
                 punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[u8DayTen] & 0x00f0) << 8;    // 20
                 punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8DayTen] & 0xf000) >> 8;    // 20
@@ -688,7 +683,7 @@ void Lcd_D61593A_GenRam_Date_And_Time(
 
         if(TRUE == bDisplay || (FALSE == bDisplay && enFocusOn != RtcHour))
         {
-            if(u8Hour >= 0 && u8Hour <= 23)
+            if(time->u8Hour >= 0 && time->u8Hour <= 23)
             {
                 punRamData[LCDRAM_INDEX_3].u16_dis[0] |= u16Num12To21Table[u8HourSingle] >> 4;    // 15
                 if(u8HourTen > 0)
@@ -705,7 +700,7 @@ void Lcd_D61593A_GenRam_Date_And_Time(
 
         if(TRUE == bDisplay || (FALSE == bDisplay && enFocusOn != RtcMin))
         {
-            if(u8Minute >= 0 && u8Minute <= 59)
+            if(time->u8Minute >= 0 && time->u8Minute <= 59)
             {
                 punRamData[LCDRAM_INDEX_4].u16_dis[0] |= (u16Num12To21Table[u8MinuteSingle] & 0x00f0) << 4;    // 13
                 punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8MinuteSingle] & 0xf000) >> 12;    // 13

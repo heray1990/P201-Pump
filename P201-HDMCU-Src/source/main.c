@@ -82,7 +82,7 @@ __IO uint8_t u8StopFlag, u8GroupNum, u8ChannelManual;
 __IO en_working_mode_t enWorkingMode;
 __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[MANUAL_GROUP_NUM_MAX] = {0, 0};
-__IO uint8_t u8RtcSecond, u8RtcMinute, u8RtcHour, u8RtcDay, u8RtcMonth, u8RtcYear;
+__IO stc_rtc_time_t stcRtcTime;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -98,6 +98,7 @@ void App_KeyStateChkSet(void);
 void App_KeyHandler(void);
 void App_RtcCfg(void);
 boolean_t App_GetRtcTime(void);
+uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
@@ -132,11 +133,7 @@ int32_t main(void)
     enLockStatus = Unlock;
     u32UpDownCnt = 0;
 
-    u8RtcYear = 0;
-    u8RtcMonth = 1;
-    u8RtcDay = 1;
-    u8RtcHour = 0;
-    u8RtcMinute = 0;
+    DDL_ZERO_STRUCT(stcRtcTime);
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();
@@ -176,7 +173,7 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, FALSE);
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
-    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
 
     App_Lcd_Display_Update(u32LcdRamData);
 
@@ -187,7 +184,7 @@ int32_t main(void)
             u8RtcFlag = 0;
             if(TRUE == App_GetRtcTime())
             {
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
             }
         }
@@ -514,7 +511,7 @@ void App_KeyHandler(void)
         Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR], (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN], enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData, (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART], enWorkingMode, TRUE, enFocusOn);
         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
     }
 
     if(Unlock == enLockStatus && unKeyPress.Set)
@@ -589,27 +586,27 @@ void App_KeyHandler(void)
             {
                 case RtcYear:
                     enFocusOn = RtcMonth;
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     break;
 
                 case RtcMonth:
                     enFocusOn = RtcDay;
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     break;
 
                 case RtcDay:
                     enFocusOn = RtcHour;
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     break;
 
                 case RtcHour:
                     enFocusOn = RtcMin;
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     break;
 
                 case RtcMin:
                     enFocusOn = Nothing;
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     if(ModeAutomatic == enWorkingMode)
                     {
                         u8StopFlag = 0;
@@ -801,55 +798,63 @@ void App_KeyHandler(void)
                 break;
 
             case RtcYear:
-                if(u8RtcYear == 0)
+                if(stcRtcTime.u8Year == 0)
                 {
-                    u8RtcYear = 99;
+                    stcRtcTime.u8Year = 99;
                 }
                 else
                 {
-                    --u8RtcYear;
+                    stcRtcTime.u8Year--;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMonth:
-                if(--u8RtcMonth < 1)
+                if(stcRtcTime.u8Month <= 1)
                 {
-                    u8RtcMonth = 12;
+                    stcRtcTime.u8Month = 12;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                else
+                {
+                    stcRtcTime.u8Month--;
+                }
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcDay:
-                if(--u8RtcDay < 1)
+                if(stcRtcTime.u8Day <= 1)
                 {
-                    u8RtcDay = 31;  // 不同月份有不同的天数, 后续区分
+                    stcRtcTime.u8Day = App_DaysInAMonth(&stcRtcTime);
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                else
+                {
+                    stcRtcTime.u8Day--;
+                }
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcHour:
-                if(u8RtcHour == 0)
+                if(stcRtcTime.u8Hour == 0)
                 {
-                    u8RtcHour = 23;
+                    stcRtcTime.u8Hour = 23;
                 }
                 else
                 {
-                    --u8RtcHour;
+                    stcRtcTime.u8Hour--;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMin:
-                if(u8RtcMinute == 0)
+                if(stcRtcTime.u8Minute == 0)
                 {
-                    u8RtcMinute = 59;
+                    stcRtcTime.u8Minute = 59;
                 }
                 else
                 {
-                    --u8RtcMinute;
+                    stcRtcTime.u8Minute--;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             default:
@@ -947,43 +952,43 @@ void App_KeyHandler(void)
                 break;
 
             case RtcYear:
-                if(++u8RtcYear > 99)
+                if(++stcRtcTime.u8Year > 99)
                 {
-                    u8RtcYear = 0;
+                    stcRtcTime.u8Year = 0;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMonth:
-                if(++u8RtcMonth > 12)
+                if(++stcRtcTime.u8Month > 12)
                 {
-                    u8RtcMonth = 1;
+                    stcRtcTime.u8Month = 1;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcDay:
-                if(++u8RtcDay > 31)
+                if(++stcRtcTime.u8Day > App_DaysInAMonth(&stcRtcTime))
                 {
-                    u8RtcDay = 1;  // 不同月份有不同的天数, 后续区分
+                    stcRtcTime.u8Day = 1;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcHour:
-                if(++u8RtcHour > 23)
+                if(++stcRtcTime.u8Hour > 23)
                 {
-                    u8RtcHour = 0;
+                    stcRtcTime.u8Hour = 0;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMin:
-                if(++u8RtcMinute > 59)
+                if(++stcRtcTime.u8Minute > 59)
                 {
-                    u8RtcMinute = 0;
+                    stcRtcTime.u8Minute = 0;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             default:
@@ -1053,27 +1058,54 @@ void App_RtcCfg(void)
 // 当分钟, 小时, 日月年有更新时, 才返回 TRUE
 boolean_t App_GetRtcTime(void)
 {
-    stc_rtc_time_t stcRtcTime;
+    stc_rtc_time_t stcRtcTimeTmp;
 
-    Rtc_ReadDateTime(&stcRtcTime);
-    if(u8RtcMinute == stcRtcTime.u8Minute &&
-        u8RtcHour == stcRtcTime.u8Hour &&
-        u8RtcDay == stcRtcTime.u8Day &&
-        u8RtcMonth == stcRtcTime.u8Month &&
-        u8RtcYear == stcRtcTime.u8Year)
+    Rtc_ReadDateTime(&stcRtcTimeTmp);
+    if(stcRtcTime.u8Minute == stcRtcTimeTmp.u8Minute &&
+        stcRtcTime.u8Hour == stcRtcTimeTmp.u8Hour &&
+        stcRtcTime.u8Day == stcRtcTimeTmp.u8Day &&
+        stcRtcTime.u8Month == stcRtcTimeTmp.u8Month &&
+        stcRtcTime.u8Year == stcRtcTimeTmp.u8Year)
     {
-        u8RtcSecond = stcRtcTime.u8Second;
+        stcRtcTime.u8Second = stcRtcTimeTmp.u8Second;
         return FALSE;
     }
     else
     {
-        u8RtcSecond = stcRtcTime.u8Second;
-        u8RtcMinute = stcRtcTime.u8Minute;
-        u8RtcHour   = stcRtcTime.u8Hour;
-        u8RtcDay    = stcRtcTime.u8Day;
-        u8RtcMonth  = stcRtcTime.u8Month;
-        u8RtcYear   = stcRtcTime.u8Year;
+        stcRtcTime.u8Second = stcRtcTimeTmp.u8Second;
+        stcRtcTime.u8Minute = stcRtcTimeTmp.u8Minute;
+        stcRtcTime.u8Hour = stcRtcTimeTmp.u8Hour;
+        stcRtcTime.u8Day = stcRtcTimeTmp.u8Day;
+        stcRtcTime.u8Month = stcRtcTimeTmp.u8Month;
+        stcRtcTime.u8Year = stcRtcTimeTmp.u8Year;
         return TRUE;
+    }
+}
+
+uint8_t App_DaysInAMonth(stc_rtc_time_t *time)
+{
+    uint8_t u8DaysInAMonth = 0;
+
+    if(time->u8Month == 2)
+    {
+        u8DaysInAMonth = Get_Month2_Day(time->u8Year);
+    }
+    else
+    {
+        if(time->u8Month == 1 ||
+            time->u8Month == 3 ||
+            time->u8Month == 5 ||
+            time->u8Month == 7 ||
+            time->u8Month == 8 ||
+            time->u8Month == 10 ||
+            time->u8Month == 12)
+        {
+            u8DaysInAMonth = 31;
+        }
+        else
+        {
+            u8DaysInAMonth = 30;
+        }
     }
 }
 
@@ -1246,7 +1278,7 @@ void App_LcdStrobeControl(void)
             case RtcHour:
             case RtcMin:
                 bFlipFlag = !bFlipFlag;
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, bFlipFlag, enFocusOn);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;
 

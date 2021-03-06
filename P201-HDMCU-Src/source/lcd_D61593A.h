@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include "ddl.h"
 #include "general_define.h"
-
+#include "rtc.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -170,12 +170,8 @@ extern void Lcd_D61593A_GenRam_Battery_Icon(
                 en_remaining_battery_t enBatteryPercent,
                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Date_And_Time(
-                un_Ram_Data* punRamData,
-                uint8_t u8Year,
-                uint8_t u8Month,
-                uint8_t u8Day,
-                uint8_t u8Hour,
-                uint8_t u8Minute,
+                un_Ram_Data *punRamData,
+                stc_rtc_time_t *time,
                 boolean_t bDisplay,
                 en_focus_on enFocusOn);
 //@} // LCDGroup

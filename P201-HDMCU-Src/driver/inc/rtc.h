@@ -229,6 +229,8 @@ extern boolean_t Rtc_GetPridItStatus(void);
 extern en_result_t Rtc_CompCfg(uint16_t CompVlue, en_rtc_compen_t NewStatus);
 //RTC根据日期计算周数
 extern en_result_t Check_BCD_Format(uint8_t u8data,uint8_t u8limit_min, uint8_t u8limit_max);
+//RTC根据年获取二月的天数
+extern uint8_t Get_Month2_Day( uint8_t u8year);
 //RTC获取时间函数
 extern en_result_t Rtc_ReadDateTime(stc_rtc_time_t* time);
 //向RTC时间寄存器写入时间

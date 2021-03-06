@@ -132,11 +132,11 @@ int32_t main(void)
     enLockStatus = Unlock;
     u32UpDownCnt = 0;
 
-    u8RtcYear = 21;
-    u8RtcMonth = 2;
-    u8RtcDay = 22;
-    u8RtcHour = 17;
-    u8RtcMinute = 21;
+    u8RtcYear = 0;
+    u8RtcMonth = 1;
+    u8RtcDay = 1;
+    u8RtcHour = 0;
+    u8RtcMinute = 0;
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();
@@ -147,6 +147,14 @@ int32_t main(void)
     App_PortCfg();               ///< LCD端口配置
     App_LcdCfg();                ///< LCD模块配置
     Lcd_ClearDisp();             ///< 清屏
+
+    App_Timer0Cfg(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
+    Bt_M0_Run(TIM0);    // Timer0 运行
+
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio,TRUE);//GPIO外设时钟打开
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);//RTC模块时钟打开
+    Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);
+    App_RtcCfg();
 
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode);
@@ -171,14 +179,6 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
 
     App_Lcd_Display_Update(u32LcdRamData);
-
-    App_Timer0Cfg(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
-    Bt_M0_Run(TIM0);    // Timer0 运行
-
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio,TRUE);//GPIO外设时钟打开
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);//RTC模块时钟打开
-    Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);
-    App_RtcCfg();
 
     while(1)
     {
@@ -1035,9 +1035,9 @@ void App_RtcCfg(void)
     RtcInitStruct.rtcTime.u8Second = 0x00;
     RtcInitStruct.rtcTime.u8Minute = 0x00;
     RtcInitStruct.rtcTime.u8Hour   = 0x00;
-    RtcInitStruct.rtcTime.u8Day    = 0x00;
-    RtcInitStruct.rtcTime.u8DayOfWeek = 0x00;
-    RtcInitStruct.rtcTime.u8Month  = 0x00;
+    RtcInitStruct.rtcTime.u8Day    = 0x01;
+    RtcInitStruct.rtcTime.u8DayOfWeek = 0x01;
+    RtcInitStruct.rtcTime.u8Month  = 0x01;
     RtcInitStruct.rtcTime.u8Year   = 0x00;
     RtcInitStruct.rtcCompen = RtcCompenEnable;
     RtcInitStruct.rtcCompValue = 0;//补偿值根据实际情况进行补偿

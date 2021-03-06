@@ -25,4 +25,6 @@ HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯
 
 ![](./Data_in_one_Sector.PNG)
 
-![](./Data_in_one_Partition.PNG)
+![](./Data_in_one_Partition_01.PNG)
+
+![](./Data_in_one_Partition_02.PNG)

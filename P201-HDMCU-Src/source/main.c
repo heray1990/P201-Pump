@@ -29,7 +29,7 @@
 #define KEY_LONG_PRESS_CNT 25 // 250ms
 #define LCD_CONTENT_STROBE_DURATION 50  // 500ms
 #define MODE_KEY_LONG_PRESS_CNT 600 // 6000ms
-#define SET_OK_KEY_LONG_PRESS_CNT 100 // 1000ms
+#define SET_OK_KEY_LONG_PRESS_CNT 200 // 2000ms
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -1028,24 +1028,24 @@ void App_RtcCfg(void)
 {
     stc_rtc_initstruct_t RtcInitStruct;
 
-    RtcInitStruct.rtcAmpm = RtcPm;        //12小时制
+    RtcInitStruct.rtcAmpm = RtcPm;        //24小时制
     RtcInitStruct.rtcClksrc = RtcClkRcl;  //内部低速时钟
     RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrds;  //周期中断类型PRDS
     RtcInitStruct.rtcPrdsel.rtcPrds = Rtc1S;      //周期中断事件间隔
-    RtcInitStruct.rtcTime.u8Second = 0x55;
-    RtcInitStruct.rtcTime.u8Minute = 0x01;
-    RtcInitStruct.rtcTime.u8Hour   = 0x10;
-    RtcInitStruct.rtcTime.u8Day    = 0x17;
-    RtcInitStruct.rtcTime.u8DayOfWeek = 0x04;
-    RtcInitStruct.rtcTime.u8Month  = 0x04;
-    RtcInitStruct.rtcTime.u8Year   = 0x19;
+    RtcInitStruct.rtcTime.u8Second = 0x00;
+    RtcInitStruct.rtcTime.u8Minute = 0x00;
+    RtcInitStruct.rtcTime.u8Hour   = 0x00;
+    RtcInitStruct.rtcTime.u8Day    = 0x00;
+    RtcInitStruct.rtcTime.u8DayOfWeek = 0x00;
+    RtcInitStruct.rtcTime.u8Month  = 0x00;
+    RtcInitStruct.rtcTime.u8Year   = 0x00;
     RtcInitStruct.rtcCompen = RtcCompenEnable;
     RtcInitStruct.rtcCompValue = 0;//补偿值根据实际情况进行补偿
     Rtc_Init(&RtcInitStruct);
     Rtc_AlmIeCmd(TRUE);                     //使能闹钟中断
     EnableNvic(RTC_IRQn, IrqLevel3, TRUE);  //使能RTC中断向量
     Rtc_Cmd(TRUE);                          //使能RTC开始计数
-    //Rtc_StartWait();                      //启动RTC计数，如果要立即切换到低功耗，需要执行此函数
+    Rtc_StartWait();                      //启动RTC计数，如果要立即切换到低功耗，需要执行此函数
 }
 
 void App_RtcTime(void)

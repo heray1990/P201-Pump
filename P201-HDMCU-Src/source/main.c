@@ -97,7 +97,7 @@ un_key_type App_KeyDetect(void);
 void App_KeyStateChkSet(void);
 void App_KeyHandler(void);
 void App_RtcCfg(void);
-void App_RtcTime(void);
+boolean_t App_GetRtcTime(void);
 void App_PortCfg(void);
 void App_LcdCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
@@ -185,9 +185,11 @@ int32_t main(void)
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
-            App_RtcTime();
-            Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
-            App_Lcd_Display_Update(u32LcdRamData);
+            if(TRUE == App_GetRtcTime())
+            {
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, u8RtcYear, u8RtcMonth, u8RtcDay, u8RtcHour, u8RtcMinute, TRUE, enFocusOn);
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
         }
 
         if(unKeyPress.Full != 0x0000)    // Key pressed detected
@@ -1048,17 +1050,31 @@ void App_RtcCfg(void)
     Rtc_StartWait();                      //启动RTC计数，如果要立即切换到低功耗，需要执行此函数
 }
 
-void App_RtcTime(void)
+// 当分钟, 小时, 日月年有更新时, 才返回 TRUE
+boolean_t App_GetRtcTime(void)
 {
     stc_rtc_time_t stcRtcTime;
 
     Rtc_ReadDateTime(&stcRtcTime);
-    u8RtcSecond = stcRtcTime.u8Second;
-    u8RtcMinute = stcRtcTime.u8Minute;
-    u8RtcHour   = stcRtcTime.u8Hour;
-    u8RtcDay    = stcRtcTime.u8Day;
-    u8RtcMonth  = stcRtcTime.u8Month;
-    u8RtcYear   = stcRtcTime.u8Year;
+    if(u8RtcMinute == stcRtcTime.u8Minute &&
+        u8RtcHour == stcRtcTime.u8Hour &&
+        u8RtcDay == stcRtcTime.u8Day &&
+        u8RtcMonth == stcRtcTime.u8Month &&
+        u8RtcYear == stcRtcTime.u8Year)
+    {
+        u8RtcSecond = stcRtcTime.u8Second;
+        return FALSE;
+    }
+    else
+    {
+        u8RtcSecond = stcRtcTime.u8Second;
+        u8RtcMinute = stcRtcTime.u8Minute;
+        u8RtcHour   = stcRtcTime.u8Hour;
+        u8RtcDay    = stcRtcTime.u8Day;
+        u8RtcMonth  = stcRtcTime.u8Month;
+        u8RtcYear   = stcRtcTime.u8Year;
+        return TRUE;
+    }
 }
 
 void Rtc_IRQHandler(void)

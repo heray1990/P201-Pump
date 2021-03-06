@@ -88,7 +88,7 @@ extern stc_flash_manager_t stcFlashManager;
 extern uint8_t Flash_Manager_Data_BCC_Checksum(uint8_t *u8pData, uint16_t u16DataLen);
 extern en_result_t Flash_Manager_Update(void);
 extern en_result_t Flash_Manager_Init(void);
-//extern uint16_t Flash_Manager_GetIndex(uint16_t index);
+extern en_result_t Flash_Manager_Erase_All_Data(void);
 
 #ifdef __cplusplus
 }

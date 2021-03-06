@@ -20,6 +20,7 @@
 #include "lcd_D61593A.h"
 #include "flash_manager.h"
 #include "general_define.h"
+#include "core_cm0plus.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -370,6 +371,23 @@ void App_KeyStateChkSet(void)
                         }
                     }
                 }
+                else if(unKeyPressDetected.Mode)
+                {
+                    // 识别为Reset键, 先执行功能, 等待Mode键松开. 等待过程中不再执行动作
+                    if(unKeyPressTemp.Reset)
+                    {
+                        enKeyState = WaitForRelease;
+                        u32Tim0Cnt = 0;
+                    }
+                    else
+                    {
+                        if(u32Tim0Cnt >= MODE_KEY_LONG_PRESS_CNT)
+                        {
+                            enKeyState = Update;
+                            unKeyPressTemp.Reset = 1;
+                        }
+                    }
+                }
                 else if(unKeyPressDetected.Up || unKeyPressDetected.Down)
                 {
                     // 识别到长按上/下键
@@ -378,7 +396,7 @@ void App_KeyStateChkSet(void)
                 }
                 else if(!unKeyPressDetected.Full)
                 {
-                    if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold)
+                    if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold || unKeyPressTemp.Reset)
                     {
                         enKeyState = Waiting;
                         u32Tim0Cnt = 0;
@@ -395,7 +413,7 @@ void App_KeyStateChkSet(void)
             {
                 if(!unKeyPressDetected.Full)
                 {
-                    if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold)
+                    if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold || unKeyPressTemp.Reset)
                     {
                         enKeyState = Waiting;
                         u32Tim0Cnt = 0;
@@ -412,7 +430,7 @@ void App_KeyStateChkSet(void)
         case Update:
             unKeyPress = unKeyPressTemp;    // HERE the Key value is updated
             u32Tim0Cnt = 0;
-            if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold)
+            if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold || unKeyPressTemp.Reset)
             {
                 enKeyState = WaitForRelease;
             }
@@ -993,6 +1011,14 @@ void App_KeyHandler(void)
             u8StopFlag = 1;
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
         }
+    }
+
+    if(Unlock == enLockStatus && unKeyPress.Reset)
+    {
+        Flash_Manager_Erase_All_Data();
+        delay1ms(10);
+        // Reset MCU
+        NVIC_SystemReset();
     }
 
     App_Lcd_Display_Update(u32LcdRamData);

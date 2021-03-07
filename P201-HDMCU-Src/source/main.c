@@ -744,7 +744,8 @@ void App_KeyHandler(void)
                     {
                         --u8GroupNum;
                     }
-                    // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
+                    // 组数变化了, 通道、浇水时长、启动时间和间隔天数也需要跟着变化
+                    u8ChannelAuto = 0;
                     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode);
                     Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8ChannelAuto + 1, TRUE, enFocusOn);
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
@@ -787,6 +788,7 @@ void App_KeyHandler(void)
                 {
                     --u8ChannelAuto;
                 }
+                // 通道变化了, 浇水时长、启动时间和间隔天数也需要跟着变化
                 Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8ChannelAuto + 1, TRUE, enFocusOn);
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
                                             (uint16_t)u32GroupDataAuto[u8GroupNum][u8ChannelAuto][AUTOMODE_GROUP_DATA_WATER_TIME],
@@ -970,7 +972,8 @@ void App_KeyHandler(void)
                     {
                         u8GroupNum = GROUP_NUM_MIN;
                     }
-                    // 组数变化了, 通道、浇水市场、启动时间和间隔天数也需要跟着变化
+                    // 组数变化了, 通道、浇水时长、启动时间和间隔天数也需要跟着变化
+                    u8ChannelAuto = 0;
                     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode);
                     Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8ChannelAuto + 1, TRUE, enFocusOn);
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
@@ -1005,6 +1008,7 @@ void App_KeyHandler(void)
                 {
                     u8ChannelAuto = 0;
                 }
+                // 通道变化了, 浇水时长、启动时间和间隔天数也需要跟着变化
                 Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8ChannelAuto + 1, TRUE, enFocusOn);
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
                                             (uint16_t)u32GroupDataAuto[u8GroupNum][u8ChannelAuto][AUTOMODE_GROUP_DATA_WATER_TIME],

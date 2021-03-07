@@ -31,9 +31,13 @@ extern "C"
 {
 #endif
 
-#define FLASH_MANAGER_BYTES_ONE_SECTOR 512
-#define FLASH_MANAGER_DATA_LEN 51   // 1bytes起始码 + 39bytes数据 + 10bytes预留空间 + 1bytes校验码(末尾)
-#define FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR 10
+#define FLASH_MANAGER_BYTES_ONE_SECTOR              512
+/* 1bytes起始码 + 52bytes数据 + 2bytes预留空间 + 1bytes校验码(末尾)
+ * 512 = 56 x 9 + 7 + 1 */
+#define FLASH_MANAGER_DATA_LEN                      56   
+#define RESERVED_DATA_LEN_IN_TAIL_OF_ONE_PART       2    // 每个Partition预留的字节数
+#define RESERVED_DATA_LEN_IN_TAIL_OF_ONE_SECTOR     7    // 每个Sector预留的字节数
+#define FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR    9
 
 // Using 16 sectors of flash to store data. Addresses are frome 0xE000 to 0xFFFF
 #define FLASH_MANAGER_SECTORS_QUANTITY 16

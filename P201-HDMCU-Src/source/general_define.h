@@ -12,13 +12,12 @@
 
 #define GROUP_NUM_MIN   0
 #define GROUP_NUM_MAX   6
-#define MANUAL_GROUP_NUM_MAX    2
-#define AUTOMODE_GROUP_DATA_ELEMENT_MAX 5
-#define AUTOMODE_GROUP_DATA_CHANNEL     0
+#define CHANNEL_NUM_MAX    2
+#define AUTOMODE_GROUP_DATA_ELEMENT_MAX 4
+#define AUTOMODE_GROUP_DATA_DAYSAPART   0
 #define AUTOMODE_GROUP_DATA_STARTHOUR   1
 #define AUTOMODE_GROUP_DATA_STARTMIN    2
-#define AUTOMODE_GROUP_DATA_DAYSAPART   3
-#define AUTOMODE_GROUP_DATA_WATER_TIME  4
+#define AUTOMODE_GROUP_DATA_WATER_TIME  3
 
 
 /******************************************************************************

@@ -1520,7 +1520,6 @@ void App_UserDataSetDefaultVal(void)
     App_ConvertUserData2FlashData();
 }
 
-
 void App_ConvertFlashData2UserData(void)
 {
     uint8_t u8GroupIdx = 0, u8ChannelIdx = 0;
@@ -1537,15 +1536,18 @@ void App_ConvertFlashData2UserData(void)
 
     for(u8GroupIdx = 0; u8GroupIdx < GROUP_NUM_MAX; u8GroupIdx++)
     {
-        u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_DAYSAPART]
-            = stcFlashManager.u8FlashManagerData[5 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)];
-        u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_STARTHOUR]
-            = stcFlashManager.u8FlashManagerData[6 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)];
-        u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_STARTMIN]
-            = stcFlashManager.u8FlashManagerData[7 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)] & 0x3F;
-        u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_WATER_TIME]
-            = ((stcFlashManager.u8FlashManagerData[7 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)] & 0xC0) >> 6) |
-                (stcFlashManager.u8FlashManagerData[8 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)] << 2);
+        for(u8ChannelIdx = 0; u8ChannelIdx < CHANNEL_NUM_MAX; u8ChannelIdx++)
+        {
+            u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_DAYSAPART]
+                = stcFlashManager.u8FlashManagerData[5 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)];
+            u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_STARTHOUR]
+                = stcFlashManager.u8FlashManagerData[6 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)];
+            u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_STARTMIN]
+                = stcFlashManager.u8FlashManagerData[7 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)] & 0x3F;
+            u32GroupDataAuto[u8GroupIdx][u8ChannelIdx][AUTOMODE_GROUP_DATA_WATER_TIME]
+                = ((stcFlashManager.u8FlashManagerData[7 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)] & 0xC0) >> 6) |
+                    (stcFlashManager.u8FlashManagerData[8 + AUTOMODE_GROUP_DATA_ELEMENT_MAX * (u8GroupIdx * 2 + u8ChannelIdx)] << 2);
+        }
     }
 }
 

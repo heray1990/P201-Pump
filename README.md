@@ -23,7 +23,9 @@ HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯
 
 ![](./Sectors_Addresses.PNG)
 
-![](./Data_in_one_Sector.PNG)
+![](./Data_in_one_Sector_01.PNG)
+
+![](./Data_in_one_Sector_02.PNG)
 
 #### 数据取值范围与最小需要的位数
 
@@ -31,21 +33,19 @@ HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯
 * **enWorkingMode**: 0~1, 1bit
 * **u8StopFlag**: 0~1, 1bit
 * **u8ChannelManual**: 0~1, 1bit
-* **u8ChannelAuto**: 0~1, 1bit
+* **Reserved**: 0~1, 1bit
 * **u16WateringTimeManual[0]**: 0~999, 10bits
 * **u16WateringTimeManual[1]**: 0~999, 10bits
-* **u8DaysApart\[0\]\[0\]**: 0~99, 7bits
-* **u8StartHour\[0\]\[0\]**: 0~24, 5bits
-* **u8StartMin\[0\]\[0\]**: 0~60, 6bits
-* **u16WateringTimeAuto\[0\]\[0\]**: 0~999, 10bits
-* **u8DaysApart\[0\]\[1\]**: 0~99, 7bits
-* **u8StartHour\[0\]\[1\]**: 0~24, 5bits
-* **u8StartMin\[0\]\[1\]**: 0~60, 6bits
-* **u16WateringTimeAuto\[0\]\[1\]**: 0~999, 10bits
+* **u8DaysApart[0]**: 0~99, 7bits
+* **u8ChannelAuto[0]**: 0~1, 1bit
+* **u8StartHour[0]**: 0~24, 5bits
+* **u8StartMin[0]**: 0~60, 6bits
+* **u16WateringTimeAuto[0]**: 0~999, 10bits
 * ......
-* **u8DaysApart\[5\]\[1\]**: 0~99, 7bits
-* **u8StartHour\[5\]\[1\]**: 0~24, 5bits
-* **u8StartMin\[5\]\[1\]**: 0~60, 6bits
-* **u16WateringTimeAuto\[5\]\[1\]**: 0~999, 10bits
+* **u8DaysApart[5]**: 0~99, 7bits
+* **u8ChannelAuto[5]**: 0~1, 1bit
+* **u8StartHour[5]**: 0~24, 5bits
+* **u8StartMin[5]**: 0~60, 6bits
+* **u16WateringTimeAuto[5]**: 0~999, 10bits
 
 ![](./Data_in_one_Partition.PNG)

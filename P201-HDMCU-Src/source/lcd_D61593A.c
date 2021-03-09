@@ -165,7 +165,9 @@ void Lcd_D61593A_GenRam_Watering_Time(
 void Lcd_D61593A_GenRam_GroupNum(
                 un_Ram_Data* punRamData,
                 uint8_t u8Val,
-                en_working_mode_t enWorkingMode)
+                en_working_mode_t enWorkingMode,
+                boolean_t bDisplay,
+                en_focus_on enFocusOn)
 {
     // Clean RAM of T8 and 12 in LCDRAM4 and LCDRAM5.
     punRamData[LCDRAM_INDEX_4].u32_dis &= MASK_LCDRAM4_T8;
@@ -173,11 +175,21 @@ void Lcd_D61593A_GenRam_GroupNum(
 
     if(ModeAutomatic == enWorkingMode)
     {
-        if(u8Val >= 0 && u8Val <= 9)
+        if(TRUE == bDisplay)
         {
-            punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x01;    // Display T8.
-            punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8Val] & 0x00f0) << 4;    // Set value for 12 in LCDRAM4
-            punRamData[LCDRAM_INDEX_5].u16_dis[0] |= (u16Num12To21Table[u8Val] & 0xf000) >> 12;    // Set value for 12 in LCDRAM5
+            if(u8Val >= 0 && u8Val <= 9)
+            {
+                punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x01;    // Display T8.
+                punRamData[LCDRAM_INDEX_4].u16_dis[1] |= (u16Num12To21Table[u8Val] & 0x00f0) << 4;    // Set value for 12 in LCDRAM4
+                punRamData[LCDRAM_INDEX_5].u16_dis[0] |= (u16Num12To21Table[u8Val] & 0xf000) >> 12;    // Set value for 12 in LCDRAM5
+            }
+        }
+        else
+        {
+            if(Group == enFocusOn)
+            {
+                punRamData[LCDRAM_INDEX_4].u8_dis[3] |= 0x01;    // Display T8.
+            }
         }
     }
 }

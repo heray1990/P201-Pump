@@ -136,7 +136,9 @@ extern void Lcd_D61593A_GenRam_Watering_Time(
 extern void Lcd_D61593A_GenRam_GroupNum(
                 un_Ram_Data* punRamData,
                 uint8_t u8Val,
-                en_working_mode_t enWorkingMode);
+                en_working_mode_t enWorkingMode,
+                boolean_t bDisplay,
+                en_focus_on enFocusOn);
 extern void Lcd_D61593A_GenRam_Smart1(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Smart2(un_Ram_Data* punRamData, en_smart_mode_t enMode, boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Starting_Time(

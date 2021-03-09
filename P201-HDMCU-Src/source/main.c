@@ -1438,8 +1438,9 @@ void App_LcdStrobeControl(void)
                 break;
         }
 
-        if(enFocusOn > Nothing)
+        if((enFocusOn > Nothing) && (enKeyState < WaitForRelease))
         {
+            // 当焦点处于会闪烁的控件并且没有处理按键时, 刷新LCD显示.
             App_Lcd_Display_Update(u32LcdRamData);
         }
     }

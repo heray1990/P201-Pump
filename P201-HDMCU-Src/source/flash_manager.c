@@ -77,7 +77,7 @@ void Flash_Manager_Load_Latest_Data(uint32_t u32DataHeadAddr)
 
     for(u8PartIdx = 0; u8PartIdx < FLASH_MANAGER_DATA_LEN; u8PartIdx++)
     {
-        stcFlashManager.u8FlashManagerData[u8PartIdx] = *((volatile uint8_t*)(u32DataHeadAddr + u8PartIdx));
+        stcFlashManager.u32FlashData[u8PartIdx] = *((volatile uint8_t*)(u32DataHeadAddr + u8PartIdx));
     }
 }
 
@@ -203,7 +203,7 @@ en_result_t Flash_Manager_Update(void)
 
     for(u8Idx = 0; u8Idx < FLASH_MANAGER_DATA_LEN; u8Idx++)
     {
-        if(Ok != Flash_WriteByte((stcFlashManager.u32DataStoredHeadAddr + u8Idx), stcFlashManager.u8FlashManagerData[u8Idx]))
+        if(Ok != Flash_WriteByte((stcFlashManager.u32DataStoredHeadAddr + u8Idx), stcFlashManager.u32FlashData[u8Idx]))
         {
             enRetVal = Error;
         }

@@ -30,6 +30,7 @@
 #define LCD_CONTENT_STROBE_DURATION 50  // 500ms
 #define MODE_KEY_LONG_PRESS_CNT 600 // 6000ms
 #define SET_OK_KEY_LONG_PRESS_CNT 200 // 2000ms
+#define TIMER0_CNT_WATER_TIME       100 // 1000ms
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -82,6 +83,7 @@ __IO en_working_mode_t enWorkingMode;
 __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO stc_rtc_time_t stcRtcTime;
+__IO boolean_t bStartWateringFlag;
 static en_key_states enKeyState = Waiting;
 
 /******************************************************************************
@@ -100,10 +102,11 @@ void App_RtcCfg(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 void App_PortCfg(void);
-void App_LcdCfg(void);
+void App_LcdPumpCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
 void App_LcdStrobeControl(void);
+void App_WateringTimeCntDown(void);
 void App_Timer0Cfg(uint16_t u16Period);
 void App_UserDataSetDefaultVal(void);
 void App_ConvertFlashData2UserData(void);
@@ -132,6 +135,7 @@ int32_t main(void)
     enFocusOn = Nothing;
     enLockStatus = Unlock;
     u32UpDownCnt = 0;
+    bStartWateringFlag = FALSE;
 
     DDL_ZERO_STRUCT(stcRtcTime);
 
@@ -142,7 +146,7 @@ int32_t main(void)
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
     Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);   ///< 开启LCD时钟
     App_PortCfg();               ///< LCD端口配置
-    App_LcdCfg();                ///< LCD模块配置
+    App_LcdPumpCfg();                ///< LCD模块和水泵GPIO口配置
     Lcd_ClearDisp();             ///< 清屏
 
     App_Timer0Cfg(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
@@ -208,6 +212,55 @@ int32_t main(void)
         {
             App_KeyHandler();
             unKeyPress.Full = 0x0000;
+        }
+
+        if(TRUE == bStartWateringFlag)
+        {
+            if(ModeAutomatic == enWorkingMode)
+            {
+
+            }
+            else
+            {
+                if(0 == u8ChannelManual)
+                {
+                    Gpio_SetIO(GpioPortC, GpioPin13);   // Channel 1
+                }
+                else
+                {
+                    Gpio_SetIO(GpioPortB, GpioPin7);    // Channel 2
+                }
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+            }
+            App_Lcd_Display_Update(u32LcdRamData);
+        }
+        else
+        {
+            if(ModeManual == enWorkingMode && 0 == u8StopFlag)
+            {
+                u8StopFlag = 1;
+                Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+                if(0 == u8ChannelManual)
+                {
+                    Gpio_ClrIO(GpioPortC, GpioPin13);   // Channel 1
+                    if(0 == u16WateringTimeManual[0])
+                    {
+                        u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
+                                            ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
+                    }
+                }
+                else
+                {
+                    Gpio_ClrIO(GpioPortB, GpioPin7);    // Channel 2
+                    if(0 == u16WateringTimeManual[1])
+                    {
+                        u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
+                                            (stcFlashManager.u32FlashData[4] << 2);
+                    }
+                }
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+                App_Lcd_Display_Update(u32LcdRamData);
+            }
         }
     }
 }
@@ -746,12 +799,23 @@ void App_KeyHandler(void)
                 {
                     enFocusOn = Nothing;
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+                    App_ConvertUserData2FlashData();
+                    Flash_Manager_Update();
                 }
                 else
                 {
                     enFocusOn = Nothing;
                     u8StopFlag = !u8StopFlag;
                     Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+                    if(1 == u8StopFlag)
+                    {
+                        bStartWateringFlag = FALSE;
+                    }
+                    else
+                    {
+                        bStartWateringFlag = TRUE;
+
+                    }
                 }
             }
         }
@@ -1329,28 +1393,35 @@ void App_PortCfg(void)
 }
 
 /******************************************************************************
- ** \brief  配置LCD
+ ** \brief  配置 LCD 和水泵 GPIO 口
  **
  ** \return 无
  *****************************************************************************/
-void App_LcdCfg(void)
+void App_LcdPumpCfg(void)
 {
     stc_lcd_cfg_t LcdInitStruct;
     stc_lcd_segcom_t LcdSegCom;
-    stc_gpio_cfg_t stcLcdBlGpioCfg;
+    stc_gpio_cfg_t stcGpioCfg;
 
     ///< 打开GPIO外设时钟门控
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
 
     ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
-    stcLcdBlGpioCfg.enDir = GpioDirOut;
+    stcGpioCfg.enDir = GpioDirOut;
     ///< 端口上下拉配置->下拉
-    stcLcdBlGpioCfg.enPu = GpioPuDisable;
-    stcLcdBlGpioCfg.enPd = GpioPdEnable;
+    stcGpioCfg.enPu = GpioPuDisable;
+    stcGpioCfg.enPd = GpioPdEnable;
 
+    // 开背光
     Gpio_SetIO(GpioPortC, GpioPin0);
     ///< GPIO IO LCD BL_ON 端口初始化
-    Gpio_Init(GpioPortC, GpioPin0, &stcLcdBlGpioCfg);
+    Gpio_Init(GpioPortC, GpioPin0, &stcGpioCfg);
+
+    // 关闭两路水泵
+    Gpio_ClrIO(GpioPortC, GpioPin13);   // Channel 1
+    Gpio_ClrIO(GpioPortB, GpioPin7);    // Channel 2
+    Gpio_Init(GpioPortC, GpioPin13, &stcGpioCfg);
+    Gpio_Init(GpioPortB, GpioPin7, &stcGpioCfg);
 
     LcdSegCom.u32Seg0_31 = 0xff800000;                              ///< 配置LCD_POEN0寄存器 开启SEG0~SEG22
     LcdSegCom.stc_seg32_51_com0_8_t.seg32_51_com0_8 = 0xffffffff;   ///< 初始化LCD_POEN1寄存器 全部关闭输出端口
@@ -1480,6 +1551,29 @@ void App_LcdStrobeControl(void)
     }
 }
 
+void App_WateringTimeCntDown(void)
+{
+    static uint8_t u8Tim0Cnt = 0;
+
+    if(TRUE == bStartWateringFlag)
+    {
+        if(++u8Tim0Cnt > TIMER0_CNT_WATER_TIME)
+        {
+            u8Tim0Cnt = 0;
+            // 每隔1s, 浇水倒计时变量减1
+            if(u16WateringTimeManual[u8ChannelManual] > 0)
+            {
+                u16WateringTimeManual[u8ChannelManual]--;
+            }
+
+            if(u16WateringTimeManual[u8ChannelManual] == 0)
+            {
+                bStartWateringFlag = FALSE;
+            }
+        }
+    }
+}
+
 /******************************************************************************
  ** \brief  Timer0配置初始化
  ** 周期 = u16Period*(1/内部时钟频率)*256
@@ -1523,6 +1617,8 @@ void Tim0_IRQHandler(void)
         App_KeyStateChkSet();
 
         App_LcdStrobeControl();
+
+        App_WateringTimeCntDown();
 
         Bt_ClearIntFlag(TIM0, BtUevIrq); //中断标志清零
     }

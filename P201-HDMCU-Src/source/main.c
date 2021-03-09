@@ -58,11 +58,10 @@ typedef union
 
 typedef enum
 {
-    Waiting,
-    Detected,
-    WaitForRelease,
-    Update,
-    UpdateForLongPress
+    Waiting = 0u,
+    Detected = 1u,
+    WaitForRelease = 2u,
+    Update = 3u
 }en_key_states;
 
 /******************************************************************************
@@ -83,6 +82,7 @@ __IO en_working_mode_t enWorkingMode;
 __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO stc_rtc_time_t stcRtcTime;
+static en_key_states enKeyState = Waiting;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -313,7 +313,6 @@ un_key_type App_KeyDetect(void)
 // 状态机按键消抖, 每10ms检查或设置1次状态
 void App_KeyStateChkSet(void)
 {
-    static en_key_states enKeyState = Waiting;
     static uint32_t u32Tim0Cnt = 0;
     static un_key_type unKeyPressTemp;  //stores temporary key values
     un_key_type unKeyPressDetected;     //stores which key was pressed
@@ -1379,6 +1378,12 @@ void App_LcdStrobeControl(void)
             bFlipFlag = !bFlipFlag;
         }
 
+        if(enKeyState > Waiting)
+        {
+            // 正在处理按键时不闪烁
+            bFlipFlag = TRUE;
+        }
+
         switch(enFocusOn)
         {
             case Channel:
@@ -1386,7 +1391,6 @@ void App_LcdStrobeControl(void)
                                     (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
                                     bFlipFlag,
                                     enFocusOn);
-                App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
             case WateringTime:
@@ -1401,7 +1405,6 @@ void App_LcdStrobeControl(void)
                 {
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], bFlipFlag, enFocusOn);
                 }
-                App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
             case StartingTimeH:
@@ -1412,7 +1415,6 @@ void App_LcdStrobeControl(void)
                                             enWorkingMode,
                                             bFlipFlag,
                                             enFocusOn);
-                App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
             case DaysApart:
@@ -1421,7 +1423,6 @@ void App_LcdStrobeControl(void)
                                         enWorkingMode,
                                         bFlipFlag,
                                         enFocusOn);
-                App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
             case RtcYear:
@@ -1430,12 +1431,16 @@ void App_LcdStrobeControl(void)
             case RtcHour:
             case RtcMin:
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, bFlipFlag, enFocusOn);
-                App_Lcd_Display_Update(u32LcdRamData);
                 break;
 
             default:
                 bFlipFlag = TRUE;
                 break;
+        }
+
+        if(enFocusOn > Nothing)
+        {
+            App_Lcd_Display_Update(u32LcdRamData);
         }
     }
 }

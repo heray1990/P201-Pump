@@ -150,7 +150,7 @@ int32_t main(void)
 
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio,TRUE);//GPIO外设时钟打开
     Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);//RTC模块时钟打开
-    Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);
+    Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
     App_RtcCfg();
 
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
@@ -1170,10 +1170,11 @@ void App_RtcCfg(void)
 {
     stc_rtc_initstruct_t RtcInitStruct;
 
-    RtcInitStruct.rtcAmpm = RtcPm;        //24小时制
-    RtcInitStruct.rtcClksrc = RtcClkRcl;  //内部低速时钟
-    RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrds;  //周期中断类型PRDS
-    RtcInitStruct.rtcPrdsel.rtcPrds = Rtc1S;      //周期中断事件间隔
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);   //RTC模块时钟打开
+    RtcInitStruct.rtcAmpm = RtcPm;                          //24小时制
+    RtcInitStruct.rtcClksrc = RtcClkXtl;                    //外部低速时钟
+    RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrdx;            //周期中断类型PRDX
+    RtcInitStruct.rtcPrdsel.rtcPrdx = 0x3B;                 //周期中断事件间隔, 0x3B -> 30s
     RtcInitStruct.rtcTime.u8Second = 0x00;
     RtcInitStruct.rtcTime.u8Minute = 0x00;
     RtcInitStruct.rtcTime.u8Hour   = 0x00;
@@ -1182,12 +1183,12 @@ void App_RtcCfg(void)
     RtcInitStruct.rtcTime.u8Month  = 0x01;
     RtcInitStruct.rtcTime.u8Year   = 0x00;
     RtcInitStruct.rtcCompen = RtcCompenEnable;
-    RtcInitStruct.rtcCompValue = 0;//补偿值根据实际情况进行补偿
+    RtcInitStruct.rtcCompValue = 0;                         //补偿值根据实际情况进行补偿
     Rtc_Init(&RtcInitStruct);
-    Rtc_AlmIeCmd(TRUE);                     //使能闹钟中断
-    EnableNvic(RTC_IRQn, IrqLevel3, TRUE);  //使能RTC中断向量
-    Rtc_Cmd(TRUE);                          //使能RTC开始计数
-    Rtc_StartWait();                      //启动RTC计数，如果要立即切换到低功耗，需要执行此函数
+    Rtc_AlmIeCmd(TRUE);                                     //使能闹钟中断
+    EnableNvic(RTC_IRQn, IrqLevel3, TRUE);                  //使能RTC中断向量
+    Rtc_Cmd(TRUE);                                          //使能RTC开始计数
+    Rtc_StartWait();                                        //启动RTC计数，如果要立即切换到低功耗，需要执行此函数
 }
 
 // 当分钟, 小时, 日月年有更新时, 才返回 TRUE

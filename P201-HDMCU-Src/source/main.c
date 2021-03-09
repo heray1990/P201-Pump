@@ -1374,10 +1374,14 @@ void App_LcdStrobeControl(void)
     {
         u8LcdContentSDCnt = 0;
 
+        if(enFocusOn > Nothing)
+        {
+            bFlipFlag = !bFlipFlag;
+        }
+
         switch(enFocusOn)
         {
             case Channel:
-                bFlipFlag = !bFlipFlag;
                 Lcd_D61593A_GenRam_Channel(u32LcdRamData,
                                     (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
                                     bFlipFlag,
@@ -1386,7 +1390,6 @@ void App_LcdStrobeControl(void)
                 break;
 
             case WateringTime:
-                bFlipFlag = !bFlipFlag;
                 if(ModeAutomatic == enWorkingMode)
                 {
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
@@ -1403,7 +1406,6 @@ void App_LcdStrobeControl(void)
 
             case StartingTimeH:
             case StartingTimeM:
-                bFlipFlag = !bFlipFlag;
                 Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
                                             (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
                                             (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
@@ -1414,7 +1416,6 @@ void App_LcdStrobeControl(void)
                 break;
 
             case DaysApart:
-                bFlipFlag = !bFlipFlag;
                 Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
                                         (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART],
                                         enWorkingMode,
@@ -1428,7 +1429,6 @@ void App_LcdStrobeControl(void)
             case RtcDay:
             case RtcHour:
             case RtcMin:
-                bFlipFlag = !bFlipFlag;
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, bFlipFlag, enFocusOn);
                 App_Lcd_Display_Update(u32LcdRamData);
                 break;

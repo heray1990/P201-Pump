@@ -81,7 +81,6 @@ void Flash_Manager_Load_Latest_Data(uint32_t u32DataHeadAddr)
     }
 }
 
-
 uint32_t Flash_Manager_Find_Valid_Partition_In_Sector(uint32_t u32SectorHeadAddr)
 {
     uint8_t u8PartIdx = 0;

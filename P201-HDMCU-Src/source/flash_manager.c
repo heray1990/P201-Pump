@@ -54,16 +54,15 @@ uint8_t Flash_Manager_Data_BCC_Checksum(uint8_t *u8pData, uint16_t u16DataLen)
 
 uint32_t Flash_Manager_Find_Latest_Data_Head_Addr(uint32_t u32SectorHeadAddr)
 {
-    uint8_t u8PartIdx = FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR;
-    uint32_t u32DataAddrTmp = 0xFFFF;
+    int8_t i8PartIdx = FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR;
+    uint32_t u32DataAddrTmp = u32SectorHeadAddr;
 
-    for(u8PartIdx = FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR; u8PartIdx > 0; u8PartIdx--)
+    for(i8PartIdx = FLASH_MANAGER_DATA_PARTITIONS_ONE_SECTOR; i8PartIdx > 0; i8PartIdx--)
     {
-        /* Sector 从右到左, 查询每个Partition的首尾地址内容, 直到找到首位为0x5A, 末位为校验码,
-         * 并且校验码符合异或校验结果, 说明这个Partition内容是最新保存的 */
-        u32DataAddrTmp = u32SectorHeadAddr + (uint32_t)((u8PartIdx - 1) * FLASH_MANAGER_DATA_LEN);
-        if(FLASH_DATA_START_CODE == *((volatile uint8_t*)u32DataAddrTmp) &&
-            Flash_Manager_Data_BCC_Checksum((volatile uint8_t*)u32DataAddrTmp, FLASH_MANAGER_DATA_LEN) == *((volatile uint8_t*)(u32DataAddrTmp + FLASH_MANAGER_DATA_LEN - 1)))
+        /* Sector 从右到左, 查询每个Partition的首尾地址内容, 直到找到首位为0x5A,
+           说明这个Partition内容是上一次最新保存的 */
+        u32DataAddrTmp = u32SectorHeadAddr + (uint32_t)((i8PartIdx - 1) * FLASH_MANAGER_DATA_LEN);
+        if(FLASH_DATA_START_CODE == *((volatile uint8_t*)u32DataAddrTmp))
         {
             return u32DataAddrTmp;
         }

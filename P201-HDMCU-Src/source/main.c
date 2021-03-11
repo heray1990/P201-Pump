@@ -83,7 +83,7 @@ __IO en_working_mode_t enWorkingMode;
 __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO stc_rtc_time_t stcRtcTime;
-__IO boolean_t bStartWateringFlag;
+__IO boolean_t bStartWateringFlag, bLcdUpdate;
 static en_key_states enKeyState = Waiting;
 
 /******************************************************************************
@@ -136,6 +136,7 @@ int32_t main(void)
     enLockStatus = Unlock;
     u32UpDownCnt = 0;
     bStartWateringFlag = FALSE;
+    bLcdUpdate = TRUE;
 
     DDL_ZERO_STRUCT(stcRtcTime);
 
@@ -198,13 +199,19 @@ int32_t main(void)
 
     while(1)
     {
+        if(TRUE == bLcdUpdate)
+        {
+            App_Lcd_Display_Update(u32LcdRamData);
+            bLcdUpdate = FALSE;
+        }
+
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
             if(TRUE == App_GetRtcTime())
             {
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                App_Lcd_Display_Update(u32LcdRamData);
+                bLcdUpdate = TRUE;
             }
         }
 
@@ -232,7 +239,7 @@ int32_t main(void)
                 }
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
             }
-            App_Lcd_Display_Update(u32LcdRamData);
+            bLcdUpdate = TRUE;
         }
         else
         {
@@ -259,7 +266,7 @@ int32_t main(void)
                     }
                 }
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
-                App_Lcd_Display_Update(u32LcdRamData);
+                bLcdUpdate = TRUE;
             }
         }
     }
@@ -1256,7 +1263,7 @@ void App_KeyHandler(void)
         NVIC_SystemReset();
     }
 
-    App_Lcd_Display_Update(u32LcdRamData);
+    bLcdUpdate = TRUE;
 }
 
 void App_RtcCfg(void)
@@ -1546,7 +1553,7 @@ void App_LcdStrobeControl(void)
         if((enFocusOn > Nothing) && (enKeyState < WaitForRelease))
         {
             // 当焦点处于会闪烁的控件并且没有处理按键时, 刷新LCD显示.
-            App_Lcd_Display_Update(u32LcdRamData);
+            bLcdUpdate = TRUE;
         }
     }
 }

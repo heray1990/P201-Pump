@@ -195,8 +195,6 @@ int32_t main(void)
     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
 
-    App_Lcd_Display_Update(u32LcdRamData);
-
     while(1)
     {
         if(TRUE == bLcdUpdate)

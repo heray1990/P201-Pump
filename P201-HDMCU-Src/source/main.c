@@ -519,9 +519,9 @@ void App_KeyStateChkSet(void)
                 {
                     enKeyState = WaitForRelease;
                     /* 识别到长按上/下键, 按的时间越长, 执行动作的速度越快, 最终以最快的速度匀速执行
-                     * 在 (30 * KEY_LONG_PRESS_CNT * 10)ms 时达到最快速度.
+                     * 在 (20 * KEY_LONG_PRESS_CNT * 10)ms 时达到最快速度.
                      * u32Tim0Cnt = 15 表示每隔 ((KEY_LONG_PRESS_CNT - 15) * 10)ms 就响应一次按键*/
-                    if(u32UpDownCnt <= 30)
+                    if(u32UpDownCnt <= 20)
                     {
                         u32Tim0Cnt = u32UpDownCnt / 2;
                     }

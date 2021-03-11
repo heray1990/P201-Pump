@@ -27,7 +27,7 @@
  *****************************************************************************/
 #define MIN_KEY_COUNT 0
 #define KEY_LONG_PRESS_CNT 25 // 250ms
-#define LCD_CONTENT_STROBE_DURATION 50  // 500ms
+#define LCD_CONTENT_FLASH_FREQ 50  // 500ms
 #define MODE_KEY_LONG_PRESS_CNT 600 // 6000ms
 #define SET_OK_KEY_LONG_PRESS_CNT 200 // 2000ms
 #define TIMER0_CNT_WATER_TIME       100 // 1000ms
@@ -1475,7 +1475,7 @@ void App_LcdStrobeControl(void)
     static uint8_t u8LcdContentSDCnt = 0;
     static boolean_t bFlipFlag = TRUE;
 
-    if(++u8LcdContentSDCnt > LCD_CONTENT_STROBE_DURATION)
+    if(++u8LcdContentSDCnt > LCD_CONTENT_FLASH_FREQ)
     {
         u8LcdContentSDCnt = 0;
 

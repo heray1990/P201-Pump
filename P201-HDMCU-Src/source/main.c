@@ -571,7 +571,8 @@ void App_KeyHandler(void)
 
     if(Unlock == enLockStatus && unKeyPress.Mode)
     {
-        enFocusOn = Nothing;
+        enFocusOn = Mode;
+
         if(ModeAutomatic == enWorkingMode)
         {
             enWorkingMode = ModeManual;
@@ -616,6 +617,11 @@ void App_KeyHandler(void)
             switch(enFocusOn)
             {
                 case Nothing:
+                case Mode:
+                    if(Mode == enFocusOn)
+                    {
+                        Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+                    }
                     enFocusOn = Group;
                     u8StopFlag = 1;
                     Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
@@ -687,6 +693,11 @@ void App_KeyHandler(void)
             {
                 enFocusOn = WateringTime;
             }
+            else if(Mode == enFocusOn)
+            {
+                enFocusOn = WateringTime;
+                Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+            }
             else
             {
                 enFocusOn = Nothing;
@@ -742,6 +753,9 @@ void App_KeyHandler(void)
             {
                 switch(enFocusOn)
                 {
+                    case Mode:
+                        break;
+
                     case Group:
                         enFocusOn = Channel;
                         if(0 == u8StopFlag)
@@ -818,6 +832,7 @@ void App_KeyHandler(void)
                 else
                 {
                     enFocusOn = Nothing;
+                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
                     u8StopFlag = !u8StopFlag;
                     Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                     if(1 == u8StopFlag)
@@ -840,6 +855,7 @@ void App_KeyHandler(void)
         {
             case Nothing:
             case Group:
+            case Mode:
                 if(ModeAutomatic == enWorkingMode)
                 {
                     if(enFocusOn != Group)
@@ -855,6 +871,7 @@ void App_KeyHandler(void)
                     {
                         --u8GroupNum;
                     }
+                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
                     // 组数变化了, 通道、浇水时长、启动时间和间隔天数也需要跟着变化
                     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
                     Lcd_D61593A_GenRam_Channel(u32LcdRamData,
@@ -1067,6 +1084,7 @@ void App_KeyHandler(void)
         {
             case Nothing:
             case Group:
+            case Mode:
                 if(ModeAutomatic == enWorkingMode)
                 {
                     if(enFocusOn != Group)
@@ -1078,6 +1096,7 @@ void App_KeyHandler(void)
                     {
                         u8GroupNum = GROUP_NUM_MIN;
                     }
+                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
                     // 组数变化了, 通道、浇水时长、启动时间和间隔天数也需要跟着变化
                     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
                     Lcd_D61593A_GenRam_Channel(u32LcdRamData,
@@ -1502,6 +1521,10 @@ void App_LcdStrobeControl(void)
 
             switch(enFocusOn)
             {
+            case Mode:
+                Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, bFlipFlag);
+                break;
+
             case Group:
                 Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, bFlipFlag, enFocusOn);
                 break;

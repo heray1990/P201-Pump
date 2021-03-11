@@ -84,7 +84,8 @@ typedef enum
     RtcMonth = 8u,
     RtcDay = 9u,
     RtcHour = 10u,
-    RtcMin = 11u
+    RtcMin = 11u,
+    Mode = 12u
 }en_focus_on;
 
 #endif /* __GENERAL_DEFINE_H__ */

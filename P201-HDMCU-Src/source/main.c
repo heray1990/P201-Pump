@@ -25,12 +25,13 @@
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
  *****************************************************************************/
-#define MIN_KEY_COUNT 0
-#define KEY_LONG_PRESS_CNT 25 // 250ms
-#define LCD_CONTENT_FLASH_FREQ 50  // 500ms
-#define MODE_KEY_LONG_PRESS_CNT 600 // 6000ms
-#define SET_OK_KEY_LONG_PRESS_CNT 200 // 2000ms
-#define TIMER0_CNT_WATER_TIME       100 // 1000ms
+#define MIN_KEY_COUNT               0
+#define KEY_LONG_PRESS_CNT          25  // 250ms
+#define LCD_CONTENT_FLASH_FREQ      50  // 500ms
+#define LCD_CONTENT_FLASH_DURATION  1000    // 10s
+#define MODE_KEY_LONG_PRESS_CNT     600 // 6s
+#define SET_OK_KEY_LONG_PRESS_CNT   200 // 2s
+#define TIMER0_CNT_WATER_TIME       100 // 1s
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -84,6 +85,7 @@ __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO stc_rtc_time_t stcRtcTime;
 __IO boolean_t bStartWateringFlag, bLcdUpdate;
+__IO uint16_t u16LcdFlickerCnt;
 static en_key_states enKeyState = Waiting;
 
 /******************************************************************************
@@ -203,6 +205,11 @@ int32_t main(void)
             bLcdUpdate = FALSE;
         }
 
+        if(Nothing == enFocusOn && u16LcdFlickerCnt != 0)
+        {
+            u16LcdFlickerCnt = 0;
+        }
+
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
@@ -217,6 +224,7 @@ int32_t main(void)
         {
             App_KeyHandler();
             unKeyPress.Full = 0x0000;
+            u16LcdFlickerCnt = 0;
         }
 
         if(TRUE == bStartWateringFlag)
@@ -1475,23 +1483,25 @@ void App_LcdStrobeControl(void)
     static uint8_t u8LcdContentSDCnt = 0;
     static boolean_t bFlipFlag = TRUE;
 
-    if(++u8LcdContentSDCnt > LCD_CONTENT_FLASH_FREQ)
+    u16LcdFlickerCnt++;
+
+    if(u16LcdFlickerCnt < LCD_CONTENT_FLASH_DURATION ||
+        (u16LcdFlickerCnt >= LCD_CONTENT_FLASH_DURATION && FALSE == bFlipFlag))
     {
-        u8LcdContentSDCnt = 0;
-
-        if(enFocusOn > Nothing)
+        if(++u8LcdContentSDCnt > LCD_CONTENT_FLASH_FREQ)
         {
+            u8LcdContentSDCnt = 0;
+
             bFlipFlag = !bFlipFlag;
-        }
 
-        if(enKeyState > Waiting)
-        {
-            // 正在处理按键时不闪烁
-            bFlipFlag = TRUE;
-        }
+            if(enKeyState > Waiting)
+            {
+                // 正在处理按键时不闪烁
+                bFlipFlag = TRUE;
+            }
 
-        switch(enFocusOn)
-        {
+            switch(enFocusOn)
+            {
             case Group:
                 Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, bFlipFlag, enFocusOn);
                 break;
@@ -1546,13 +1556,18 @@ void App_LcdStrobeControl(void)
             default:
                 bFlipFlag = TRUE;
                 break;
-        }
+            }
 
-        if((enFocusOn > Nothing) && (enKeyState < WaitForRelease))
-        {
-            // 当焦点处于会闪烁的控件并且没有处理按键时, 刷新LCD显示.
-            bLcdUpdate = TRUE;
+            if((enFocusOn > Nothing) && (enKeyState < WaitForRelease))
+            {
+                // 当焦点处于会闪烁的控件并且没有处理按键时, 刷新LCD显示.
+                bLcdUpdate = TRUE;
+            }
         }
+    }
+    else
+    {
+        enFocusOn = Nothing;
     }
 }
 
@@ -1621,7 +1636,10 @@ void Tim0_IRQHandler(void)
     {
         App_KeyStateChkSet();
 
-        App_LcdStrobeControl();
+        if(enFocusOn > Nothing)
+        {
+            App_LcdStrobeControl();
+        }
 
         App_WateringTimeCntDown();
 

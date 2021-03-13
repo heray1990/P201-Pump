@@ -237,11 +237,17 @@ int32_t main(void)
             {
                 if(0 == u8ChannelManual)
                 {
-                    Gpio_SetIO(GpioPortC, GpioPin13);   // Channel 1
+                    if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                    {
+                        Gpio_SetIO(GpioPortC, GpioPin13);   // Channel 1
+                    }
                 }
                 else
                 {
-                    Gpio_SetIO(GpioPortB, GpioPin7);    // Channel 2
+                    if(FALSE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                    {
+                        Gpio_SetIO(GpioPortB, GpioPin7);    // Channel 2
+                    }
                 }
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
             }
@@ -255,7 +261,10 @@ int32_t main(void)
                 Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                 if(0 == u8ChannelManual)
                 {
-                    Gpio_ClrIO(GpioPortC, GpioPin13);   // Channel 1
+                    if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                    {
+                        Gpio_ClrIO(GpioPortC, GpioPin13);   // Channel 1
+                    }
                     if(0 == u16WateringTimeManual[0])
                     {
                         u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
@@ -264,7 +273,10 @@ int32_t main(void)
                 }
                 else
                 {
-                    Gpio_ClrIO(GpioPortB, GpioPin7);    // Channel 2
+                    if(TRUE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                    {
+                        Gpio_ClrIO(GpioPortB, GpioPin7);    // Channel 2
+                    }
                     if(0 == u16WateringTimeManual[1])
                     {
                         u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |

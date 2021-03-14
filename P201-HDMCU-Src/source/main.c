@@ -362,11 +362,15 @@ int32_t main(void)
                 {
                     u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
                         (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                            (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                            TRUE,
-                                            enFocusOn);
-                    bLcdUpdate = TRUE;
+
+                    if(enFocusOn != WateringTime)
+                    {
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
+                                                (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                                TRUE,
+                                                enFocusOn);
+                        bLcdUpdate = TRUE;
+                    }
                 }
             }
 

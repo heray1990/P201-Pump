@@ -310,15 +310,6 @@ int32_t main(void)
                         Gpio_SetIO(GpioPortB, GpioPin7);    // Channel 2
                     }
                 }
-
-                if(u8DaysAddUp[u8GroupNum] <= u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART])
-                {
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                            (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                            TRUE,
-                                            enFocusOn);
-                    bLcdUpdate = TRUE;
-                }
             }
             else
             {
@@ -336,8 +327,6 @@ int32_t main(void)
                         Gpio_SetIO(GpioPortB, GpioPin7);    // Channel 2
                     }
                 }
-                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
-                bLcdUpdate = TRUE;
             }
         }
         else
@@ -1746,6 +1735,12 @@ void App_WateringTimeCntDown(void)
                 {
                     bStartWateringFlag = FALSE;
                 }
+
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
+                                        (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                        TRUE,
+                                        enFocusOn);
+                bLcdUpdate = TRUE;
             }
             else
             {
@@ -1754,10 +1749,13 @@ void App_WateringTimeCntDown(void)
                     u16WateringTimeManual[u8ChannelManual]--;
                 }
 
-                if(u16WateringTimeManual[u8ChannelManual] == 0)
+                if(0 == u16WateringTimeManual[u8ChannelManual])
                 {
                     bStartWateringFlag = FALSE;
                 }
+
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+                bLcdUpdate = TRUE;
             }
         }
     }

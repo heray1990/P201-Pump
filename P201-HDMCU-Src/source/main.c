@@ -211,6 +211,13 @@ int32_t main(void)
             bLcdUpdate = FALSE;
         }
 
+        if(unKeyPress.Full != 0x0000)    // Key pressed detected
+        {
+            App_KeyHandler();
+            unKeyPress.Full = 0x0000;
+            u16LcdFlickerCnt = 0;
+        }
+
         if(Nothing == enFocusOn && u16LcdFlickerCnt != 0)
         {
             u16LcdFlickerCnt = 0;
@@ -283,13 +290,6 @@ int32_t main(void)
                     }
                 }
             }
-        }
-
-        if(unKeyPress.Full != 0x0000)    // Key pressed detected
-        {
-            App_KeyHandler();
-            unKeyPress.Full = 0x0000;
-            u16LcdFlickerCnt = 0;
         }
 
         if(TRUE == bStartWateringFlag)

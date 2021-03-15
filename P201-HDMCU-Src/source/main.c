@@ -108,6 +108,7 @@ void App_PortCfg(void);
 void App_LcdPumpCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
+void App_PumpCtrl(void);
 void App_LcdStrobeControl(void);
 void App_WateringTimeCntDown(void);
 void App_Timer0Cfg(uint16_t u16Period);
@@ -292,109 +293,7 @@ int32_t main(void)
             }
         }
 
-        if(TRUE == bStartWateringFlag)
-        {
-            if(ModeAutomatic == enWorkingMode)
-            {
-                if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL])
-                {
-                    if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
-                    {
-                        Gpio_SetIO(GpioPortC, GpioPin13);   // Channel 1
-                    }
-                }
-                else
-                {
-                    if(FALSE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
-                    {
-                        Gpio_SetIO(GpioPortB, GpioPin7);    // Channel 2
-                    }
-                }
-            }
-            else
-            {
-                if(0 == u8ChannelManual)
-                {
-                    if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
-                    {
-                        Gpio_SetIO(GpioPortC, GpioPin13);   // Channel 1
-                    }
-                }
-                else
-                {
-                    if(FALSE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
-                    {
-                        Gpio_SetIO(GpioPortB, GpioPin7);    // Channel 2
-                    }
-                }
-            }
-        }
-        else
-        {
-            if(ModeAutomatic == enWorkingMode)
-            {
-                if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL])
-                {
-                    if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
-                    {
-                        Gpio_ClrIO(GpioPortC, GpioPin13);   // Channel 1
-                    }
-                }
-                else
-                {
-                    if(TRUE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
-                    {
-                        Gpio_ClrIO(GpioPortB, GpioPin7);    // Channel 2
-                    }
-                }
-                if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME])
-                {
-                    u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
-                        (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
-
-                    if(enFocusOn != WateringTime)
-                    {
-                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                                (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                                TRUE,
-                                                enFocusOn);
-                        bLcdUpdate = TRUE;
-                    }
-                }
-            }
-
-            if(ModeManual == enWorkingMode && 0 == u8StopFlag)
-            {
-                u8StopFlag = 1;
-                Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-                if(0 == u8ChannelManual)
-                {
-                    if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
-                    {
-                        Gpio_ClrIO(GpioPortC, GpioPin13);   // Channel 1
-                    }
-                    if(0 == u16WateringTimeManual[0])
-                    {
-                        u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
-                                            ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
-                    }
-                }
-                else
-                {
-                    if(TRUE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
-                    {
-                        Gpio_ClrIO(GpioPortB, GpioPin7);    // Channel 2
-                    }
-                    if(0 == u16WateringTimeManual[1])
-                    {
-                        u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
-                                            (stcFlashManager.u32FlashData[4] << 2);
-                    }
-                }
-                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
-                bLcdUpdate = TRUE;
-            }
-        }
+        App_PumpCtrl();
     }
 }
 
@@ -962,7 +861,6 @@ void App_KeyHandler(void)
                     else
                     {
                         bStartWateringFlag = TRUE;
-
                     }
                 }
             }
@@ -1570,8 +1468,8 @@ void App_LcdPumpCfg(void)
     Gpio_Init(GpioPortC, GpioPin0, &stcGpioCfg);
 
     // 关闭两路水泵
-    Gpio_ClrIO(GpioPortC, GpioPin13);   // Channel 1
-    Gpio_ClrIO(GpioPortB, GpioPin7);    // Channel 2
+    Gpio_ClrIO(GpioPortC, GpioPin13);   // Pump 1
+    Gpio_ClrIO(GpioPortB, GpioPin7);    // Pump 2
     Gpio_Init(GpioPortC, GpioPin13, &stcGpioCfg);
     Gpio_Init(GpioPortB, GpioPin7, &stcGpioCfg);
 
@@ -1614,6 +1512,87 @@ void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
     for(u8Idx = 0; u8Idx <= LCDRAM_INDEX_MAX; u8Idx++)
     {
         Lcd_WriteRam(u8Idx, pu32Data[u8Idx].u32_dis);
+    }
+}
+
+void App_PumpCtrl(void)
+{
+    if(TRUE == bStartWateringFlag)
+    {
+        if(ModeAutomatic == enWorkingMode)
+        {
+            if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL])
+            {
+                if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                {
+                    Gpio_SetIO(GpioPortC, GpioPin13);   // Pump 1
+                }
+            }
+            else
+            {
+                if(FALSE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                {
+                    Gpio_SetIO(GpioPortB, GpioPin7);    // Pump 2
+                }
+            }
+        }
+        else
+        {
+            if(0 == u8ChannelManual)
+            {
+                if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                {
+                    Gpio_SetIO(GpioPortC, GpioPin13);   // Pump 1
+                }
+            }
+            else
+            {
+                if(FALSE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                {
+                    Gpio_SetIO(GpioPortB, GpioPin7);    // Pump 2
+                }
+            }
+        }
+    }
+    else
+    {
+        if(ModeAutomatic == enWorkingMode)
+        {
+            if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL])
+            {
+                if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                {
+                    Gpio_ClrIO(GpioPortC, GpioPin13);   // Pump 1
+                }
+            }
+            else
+            {
+                if(TRUE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                {
+                    Gpio_ClrIO(GpioPortB, GpioPin7);    // Pump 2
+                }
+            }
+        }
+
+        if(ModeManual == enWorkingMode && 0 == u8StopFlag)
+        {
+            u8StopFlag = 1;
+            Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+            if(0 == u8ChannelManual)
+            {
+                if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                {
+                    Gpio_ClrIO(GpioPortC, GpioPin13);   // Pump 1
+                }
+            }
+            else
+            {
+                if(TRUE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                {
+                    Gpio_ClrIO(GpioPortB, GpioPin7);    // Pump 2
+                }
+            }
+        }
     }
 }
 
@@ -1734,6 +1713,9 @@ void App_WateringTimeCntDown(void)
                 if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME])
                 {
                     bStartWateringFlag = FALSE;
+
+                    u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
+                        (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
                 }
 
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
@@ -1752,6 +1734,17 @@ void App_WateringTimeCntDown(void)
                 if(0 == u16WateringTimeManual[u8ChannelManual])
                 {
                     bStartWateringFlag = FALSE;
+
+                    if(0 == u8ChannelManual)
+                    {
+                        u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
+                                            ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
+                    }
+                    else
+                    {
+                        u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
+                                            (stcFlashManager.u32FlashData[4] << 2);
+                    }
                 }
 
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);

@@ -32,6 +32,7 @@
 #define MODE_KEY_LONG_PRESS_CNT     600 // 6s
 #define SET_OK_KEY_LONG_PRESS_CNT   200 // 2s
 #define TIMER0_CNT_WATER_TIME       100 // 1s
+#define LCD_AUTO_OFF_CNT            1000    // 10s
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -86,7 +87,7 @@ __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
 __IO stc_rtc_time_t stcRtcTime;
 __IO boolean_t bStartWateringFlag, bLcdUpdate;
-__IO uint16_t u16LcdFlickerCnt, u16RtcCnt;
+__IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16LcdAutoOffCnt;
 static en_key_states enKeyState = Waiting;
 
 /******************************************************************************
@@ -282,6 +283,13 @@ int32_t main(void)
                                                     TRUE,
                                                     enFocusOn);
                             bLcdUpdate = TRUE;
+
+                            //开LCD和背光
+                            if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+                            {
+                                M0P_LCD->CR0_f.EN = LcdEnable;
+                                Gpio_SetIO(GpioPortC, GpioPin0);
+                            }
                         }
                     }
 
@@ -576,15 +584,21 @@ void App_KeyHandler(void)
         {
             u8PowerOnFlag = 1;
             enLockStatus = Unlock;
-            M0P_LCD->CR0_f.EN = LcdEnable;
-            Gpio_SetIO(GpioPortC, GpioPin0);
+            if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+            {
+                M0P_LCD->CR0_f.EN = LcdEnable;
+                Gpio_SetIO(GpioPortC, GpioPin0);
+            }
         }
         else
         {
             u8PowerOnFlag = 0;
             enLockStatus = LockExceptPowerKey;
-            M0P_LCD->CR0_f.EN = LcdDisable;
-            Gpio_ClrIO(GpioPortC, GpioPin0);
+            if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+            {
+                M0P_LCD->CR0_f.EN = LcdDisable;
+                Gpio_ClrIO(GpioPortC, GpioPin0);
+            }
         }
     }
 
@@ -1713,6 +1727,7 @@ void App_WateringTimeCntDown(void)
                 if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME])
                 {
                     bStartWateringFlag = FALSE;
+                    u16LcdAutoOffCnt = 0;
 
                     u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
                         (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
@@ -1734,6 +1749,7 @@ void App_WateringTimeCntDown(void)
                 if(0 == u16WateringTimeManual[u8ChannelManual])
                 {
                     bStartWateringFlag = FALSE;
+                    u16LcdAutoOffCnt = 0;
 
                     if(0 == u8ChannelManual)
                     {
@@ -1750,6 +1766,21 @@ void App_WateringTimeCntDown(void)
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
                 bLcdUpdate = TRUE;
             }
+        }
+    }
+}
+
+void App_LCDOffCtrl(void)
+{
+    u16LcdAutoOffCnt++;
+    if(u16LcdAutoOffCnt >= LCD_AUTO_OFF_CNT)
+    {
+        u16LcdAutoOffCnt = 0;
+        // 关LCD和背光
+        if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+        {
+            M0P_LCD->CR0_f.EN = LcdDisable;
+            Gpio_ClrIO(GpioPortC, GpioPin0);
         }
     }
 }
@@ -1802,6 +1833,12 @@ void Tim0_IRQHandler(void)
         }
 
         App_WateringTimeCntDown();
+
+        if((enFocusOn == Nothing) && (enKeyState < WaitForRelease) && FALSE == bStartWateringFlag)
+        {
+            // 无操作10s后关闭LCD和背光.
+            App_LCDOffCtrl();
+        }
 
         Bt_ClearIntFlag(TIM0, BtUevIrq); //中断标志清零
     }

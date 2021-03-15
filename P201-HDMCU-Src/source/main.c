@@ -218,6 +218,13 @@ int32_t main(void)
             App_KeyHandler();
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;
+            u16LcdAutoOffCnt = 0;
+            //开LCD和背光
+            if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+            {
+                M0P_LCD->CR0_f.EN = LcdEnable;
+                Gpio_SetIO(GpioPortC, GpioPin0);
+            }
         }
 
         if(Nothing == enFocusOn && u16LcdFlickerCnt != 0)

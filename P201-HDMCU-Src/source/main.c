@@ -86,7 +86,7 @@ __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
 __IO stc_rtc_time_t stcRtcTime;
-__IO boolean_t bStartWateringFlag, bLcdUpdate;
+__IO boolean_t bStartWateringFlag, bLcdUpdate, bPortDIrFlag;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16LcdAutoOffCnt;
 static en_key_states enKeyState = Waiting;
 
@@ -147,11 +147,16 @@ int32_t main(void)
     bLcdUpdate = TRUE;
     u16RtcCnt = 0;
     u8RtcFlag = 0;
+    bPortDIrFlag = FALSE;
 
     DDL_ZERO_STRUCT(stcRtcTime);
 
     App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
     App_KeyInit();
+
+    ///< 配置POWER KEY为下降沿中断, 初始化关闭PortD中断
+    Gpio_EnableIrq(GpioPortD, GpioPin0, GpioIrqFalling);
+    EnableNvic(PORTD_IRQn, IrqLevel3, FALSE);
 
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
@@ -219,8 +224,9 @@ int32_t main(void)
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;
             u16LcdAutoOffCnt = 0;
+
             //开LCD和背光
-            if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+            if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0) && 1 == u8PowerOnFlag)
             {
                 M0P_LCD->CR0_f.EN = LcdEnable;
                 Gpio_SetIO(GpioPortC, GpioPin0);
@@ -371,7 +377,7 @@ un_key_type App_KeyDetect(void)
     unKeyTypeTemp.Full = 0x0000;
 
     ///< 检测各按键是否按下(低电平)
-    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin0))
+    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin0) && FALSE == bPortDIrFlag)
     {
         unKeyTypeTemp.Power = 1;
         return unKeyTypeTemp;
@@ -534,8 +540,17 @@ void App_KeyStateChkSet(void)
                     }
                     else
                     {
-                        enKeyState = Update;   //state transition when all buttons released
-                        u32UpDownCnt = 0;
+                        if(unKeyPressTemp.Power && 0 == u8PowerOnFlag)
+                        {
+                            u8PowerOnFlag = 1;
+                            enKeyState = Waiting;
+                            unKeyPressTemp.Full = 0x0000;
+                        }
+                        else
+                        {
+                            enKeyState = Update;   //state transition when all buttons released
+                            u32UpDownCnt = 0;
+                        }
                     }
                 }
             }
@@ -583,24 +598,32 @@ void App_KeyStateChkSet(void)
 
 void App_KeyHandler(void)
 {
-    static uint8_t j = 0;
-
     if(enLockStatus < Lock  && unKeyPress.Power)
     {
         if(0 == u8PowerOnFlag)
         {
-            u8PowerOnFlag = 1;
-            enLockStatus = Unlock;
-            if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+            if(TRUE == bPortDIrFlag)
             {
-                M0P_LCD->CR0_f.EN = LcdEnable;
-                Gpio_SetIO(GpioPortC, GpioPin0);
+                enLockStatus = Unlock;
+                bLcdUpdate = TRUE;
+                bPortDIrFlag = FALSE;
+
+                EnableNvic(PORTD_IRQn, IrqLevel3, FALSE);   // 关闭端口PORTD系统中断
+
+                if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+                {
+                    M0P_LCD->CR0_f.EN = LcdEnable;
+                    Gpio_SetIO(GpioPortC, GpioPin0);
+                }
             }
         }
         else
         {
             u8PowerOnFlag = 0;
             enLockStatus = LockExceptPowerKey;
+
+            EnableNvic(PORTD_IRQn, IrqLevel3, TRUE);    // 使能端口PORTD系统中断
+
             if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
             {
                 M0P_LCD->CR0_f.EN = LcdDisable;
@@ -1475,6 +1498,17 @@ void App_PortCfg(void)
     Gpio_SetAnalogMode(GpioPortB, GpioPin4); //SEG33/VLCD2
     Gpio_SetAnalogMode(GpioPortB, GpioPin5); //SEG34/VLCD3
     Gpio_SetAnalogMode(GpioPortB, GpioPin6); //SEG35/VLCDH
+}
+
+///< PortD 按键中断服务函数
+void PortD_IRQHandler(void)
+{
+    if(TRUE == Gpio_GetIrqStatus(GpioPortD, GpioPin0))
+    {
+        bPortDIrFlag = TRUE;
+        unKeyPress.Power = 1;
+        Gpio_ClearIrq(GpioPortD, GpioPin0);
+    }
 }
 
 /******************************************************************************

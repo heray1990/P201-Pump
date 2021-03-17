@@ -106,6 +106,8 @@ void App_RtcCfg(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 void App_PortCfg(void);
+void App_LowPowerModeGpioSet(void);
+void App_ExitLowPowerModeGpioSet(void);
 void App_LcdPumpCfg(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
@@ -630,16 +632,23 @@ void App_KeyHandler(void)
         {
             if(TRUE == bPortDIrFlag)
             {
-                enLockStatus = Unlock;
-                bLcdUpdate = TRUE;
-                bPortDIrFlag = FALSE;
-
-                EnableNvic(PORTD_IRQn, IrqLevel3, FALSE);   // 关闭端口PORTD系统中断
-
-                if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+                delay1ms(10);   // 延迟消抖
+                if(TRUE == bPortDIrFlag)
                 {
-                    M0P_LCD->CR0_f.EN = LcdEnable;
-                    Gpio_SetIO(GpioPortC, GpioPin0);
+                    enLockStatus = Unlock;
+                    bLcdUpdate = TRUE;
+                    bPortDIrFlag = FALSE;
+                    u16LcdFlickerCnt = 0;
+                    u16LcdAutoOffCnt = 0;
+
+                    App_ExitLowPowerModeGpioSet();
+                    EnableNvic(PORTD_IRQn, IrqLevel3, FALSE);   // 关闭端口PORTD系统中断
+
+                    if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
+                    {
+                        M0P_LCD->CR0_f.EN = LcdEnable;
+                        Gpio_SetIO(GpioPortC, GpioPin0);
+                    }
                 }
             }
         }
@@ -655,6 +664,8 @@ void App_KeyHandler(void)
                 M0P_LCD->CR0_f.EN = LcdDisable;
                 Gpio_ClrIO(GpioPortC, GpioPin0);
             }
+
+            App_LowPowerModeGpioSet();
         }
     }
 
@@ -1527,6 +1538,55 @@ void App_PortCfg(void)
     Gpio_SetAnalogMode(GpioPortB, GpioPin4); //SEG33/VLCD2
     Gpio_SetAnalogMode(GpioPortB, GpioPin5); //SEG34/VLCD3
     Gpio_SetAnalogMode(GpioPortB, GpioPin6); //SEG35/VLCDH
+}
+
+void App_LowPowerModeGpioSet(void)
+{
+    ///< 打开GPIO外设时钟门控
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+    }
+
+    //swd as gpio
+    Sysctrl_SetFunc(SysctrlSWDUseIOEn, TRUE);
+
+    ///< 配置为数字端口
+    M0P_GPIO->PAADS = 0;
+    M0P_GPIO->PBADS = 0;
+    M0P_GPIO->PCADS = 0;
+    M0P_GPIO->PDADS = 0;
+
+    ///< 配置为端口输入
+    M0P_GPIO->PADIR = 0XFFFF;
+    M0P_GPIO->PBDIR = 0XFFFF;
+    M0P_GPIO->PCDIR = 0XFFFF;
+    M0P_GPIO->PDDIR = 0XFFFF;
+
+    ///< 输入下拉（除POWER KEY和外部晶振端口以外）
+    M0P_GPIO->PAPD = 0xFFFF;
+    M0P_GPIO->PBPD = 0xFFFF;
+    M0P_GPIO->PCPD = 0x3FFF;    // PC14 PC15 为 RTC 晶振输入脚不能下拉
+    M0P_GPIO->PDPD = 0xFFFE;    // PD00 是 POWER 按键不能下拉
+}
+
+void App_ExitLowPowerModeGpioSet(void)
+{
+    stc_gpio_cfg_t stcGpioCfg;
+
+    ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
+    stcGpioCfg.enDir = GpioDirOut;
+    ///< 端口上下拉配置->下拉
+    stcGpioCfg.enPu = GpioPuDisable;
+    stcGpioCfg.enPd = GpioPdEnable;
+
+    ///< GPIO IO BL_ON Pump 端口初始化
+    Gpio_Init(GpioPortC, GpioPin0, &stcGpioCfg);
+    Gpio_Init(GpioPortC, GpioPin13, &stcGpioCfg);
+    Gpio_Init(GpioPortB, GpioPin7, &stcGpioCfg);
+
+    App_KeyInit();
+    App_PortCfg();  // 重新配置 LCD 端口
 }
 
 ///< PortD 按键中断服务函数

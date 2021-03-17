@@ -160,7 +160,10 @@ int32_t main(void)
 
     Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
     Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);   ///< 开启LCD时钟
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralLcd))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);   ///< 开启LCD时钟
+    }
     App_PortCfg();               ///< LCD端口配置
     App_LcdPumpCfg();                ///< LCD模块和水泵GPIO口配置
     Lcd_ClearDisp();             ///< 清屏
@@ -168,8 +171,14 @@ int32_t main(void)
     App_Timer0Cfg(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
     Bt_M0_Run(TIM0);    // Timer0 运行
 
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio,TRUE);//GPIO外设时钟打开
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);//RTC模块时钟打开
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);//GPIO外设时钟打开
+    }
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralRtc))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc, TRUE);//RTC模块时钟打开
+    }
     Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
     App_RtcCfg();
 
@@ -324,7 +333,10 @@ void App_ClkInit(void)
     stc_sysctrl_clk_cfg_t stcCfg;
 
     ///< 开启FLASH外设时钟
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralFlash, TRUE);
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralFlash))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralFlash, TRUE);
+    }
 
     ///<========================== 时钟初始化配置 ===================================
     ///< 因要使用的时钟源HCLK小于24M：此处设置FLASH 读等待周期为0 cycle(默认值也为0 cycle)
@@ -348,7 +360,10 @@ void App_KeyInit(void)
     stc_gpio_cfg_t stcGpioCfg;
 
     ///< 打开GPIO外设时钟门控
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+    }
 
     ///< 端口方向配置->输入
     stcGpioCfg.enDir = GpioDirIn;
@@ -1371,7 +1386,10 @@ void App_RtcCfg(void)
 {
     stc_rtc_initstruct_t RtcInitStruct;
 
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc,TRUE);   //RTC模块时钟打开
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralRtc))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc, TRUE);   //RTC模块时钟打开
+    }
     RtcInitStruct.rtcAmpm = RtcPm;                          //24小时制
     RtcInitStruct.rtcClksrc = RtcClkXtl;                    //外部低速时钟
     RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrdx;            //周期中断类型PRDX
@@ -1523,7 +1541,10 @@ void App_LcdPumpCfg(void)
     stc_gpio_cfg_t stcGpioCfg;
 
     ///< 打开GPIO外设时钟门控
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+    }
 
     ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
     stcGpioCfg.enDir = GpioDirOut;
@@ -1853,7 +1874,10 @@ void App_Timer0Cfg(uint16_t u16Period)
 
     DDL_ZERO_STRUCT(stcBtBaseCfg);
 
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralBaseTim, TRUE); //Base Timer外设时钟使能
+    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralBaseTim))
+    {
+        Sysctrl_SetPeripheralGate(SysctrlPeripheralBaseTim, TRUE); //Base Timer外设时钟使能
+    }
 
     stcBtBaseCfg.enWorkMode = BtWorkMode0;                  //定时器模式
     stcBtBaseCfg.enCT       = BtTimer;                      //定时器功能，计数时钟为内部PCLK

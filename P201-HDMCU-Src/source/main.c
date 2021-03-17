@@ -538,8 +538,18 @@ void App_KeyStateChkSet(void)
                     }
                     else
                     {
-                        enKeyState = Update;
-                        u32UpDownCnt = 0;
+                        if(unKeyPressTemp.Power && 0 == u8PowerOnFlag)
+                        {
+                            u8PowerOnFlag = 1;
+                            enKeyState = Waiting;
+                            u32Tim0Cnt = 0;
+                            unKeyPressTemp.Full = 0x0000;
+                        }
+                        else
+                        {
+                            enKeyState = Update;
+                            u32UpDownCnt = 0;
+                        }
                     }
                 }
             }
@@ -559,6 +569,7 @@ void App_KeyStateChkSet(void)
                         {
                             u8PowerOnFlag = 1;
                             enKeyState = Waiting;
+                            u32Tim0Cnt = 0;
                             unKeyPressTemp.Full = 0x0000;
                         }
                         else

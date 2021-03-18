@@ -21,6 +21,7 @@
 #include "flash_manager.h"
 #include "general_define.h"
 #include "core_cm0plus.h"
+#include "wdt.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -106,11 +107,12 @@ void App_RtcInit(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 void App_PortInit(void);
-void App_LowPowerModeGpioSet(void);
+void App_DeepSleepModeEnter(void);
 void App_ExitLowPowerModeGpioSet(void);
-void App_LcdPumpCfg(void);
+void App_LcdInit(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
+void App_PumpInit(void);
 void App_PumpCtrl(void);
 void App_LcdStrobeControl(void);
 void App_WateringTimeCntDown(void);
@@ -118,12 +120,17 @@ void App_Timer0Init(uint16_t u16Period);
 void App_UserDataSetDefaultVal(void);
 void App_ConvertFlashData2UserData(void);
 void App_ConvertUserData2FlashData(void);
+void App_WdtInit(void);
+void App_SysInit(void);
+void App_SysInitWakeUp(void);
 
 
 int32_t main(void)
 {
     static uint8_t u8WateringGroupIdx = 0;
     static boolean_t bJustWatered = FALSE;
+
+    App_SysInit();
 
     if(Ok == Flash_Manager_Init())
     {
@@ -153,73 +160,7 @@ int32_t main(void)
 
     DDL_ZERO_STRUCT(stcRtcTime);
 
-    App_ClkInit(); //设置RCH为4MHz内部时钟初始化配置
-    App_KeyInit();
-
-    ///< 配置POWER KEY为下降沿中断, 初始化关闭PortD中断
-    Gpio_EnableIrq(GpioPortD, GpioPin0, GpioIrqFalling);
-    EnableNvic(PORTD_IRQn, IrqLevel3, FALSE);
-
-    Sysctrl_ClkSourceEnable(SysctrlClkRCL,TRUE);            ///< 使能RCL时钟
-    Sysctrl_SetRCLTrim(SysctrlRclFreq32768);                ///< 配置内部低速时钟频率为32.768kHz
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralLcd))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);   ///< 开启LCD时钟
-    }
-    App_PortInit();               ///< LCD端口配置
-    App_LcdPumpCfg();                ///< LCD模块和水泵GPIO口配置
-    Lcd_ClearDisp();             ///< 清屏
-
-    App_Timer0Init(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
     Bt_M0_Run(TIM0);    // Timer0 运行
-
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);//GPIO外设时钟打开
-    }
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralRtc))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc, TRUE);//RTC模块时钟打开
-    }
-    Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
-    App_RtcInit();
-
-    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
-    Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
-    if(ModeAutomatic == enWorkingMode)
-    {
-        Lcd_D61593A_GenRam_Channel(u32LcdRamData,
-                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
-                            TRUE,
-                            enFocusOn);
-        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                    (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                    TRUE,
-                                    enFocusOn);
-    }
-    else
-    {
-        Lcd_D61593A_GenRam_Channel(u32LcdRamData, u8ChannelManual + 1, TRUE, enFocusOn);
-        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
-    }
-    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
-                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
-                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
-                                enWorkingMode,
-                                TRUE,
-                                enFocusOn);
-    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
-                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART],
-                            enWorkingMode,
-                            TRUE,
-                            enFocusOn);
-    Lcd_D61593A_GenRam_Smart1(u32LcdRamData, SmartModeDry, FALSE);
-    Lcd_D61593A_GenRam_Smart2(u32LcdRamData, SmartModeWet, FALSE);
-    Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-    Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
-    Lcd_D61593A_GenRam_Wifi_Icon(u32LcdRamData, WifiSignalStrong, FALSE);
-    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, BatteryPercent100, TRUE);
-    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
 
     while(1)
     {
@@ -1510,13 +1451,23 @@ void App_PortInit(void)
     Gpio_SetAnalogMode(GpioPortB, GpioPin6); //SEG35/VLCDH
 }
 
-void App_LowPowerModeGpioSet(void)
+void App_DeepSleepModeEnter(void)
 {
+    unsigned char i;
+
     ///< 打开GPIO外设时钟门控
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
 
     //swd as gpio
     Sysctrl_SetFunc(SysctrlSWDUseIOEn, TRUE);
+
+    i = 10;
+    while(i--)
+    {
+        Lcd_ClearDisp();
+        M0P_LCD->CR0_f.EN = LcdDisable;
+    }
+    Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
     ///< 配置为数字端口
     M0P_GPIO->PAADS = 0;
@@ -1534,7 +1485,40 @@ void App_LowPowerModeGpioSet(void)
     M0P_GPIO->PAPD = 0xFFFF;
     M0P_GPIO->PBPD = 0xFFFF;
     M0P_GPIO->PCPD = 0x3FFF;    // PC14 PC15 为 RTC 晶振输入脚不能下拉
-    M0P_GPIO->PDPD = 0xFFFE;    // PD00 是 POWER 按键不能下拉
+    M0P_GPIO->PDPD = 0xFF0C;    // 按键不下拉
+
+    M0P_GPIO->PABCLR = 0xFFFF;
+    M0P_GPIO->PBBCLR = 0xFFFF;
+    M0P_GPIO->PCBCLR = 0X3FFF;
+    M0P_GPIO->PDBCLR = 0xFF0C;
+
+    Gpio_SetAnalogMode(GPIO_PORT_XTL, GPIO_PIN_XTLI);  //XTLI
+    Gpio_SetAnalogMode(GPIO_PORT_XTL, GPIO_PIN_XTLO);  //XTLO
+
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+
+	EnableNvic(PORTD_IRQn, IrqLevel3, TRUE);
+
+    Rtc_AlmIeCmd(TRUE);                     //使能闹钟中断
+    EnableNvic(RTC_IRQn, IrqLevel3, TRUE);  //使能RTC中断向量
+    Rtc_Cmd(TRUE);                          //使能RTC开始计数
+    Rtc_StartWait();                        //配置闹铃时间
+
+    Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
+    Sysctrl_SysClkSwitch(SysctrlClkXTL);
+
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralWdt, FALSE);
+
+    Lpm_GotoDeepSleep(FALSE);
+    Wdt_Feed();     // 喂狗
+
+    i = 10;
+    while(i--);
 }
 
 void App_ExitLowPowerModeGpioSet(void)
@@ -1559,10 +1543,28 @@ void App_ExitLowPowerModeGpioSet(void)
 ///< PortD 按键中断服务函数
 void PortD_IRQHandler(void)
 {
-    if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER))
+    if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_SET) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_OK) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
     {
         bPortDIrFlag = TRUE;
-        unKeyPress.Power = 1;
+
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
     }
 }
@@ -1572,17 +1574,11 @@ void PortD_IRQHandler(void)
  **
  ** \return 无
  *****************************************************************************/
-void App_LcdPumpCfg(void)
+void App_LcdInit(void)
 {
     stc_lcd_cfg_t LcdInitStruct;
     stc_lcd_segcom_t LcdSegCom;
     stc_gpio_cfg_t stcGpioCfg;
-
-    ///< 打开GPIO外设时钟门控
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
-    }
 
     ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
     stcGpioCfg.enDir = GpioDirOut;
@@ -1594,12 +1590,6 @@ void App_LcdPumpCfg(void)
     Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     ///< GPIO IO LCD BL_ON 端口初始化
     Gpio_Init(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL, &stcGpioCfg);
-
-    // 关闭两路水泵
-    Gpio_ClrIO(GpioPortC, GpioPin13);   // Pump 1
-    Gpio_ClrIO(GpioPortB, GpioPin7);    // Pump 2
-    Gpio_Init(GpioPortC, GpioPin13, &stcGpioCfg);
-    Gpio_Init(GpioPortB, GpioPin7, &stcGpioCfg);
 
     LcdSegCom.u32Seg0_31 = 0xff800000;                              ///< 配置LCD_POEN0寄存器 开启SEG0~SEG22
     LcdSegCom.stc_seg32_51_com0_8_t.seg32_51_com0_8 = 0xffffffff;   ///< 初始化LCD_POEN1寄存器 全部关闭输出端口
@@ -1631,6 +1621,43 @@ void App_LcdRam_Init(un_Ram_Data* pu32Data)
     {
         pu32Data[u8Idx].u32_dis = 0x00000000;
     }
+
+    Lcd_D61593A_GenRam_WorkingMode(pu32Data, enWorkingMode, TRUE);
+    Lcd_D61593A_GenRam_GroupNum(pu32Data, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
+    if(ModeAutomatic == enWorkingMode)
+    {
+        Lcd_D61593A_GenRam_Channel(pu32Data,
+                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
+                            TRUE,
+                            enFocusOn);
+        Lcd_D61593A_GenRam_Watering_Time(pu32Data,
+                                    (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                    TRUE,
+                                    enFocusOn);
+    }
+    else
+    {
+        Lcd_D61593A_GenRam_Channel(pu32Data, u8ChannelManual + 1, TRUE, enFocusOn);
+        Lcd_D61593A_GenRam_Watering_Time(pu32Data, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+    }
+    Lcd_D61593A_GenRam_Starting_Time(pu32Data,
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
+                                enWorkingMode,
+                                TRUE,
+                                enFocusOn);
+    Lcd_D61593A_GenRam_Days_Apart(pu32Data,
+                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART],
+                            enWorkingMode,
+                            TRUE,
+                            enFocusOn);
+    Lcd_D61593A_GenRam_Smart1(pu32Data, SmartModeDry, FALSE);
+    Lcd_D61593A_GenRam_Smart2(pu32Data, SmartModeWet, FALSE);
+    Lcd_D61593A_GenRam_Stop(pu32Data, u8StopFlag);
+    Lcd_D61593A_GenRam_Lock_Icon(pu32Data, enLockStatus, TRUE);
+    Lcd_D61593A_GenRam_Wifi_Icon(pu32Data, WifiSignalStrong, FALSE);
+    Lcd_D61593A_GenRam_Battery_Icon(pu32Data, BatteryPercent100, TRUE);
+    Lcd_D61593A_GenRam_Date_And_Time(pu32Data, &stcRtcTime, TRUE, enFocusOn);
 }
 
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
@@ -1641,6 +1668,23 @@ void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
     {
         Lcd_WriteRam(u8Idx, pu32Data[u8Idx].u32_dis);
     }
+}
+
+void App_PumpInit(void)
+{
+    stc_gpio_cfg_t stcGpioCfg;
+
+    ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
+    stcGpioCfg.enDir = GpioDirOut;
+    ///< 端口上下拉配置->下拉
+    stcGpioCfg.enPu = GpioPuDisable;
+    stcGpioCfg.enPd = GpioPdEnable;
+
+    Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
+    Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
+
+    Gpio_Init(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1, &stcGpioCfg);
+    Gpio_Init(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2, &stcGpioCfg);
 }
 
 void App_PumpCtrl(void)
@@ -2035,6 +2079,76 @@ void App_ConvertUserData2FlashData(void)
     }
 
     stcFlashManager.u32FlashData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u32FlashData, FLASH_MANAGER_DATA_LEN);
+}
+
+void App_WdtInit(void)
+{
+    ///< 开启WDT外设时钟
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralWdt, TRUE);
+    ///< WDT 初始化
+    Wdt_Init(WdtResetEn, WdtT52s4);
+}
+
+void App_SysInit(void)
+{
+    App_ClkInit();
+
+    App_Timer0Init(160); //周期 = 160*(1/(4*1024)*256 = 10ms
+
+    Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
+    Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);   // 使能RCL时钟
+    Sysctrl_SetRCLTrim(SysctrlRclFreq32768);        // 配置内部低速时钟频率为32.768kHz
+
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);  // 开启LCD时钟
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 开启GPIO外设时钟
+    App_PortInit();
+    App_LcdInit();      // LCD模块和水泵GPIO口配置
+    Lcd_ClearDisp();    // 清屏
+
+    App_RtcInit();
+    App_WdtInit();
+    App_KeyInit();
+    App_PumpInit();
+
+    ///< 确保初始化正确执行后方能进行FLASH编程操作，FLASH初始化（编程时间,休眠模式配置）
+    while(Ok != Flash_Init(1, TRUE))
+    {
+        ;
+    }
+}
+
+void App_SysInitWakeUp(void)
+{
+    App_ClkInit();
+
+    App_Timer0Init(160); //周期 = 160*(1/(4*1024)*256 = 10ms
+
+    Gpio_SetAnalogMode(GPIO_PORT_XTL, GPIO_PIN_XTLI);  //XTLI
+    Gpio_SetAnalogMode(GPIO_PORT_XTL, GPIO_PIN_XTLO);  //XTLO
+    Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
+    Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);   // 使能RCL时钟
+    Sysctrl_SetRCLTrim(SysctrlRclFreq32768);        // 配置内部低速时钟频率为32.768kHz
+
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);  // 开启LCD时钟
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 开启GPIO外设时钟
+    App_PortInit();
+    App_LcdInit();      // LCD模块和水泵GPIO口配置
+    Lcd_ClearDisp();    // 清屏
+
+    App_WdtInit();
+    App_KeyInit();
+    App_PumpInit();
+
+    EnableNvic(RTC_IRQn, IrqLevel3, TRUE);
+    Rtc_StartWait();
+
+    ///< 确保初始化正确执行后方能进行FLASH编程操作，FLASH初始化（编程时间,休眠模式配置）
+    while(Ok != Flash_Init(1, TRUE))
+    {
+        ;
+    }
+
+    Lcd_ClearDisp();
 }
 /******************************************************************************
  * EOF (not truncated)

@@ -36,6 +36,10 @@
 #define GPIO_PORT_LCD_BL    GpioPortC
 #define GPIO_PIN_LCD_BL     GpioPin0
 
+#define GPIO_PORT_XTL       GpioPortC
+#define GPIO_PIN_XTLI       GpioPin14
+#define GPIO_PIN_XTLO       GpioPin15
+
 
 /******************************************************************************
  ** \brief 智能模式选择

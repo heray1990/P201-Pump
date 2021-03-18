@@ -20,6 +20,22 @@
 #define AUTOMODE_GROUP_DATA_STARTMIN    3
 #define AUTOMODE_GROUP_DATA_WATER_TIME  4
 
+#define GPIO_PORT_KEY       GpioPortD
+#define GPIO_PIN_KEY_POWER  GpioPin0
+#define GPIO_PIN_KEY_MODE   GpioPin1
+#define GPIO_PIN_KEY_SET    GpioPin4
+#define GPIO_PIN_KEY_OK     GpioPin6
+#define GPIO_PIN_KEY_DOWN   GpioPin5
+#define GPIO_PIN_KEY_UP     GpioPin7
+
+#define GPIO_PORT_PUMP_1    GpioPortC
+#define GPIO_PORT_PUMP_2    GpioPortB
+#define GPIO_PIN_PUMP_1     GpioPin13
+#define GPIO_PIN_PUMP_2     GpioPin7
+
+#define GPIO_PORT_LCD_BL    GpioPortC
+#define GPIO_PIN_LCD_BL     GpioPin0
+
 
 /******************************************************************************
  ** \brief 智能模式选择

@@ -102,10 +102,10 @@ void App_KeyInit(void);
 un_key_type App_KeyDetect(void);
 void App_KeyStateChkSet(void);
 void App_KeyHandler(void);
-void App_RtcCfg(void);
+void App_RtcInit(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
-void App_PortCfg(void);
+void App_PortInit(void);
 void App_LowPowerModeGpioSet(void);
 void App_ExitLowPowerModeGpioSet(void);
 void App_LcdPumpCfg(void);
@@ -114,7 +114,7 @@ void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
 void App_PumpCtrl(void);
 void App_LcdStrobeControl(void);
 void App_WateringTimeCntDown(void);
-void App_Timer0Cfg(uint16_t u16Period);
+void App_Timer0Init(uint16_t u16Period);
 void App_UserDataSetDefaultVal(void);
 void App_ConvertFlashData2UserData(void);
 void App_ConvertUserData2FlashData(void);
@@ -166,11 +166,11 @@ int32_t main(void)
     {
         Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);   ///< 开启LCD时钟
     }
-    App_PortCfg();               ///< LCD端口配置
+    App_PortInit();               ///< LCD端口配置
     App_LcdPumpCfg();                ///< LCD模块和水泵GPIO口配置
     Lcd_ClearDisp();             ///< 清屏
 
-    App_Timer0Cfg(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
+    App_Timer0Init(160);   //周期 = 160*(1/(4*1024)*256 = 10ms
     Bt_M0_Run(TIM0);    // Timer0 运行
 
     if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
@@ -182,7 +182,7 @@ int32_t main(void)
         Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc, TRUE);//RTC模块时钟打开
     }
     Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
-    App_RtcCfg();
+    App_RtcInit();
 
     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
     Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
@@ -309,11 +309,8 @@ int32_t main(void)
                             bLcdUpdate = TRUE;
 
                             //开LCD和背光
-                            if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
-                            {
-                                M0P_LCD->CR0_f.EN = LcdEnable;
-                                Gpio_SetIO(GpioPortC, GpioPin0);
-                            }
+                            M0P_LCD->CR0_f.EN = LcdEnable;
+                            Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
                         }
                     }
 
@@ -333,14 +330,6 @@ int32_t main(void)
 void App_ClkInit(void)
 {
     stc_sysctrl_clk_cfg_t stcCfg;
-
-    ///< 开启FLASH外设时钟
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralFlash))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralFlash, TRUE);
-    }
-
-    ///<========================== 时钟初始化配置 ===================================
     ///< 因要使用的时钟源HCLK小于24M：此处设置FLASH 读等待周期为0 cycle(默认值也为0 cycle)
     Flash_WaitCycle(FlashWaitCycle0);
 
@@ -362,10 +351,7 @@ void App_KeyInit(void)
     stc_gpio_cfg_t stcGpioCfg;
 
     ///< 打开GPIO外设时钟门控
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
-    }
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
 
     ///< 端口方向配置->输入
     stcGpioCfg.enDir = GpioDirIn;
@@ -379,12 +365,12 @@ void App_KeyInit(void)
     ///< 端口输入/输出值寄存器总线控制模式配置->AHB
     stcGpioCfg.enCtrlMode = GpioAHB;
     ///< GPIO IO KEY初始化
-    Gpio_Init(GpioPortD, GpioPin0, &stcGpioCfg);    // POWER
-    Gpio_Init(GpioPortD, GpioPin1, &stcGpioCfg);    // MODE
-    Gpio_Init(GpioPortD, GpioPin4, &stcGpioCfg);    // SET
-    Gpio_Init(GpioPortD, GpioPin6, &stcGpioCfg);    // OK
-    Gpio_Init(GpioPortD, GpioPin5, &stcGpioCfg);    // DW
-    Gpio_Init(GpioPortD, GpioPin7, &stcGpioCfg);    // UP
+    Gpio_Init(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, &stcGpioCfg);  // POWER
+    Gpio_Init(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, &stcGpioCfg);   // MODE
+    Gpio_Init(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, &stcGpioCfg);    // SET
+    Gpio_Init(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, &stcGpioCfg);     // OK
+    Gpio_Init(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, &stcGpioCfg);   // DW
+    Gpio_Init(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, &stcGpioCfg);     // UP
 }
 
 un_key_type App_KeyDetect(void)
@@ -394,37 +380,37 @@ un_key_type App_KeyDetect(void)
     unKeyTypeTemp.Full = 0x0000;
 
     ///< 检测各按键是否按下(低电平)
-    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin0) && FALSE == bPortDIrFlag)
+    if(FALSE == Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) && FALSE == bPortDIrFlag)
     {
         unKeyTypeTemp.Power = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin1))
+    if(FALSE == Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE))
     {
         unKeyTypeTemp.Mode = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin4))
+    if(FALSE == Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_SET))
     {
         unKeyTypeTemp.Set = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin6))
+    if(FALSE == Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_OK))
     {
         unKeyTypeTemp.OK = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin5))
+    if(FALSE == Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN))
     {
         unKeyTypeTemp.Down = 1;
         return unKeyTypeTemp;
     }
 
-    if(FALSE == Gpio_GetInputIO(GpioPortD, GpioPin7))
+    if(FALSE == Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
     {
         unKeyTypeTemp.Up = 1;
         return unKeyTypeTemp;
@@ -640,15 +626,8 @@ void App_KeyHandler(void)
                     bPortDIrFlag = FALSE;
                     u16LcdFlickerCnt = 0;
                     u16LcdAutoOffCnt = 0;
-
-                    App_ExitLowPowerModeGpioSet();
-                    EnableNvic(PORTD_IRQn, IrqLevel3, FALSE);   // 关闭端口PORTD系统中断
-
-                    if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
-                    {
-                        M0P_LCD->CR0_f.EN = LcdEnable;
-                        Gpio_SetIO(GpioPortC, GpioPin0);
-                    }
+                    M0P_LCD->CR0_f.EN = LcdEnable;
+                    Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
                 }
             }
         }
@@ -657,15 +636,8 @@ void App_KeyHandler(void)
             u8PowerOnFlag = 0;
             enLockStatus = LockExceptPowerKey;
 
-            EnableNvic(PORTD_IRQn, IrqLevel3, TRUE);    // 使能端口PORTD系统中断
-
-            if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
-            {
-                M0P_LCD->CR0_f.EN = LcdDisable;
-                Gpio_ClrIO(GpioPortC, GpioPin0);
-            }
-
-            App_LowPowerModeGpioSet();
+            M0P_LCD->CR0_f.EN = LcdDisable;
+            Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
         }
     }
 
@@ -1404,14 +1376,12 @@ void App_KeyHandler(void)
     bLcdUpdate = TRUE;
 }
 
-void App_RtcCfg(void)
+void App_RtcInit(void)
 {
     stc_rtc_initstruct_t RtcInitStruct;
 
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralRtc))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc, TRUE);   //RTC模块时钟打开
-    }
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralRtc, TRUE);  //RTC模块时钟打开
+
     RtcInitStruct.rtcAmpm = RtcPm;                          //24小时制
     RtcInitStruct.rtcClksrc = RtcClkXtl;                    //外部低速时钟
     RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrdx;            //周期中断类型PRDX
@@ -1422,7 +1392,7 @@ void App_RtcCfg(void)
     RtcInitStruct.rtcTime.u8Day    = 0x01;
     RtcInitStruct.rtcTime.u8DayOfWeek = 0x01;
     RtcInitStruct.rtcTime.u8Month  = 0x01;
-    RtcInitStruct.rtcTime.u8Year   = 0x00;
+    RtcInitStruct.rtcTime.u8Year   = 0x15;
     RtcInitStruct.rtcCompen = RtcCompenEnable;
     RtcInitStruct.rtcCompValue = 0;                         //补偿值根据实际情况进行补偿
     Rtc_Init(&RtcInitStruct);
@@ -1500,7 +1470,7 @@ void Rtc_IRQHandler(void)
  **
  ** \return 无
  *****************************************************************************/
-void App_PortCfg(void)
+void App_PortInit(void)
 {
     Gpio_SetAnalogMode(GpioPortA, GpioPin9);  //COM0
     Gpio_SetAnalogMode(GpioPortA, GpioPin10); //COM1
@@ -1543,10 +1513,7 @@ void App_PortCfg(void)
 void App_LowPowerModeGpioSet(void)
 {
     ///< 打开GPIO外设时钟门控
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralGpio))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
-    }
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
 
     //swd as gpio
     Sysctrl_SetFunc(SysctrlSWDUseIOEn, TRUE);
@@ -1581,22 +1548,22 @@ void App_ExitLowPowerModeGpioSet(void)
     stcGpioCfg.enPd = GpioPdEnable;
 
     ///< GPIO IO BL_ON Pump 端口初始化
-    Gpio_Init(GpioPortC, GpioPin0, &stcGpioCfg);
-    Gpio_Init(GpioPortC, GpioPin13, &stcGpioCfg);
-    Gpio_Init(GpioPortB, GpioPin7, &stcGpioCfg);
+    Gpio_Init(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL, &stcGpioCfg);
+    Gpio_Init(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1, &stcGpioCfg);
+    Gpio_Init(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2, &stcGpioCfg);
 
     App_KeyInit();
-    App_PortCfg();  // 重新配置 LCD 端口
+    App_PortInit();  // 重新配置 LCD 端口
 }
 
 ///< PortD 按键中断服务函数
 void PortD_IRQHandler(void)
 {
-    if(TRUE == Gpio_GetIrqStatus(GpioPortD, GpioPin0))
+    if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER))
     {
         bPortDIrFlag = TRUE;
         unKeyPress.Power = 1;
-        Gpio_ClearIrq(GpioPortD, GpioPin0);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
     }
 }
 
@@ -1624,9 +1591,9 @@ void App_LcdPumpCfg(void)
     stcGpioCfg.enPd = GpioPdEnable;
 
     // 开背光
-    Gpio_SetIO(GpioPortC, GpioPin0);
+    Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     ///< GPIO IO LCD BL_ON 端口初始化
-    Gpio_Init(GpioPortC, GpioPin0, &stcGpioCfg);
+    Gpio_Init(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL, &stcGpioCfg);
 
     // 关闭两路水泵
     Gpio_ClrIO(GpioPortC, GpioPin13);   // Pump 1
@@ -1684,16 +1651,16 @@ void App_PumpCtrl(void)
         {
             if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL])
             {
-                if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                if(FALSE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1))
                 {
-                    Gpio_SetIO(GpioPortC, GpioPin13);   // Pump 1
+                    Gpio_SetIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
                 }
             }
             else
             {
-                if(FALSE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                if(FALSE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2))
                 {
-                    Gpio_SetIO(GpioPortB, GpioPin7);    // Pump 2
+                    Gpio_SetIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
                 }
             }
         }
@@ -1701,16 +1668,16 @@ void App_PumpCtrl(void)
         {
             if(0 == u8ChannelManual)
             {
-                if(FALSE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                if(FALSE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1))
                 {
-                    Gpio_SetIO(GpioPortC, GpioPin13);   // Pump 1
+                    Gpio_SetIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
                 }
             }
             else
             {
-                if(FALSE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                if(FALSE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2))
                 {
-                    Gpio_SetIO(GpioPortB, GpioPin7);    // Pump 2
+                    Gpio_SetIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
                 }
             }
         }
@@ -1721,16 +1688,16 @@ void App_PumpCtrl(void)
         {
             if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL])
             {
-                if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                if(TRUE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1))
                 {
-                    Gpio_ClrIO(GpioPortC, GpioPin13);   // Pump 1
+                    Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
                 }
             }
             else
             {
-                if(TRUE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                if(TRUE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2))
                 {
-                    Gpio_ClrIO(GpioPortB, GpioPin7);    // Pump 2
+                    Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
                 }
             }
         }
@@ -1741,16 +1708,16 @@ void App_PumpCtrl(void)
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
             if(0 == u8ChannelManual)
             {
-                if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin13))
+                if(TRUE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1))
                 {
-                    Gpio_ClrIO(GpioPortC, GpioPin13);   // Pump 1
+                    Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
                 }
             }
             else
             {
-                if(TRUE == Gpio_ReadOutputIO(GpioPortB, GpioPin7))
+                if(TRUE == Gpio_ReadOutputIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2))
                 {
-                    Gpio_ClrIO(GpioPortB, GpioPin7);    // Pump 2
+                    Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
                 }
             }
         }
@@ -1924,11 +1891,8 @@ void App_LCDOffCtrl(void)
     {
         u16LcdAutoOffCnt = 0;
         // 关LCD和背光
-        if(TRUE == Gpio_ReadOutputIO(GpioPortC, GpioPin0))
-        {
-            M0P_LCD->CR0_f.EN = LcdDisable;
-            Gpio_ClrIO(GpioPortC, GpioPin0);
-        }
+        M0P_LCD->CR0_f.EN = LcdDisable;
+        Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     }
 }
 
@@ -1937,18 +1901,15 @@ void App_LCDOffCtrl(void)
  ** 周期 = u16Period*(1/内部时钟频率)*256
  ** \return 无
  ******************************************************************************/
-void App_Timer0Cfg(uint16_t u16Period)
+void App_Timer0Init(uint16_t u16Period)
 {
-    uint16_t                  u16ArrValue;
-    uint16_t                  u16CntValue;
-    stc_bt_mode0_cfg_t     stcBtBaseCfg;
+    uint16_t            u16ArrValue;
+    uint16_t            u16CntValue;
+    stc_bt_mode0_cfg_t  stcBtBaseCfg;
 
     DDL_ZERO_STRUCT(stcBtBaseCfg);
 
-    if(FALSE == Sysctrl_GetPeripheralGate(SysctrlPeripheralBaseTim))
-    {
-        Sysctrl_SetPeripheralGate(SysctrlPeripheralBaseTim, TRUE); //Base Timer外设时钟使能
-    }
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralBaseTim, TRUE); //Base Timer外设时钟使能
 
     stcBtBaseCfg.enWorkMode = BtWorkMode0;                  //定时器模式
     stcBtBaseCfg.enCT       = BtTimer;                      //定时器功能，计数时钟为内部PCLK

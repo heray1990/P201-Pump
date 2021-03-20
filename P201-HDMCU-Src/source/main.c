@@ -169,6 +169,7 @@ void PortD_IRQHandler(void)
         TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
     {
         bPortDIrFlag = TRUE;
+        bLcdUpdate = TRUE;
         M0P_LCD->CR0_f.EN = LcdEnable;
 
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
@@ -2008,6 +2009,7 @@ void App_SysInitWakeUp(void)
 {
     //M0P_LCD->CR0_f.EN = LcdEnable;
     u16NoKeyPressedCnt = 0;
+    Lcd_ClearDisp();
     App_PumpInit();
     Bt_M0_Run(TIM0);
 #if 0
@@ -2049,7 +2051,9 @@ void App_DeepSleepModeEnter(void)
 {
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 打开GPIO外设时钟门控
     Sysctrl_SetFunc(SysctrlSWDUseIOEn, TRUE);   //swd as gpio
+
     M0P_LCD->CR0_f.EN = LcdDisable;
+    Lcd_ClearDisp();
     //Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     u8DeepSleepFlag = 0;
     u16NoKeyPressedCnt = 0;
@@ -2057,8 +2061,8 @@ void App_DeepSleepModeEnter(void)
 
     // 配置为端口输入, LCD背光和水泵为输出
     M0P_GPIO->PADIR = 0XFFFF;
-    M0P_GPIO->PBDIR = 0XFDFF;
-    M0P_GPIO->PCDIR = 0XFF7E;
+    M0P_GPIO->PBDIR = 0XFFFF;
+    M0P_GPIO->PCDIR = 0X3FFE;   // PC00(BL ON)这个IO在进入深度休眠前暂时不能清零, 否则系统会自动复位, 原因待查
     M0P_GPIO->PDDIR = 0XFFFF;
 
     // 配置为端口下拉, 1为下拉
@@ -2066,6 +2070,11 @@ void App_DeepSleepModeEnter(void)
     M0P_GPIO->PBPD = 0xFFFF;
     M0P_GPIO->PCPD = 0x3FFF;    // PC14 PC15 为 RTC 晶振输入脚不能下拉
     M0P_GPIO->PDPD = 0xFF0C;    // 按键不下拉
+
+    M0P_GPIO->PABCLR=0XFFFF;
+    M0P_GPIO->PBBCLR=0XFFFF;
+    M0P_GPIO->PCBCLR=0X3FFE;    // PC00(BL ON)这个IO在进入深度休眠前暂时不能清零, 否则系统会自动复位, 原因待查
+    M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);

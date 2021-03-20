@@ -106,8 +106,9 @@ void App_KeyHandler(void);
 void App_RtcInit(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
-void App_PortInit(void);
+void App_LcdPortInit(void);
 void App_LcdInit(void);
+void App_LcdBlInit(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
 void App_PumpInit(void);
@@ -275,6 +276,7 @@ int32_t main(void)
                             stcRtcTime.u8Minute == u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_STARTMIN] &&
                             FALSE == bJustWatered)
                         {
+                            App_PumpInit();
                             bJustWatered = TRUE;
                             bStartWateringFlag = TRUE;
                             u8GroupNum = u8WateringGroupIdx;
@@ -1440,12 +1442,7 @@ uint8_t App_DaysInAMonth(stc_rtc_time_t *time)
     }
 }
 
-/******************************************************************************
- ** \brief  初始化外部GPIO引脚
- **
- ** \return 无
- *****************************************************************************/
-void App_PortInit(void)
+void App_LcdPortInit(void)
 {
     Gpio_SetAnalogMode(GpioPortA, GpioPin9);  //COM0
     Gpio_SetAnalogMode(GpioPortA, GpioPin10); //COM1
@@ -1485,24 +1482,10 @@ void App_PortInit(void)
     Gpio_SetAnalogMode(GpioPortB, GpioPin6); //SEG35/VLCDH
 }
 
-/******************************************************************************
- ** \brief  配置 LCD 和水泵 GPIO 口
- **
- ** \return 无
- *****************************************************************************/
 void App_LcdInit(void)
 {
     stc_lcd_cfg_t LcdInitStruct;
     stc_lcd_segcom_t LcdSegCom;
-    stc_gpio_cfg_t stcGpioCfg;
-
-    ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
-    stcGpioCfg.enDir = GpioDirOut;
-    ///< 端口上下拉配置->下拉
-    stcGpioCfg.enPu = GpioPuDisable;
-    stcGpioCfg.enPd = GpioPdEnable;
-    ///< GPIO IO LCD BL_ON 端口初始化
-    Gpio_Init(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL, &stcGpioCfg);
 
     LcdSegCom.u32Seg0_31 = 0xff800000;                              ///< 配置LCD_POEN0寄存器 开启SEG0~SEG22
     LcdSegCom.stc_seg32_51_com0_8_t.seg32_51_com0_8 = 0xffffffff;   ///< 初始化LCD_POEN1寄存器 全部关闭输出端口
@@ -1524,6 +1507,21 @@ void App_LcdInit(void)
     LcdInitStruct.LcdClkSrc = LcdRCL;                              ///< LCD时钟选择RCL
     LcdInitStruct.LcdEn   = LcdEnable;                             ///< 使能LCD模块
     Lcd_Init(&LcdInitStruct);
+}
+
+void App_LcdBlInit(void)
+{
+    stc_gpio_cfg_t stcGpioCfg;
+
+    ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
+    stcGpioCfg.enDir = GpioDirOut;
+    ///< 端口上下拉配置->下拉
+    stcGpioCfg.enPu = GpioPuDisable;
+    stcGpioCfg.enPd = GpioPdEnable;
+
+    Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+    ///< GPIO IO LCD BL_ON 端口初始化
+    Gpio_Init(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL, &stcGpioCfg);
 }
 
 void App_LcdRam_Init(un_Ram_Data* pu32Data)
@@ -1988,8 +1986,9 @@ void App_SysInit(void)
 
     Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);  // 开启LCD时钟
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 开启GPIO外设时钟
-    App_PortInit();
-    App_LcdInit();      // LCD模块和水泵GPIO口配置
+    App_LcdPortInit();
+    App_LcdInit();
+    App_LcdBlInit();
     Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     Lcd_ClearDisp();    // 清屏
 
@@ -2019,8 +2018,9 @@ void App_SysInitWakeUp(void)
 
     Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);  // 开启LCD时钟
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 开启GPIO外设时钟
-    App_PortInit();
-    App_LcdInit();      // LCD模块和水泵GPIO口配置
+    App_LcdPortInit();
+    App_LcdInit();
+    App_LcdBlInit();
     Lcd_ClearDisp();    // 清屏
 
     //App_WdtInit();
@@ -2042,9 +2042,23 @@ void App_SysInitWakeUp(void)
 void App_DeepSleepModeEnter(void)
 {
     M0P_LCD->CR0_f.EN = LcdDisable;
+    //Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     u8DeepSleepFlag = 0;
     u16NoKeyPressedCnt = 0;
     Bt_M0_Stop(TIM0);
+
+    // 配置为端口输入, LCD背光和水泵为输出
+    M0P_GPIO->PADIR = 0XFFFF;
+    M0P_GPIO->PBDIR = 0XFDFF;
+    M0P_GPIO->PCDIR = 0XFF7E;
+    M0P_GPIO->PDDIR = 0XFFFF;
+
+    // 配置为端口下拉, 1为下拉
+    M0P_GPIO->PAPD = 0xFFFF;
+    M0P_GPIO->PBPD = 0xFFFF;
+    M0P_GPIO->PCPD = 0x3FFF;    // PC14 PC15 为 RTC 晶振输入脚不能下拉
+    M0P_GPIO->PDPD = 0xFF0C;    // 按键不下拉
+
     Rtc_StartWait();
     delay1ms(10);
     Lpm_GotoDeepSleep(FALSE);
@@ -2067,7 +2081,7 @@ void App_ExitLowPowerModeGpioSet(void)
     Gpio_Init(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2, &stcGpioCfg);
 
     App_KeyInit();
-    App_PortInit();  // 重新配置 LCD 端口
+    App_LcdPortInit();  // 重新配置 LCD 端口
 }
 /******************************************************************************
  * EOF (not truncated)

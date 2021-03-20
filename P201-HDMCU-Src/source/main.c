@@ -260,60 +260,61 @@ int32_t main(void)
             }
             u16RtcCnt++;
 
-            if(ModeAutomatic == enWorkingMode)
+            for(u8WateringGroupIdx = 0; u8WateringGroupIdx < GROUP_NUM_MAX; u8WateringGroupIdx++)
             {
-                for(u8WateringGroupIdx = 0; u8WateringGroupIdx < GROUP_NUM_MAX; u8WateringGroupIdx++)
+                if(u16RtcCnt >= 2880)    // 24 * 60 * 60 / 30 = 2880
                 {
-                    if(u16RtcCnt >= 2880)    // 24 * 60 * 60 / 30 = 2880
-                    {
-                        u16RtcCnt = 0;
-                        u8DaysAddUp[u8WateringGroupIdx]++;
-                    }
+                    u16RtcCnt = 0;
+                    u8DaysAddUp[u8WateringGroupIdx]++;
+                }
 
-                    if(u8DaysAddUp[u8WateringGroupIdx] >= u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_DAYSAPART] &&
-                        u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0 && 
-                        FALSE == bStartWateringFlag && 1 == u8PowerOnFlag)
+                if(u8DaysAddUp[u8WateringGroupIdx] >= u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_DAYSAPART] &&
+                    u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0 && 
+                    FALSE == bStartWateringFlag)
+                {
+                    if(stcRtcTime.u8Hour == u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_STARTHOUR] &&
+                        stcRtcTime.u8Minute == u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_STARTMIN] &&
+                        FALSE == bJustWatered && 1 == u8PowerOnFlag)
                     {
-                        if(stcRtcTime.u8Hour == u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_STARTHOUR] &&
-                            stcRtcTime.u8Minute == u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_STARTMIN] &&
-                            FALSE == bJustWatered)
-                        {
-                            bJustWatered = TRUE;
-                            bStartWateringFlag = TRUE;
-                            u8GroupNum = u8WateringGroupIdx;
+                        bJustWatered = TRUE;
+                        bStartWateringFlag = TRUE;
+                        u8GroupNum = u8WateringGroupIdx;
+                        enWorkingMode = ModeAutomatic;
+                        u8StopFlag = 0;
 
-                            Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
-                            Lcd_D61593A_GenRam_Channel(u32LcdRamData,
-                                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
+                        Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+                        Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+                        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
+                        Lcd_D61593A_GenRam_Channel(u32LcdRamData,
+                                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
+                                            TRUE,
+                                            enFocusOn);
+                        Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
+                                                (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
                                                 TRUE,
                                                 enFocusOn);
-                            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                                    (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                                    TRUE,
-                                                    enFocusOn);
-                            Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
-                                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
-                                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
-                                                    enWorkingMode,
-                                                    TRUE,
-                                                    enFocusOn);
-                            Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
-                                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] - u8DaysAddUp[u8GroupNum],
-                                                    enWorkingMode,
-                                                    TRUE,
-                                                    enFocusOn);
-                            bLcdUpdate = TRUE;
+                        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
+                                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
+                                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
+                                                enWorkingMode,
+                                                TRUE,
+                                                enFocusOn);
+                        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
+                                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] - u8DaysAddUp[u8GroupNum],
+                                                enWorkingMode,
+                                                TRUE,
+                                                enFocusOn);
+                        bLcdUpdate = TRUE;
 
-                            //开LCD和背光
-                            M0P_LCD->CR0_f.EN = LcdEnable;
-                            Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
-                        }
+                        //开LCD和背光
+                        M0P_LCD->CR0_f.EN = LcdEnable;
+                        Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
                     }
+                }
 
-                    if(u8DaysAddUp[u8WateringGroupIdx] > 99)
-                    {
-                        u8DaysAddUp[u8WateringGroupIdx] = 0;
-                    }
+                if(u8DaysAddUp[u8WateringGroupIdx] > 99)
+                {
+                    u8DaysAddUp[u8WateringGroupIdx] = 0;
                 }
             }
         }

@@ -225,7 +225,7 @@ int32_t main(void)
     u8RtcFlag = 0;
     bPortDIrFlag = FALSE;
 
-    while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) == TRUE);
+    while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) == TRUE);
     Wdt_Start();
     Bt_M0_Run(TIM0);    // Timer0 运行
 
@@ -237,7 +237,6 @@ int32_t main(void)
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;
             u16NoKeyPressedCnt = 0;
-            u8DeepSleepFlag = 0;
         }
 
         if(Nothing == enFocusOn && u16LcdFlickerCnt != 0)
@@ -537,18 +536,8 @@ void App_KeyStateChkSet(void)
                     }
                     else
                     {
-                        if(unKeyPressTemp.Power && 0 == u8PowerOnFlag)
-                        {
-                            u8PowerOnFlag = 1;
-                            enKeyState = Waiting;
-                            u32Tim0Cnt = 0;
-                            unKeyPressTemp.Full = 0x0000;
-                        }
-                        else
-                        {
-                            enKeyState = Update;
-                            u32UpDownCnt = 0;
-                        }
+                        enKeyState = Update;
+                        u32UpDownCnt = 0;
                     }
                 }
             }
@@ -564,18 +553,8 @@ void App_KeyStateChkSet(void)
                     }
                     else
                     {
-                        if(unKeyPressTemp.Power && 0 == u8PowerOnFlag)
-                        {
-                            u8PowerOnFlag = 1;
-                            enKeyState = Waiting;
-                            u32Tim0Cnt = 0;
-                            unKeyPressTemp.Full = 0x0000;
-                        }
-                        else
-                        {
-                            enKeyState = Update;   //state transition when all buttons released
-                            u32UpDownCnt = 0;
-                        }
+                        enKeyState = Update;   //state transition when all buttons released
+                        u32UpDownCnt = 0;
                     }
                 }
             }
@@ -625,6 +604,17 @@ void App_KeyHandler(void)
 {
     if(enLockStatus < Lock  && unKeyPress.Power)
     {
+        if(0 == u8PowerOnFlag)
+        {
+            u8PowerOnFlag = 1;
+            enLockStatus = Unlock;
+        }
+        else
+        {
+            u8PowerOnFlag = 0;
+            enLockStatus = LockExceptPowerKey;
+            u8DeepSleepFlag = 1;
+        }
     }
 
     if(Unlock == enLockStatus && unKeyPress.Mode)
@@ -2012,39 +2002,6 @@ void App_SysInitWakeUp(void)
     Lcd_ClearDisp();
     App_PumpInit();
     Bt_M0_Run(TIM0);
-#if 0
-    App_ClkInit();
-
-    App_Timer0Init(160); //周期 = 160*(1/(4*1024)*256 = 10ms
-
-    Gpio_SetAnalogMode(GPIO_PORT_XTL, GPIO_PIN_XTLI);  //XTLI
-    Gpio_SetAnalogMode(GPIO_PORT_XTL, GPIO_PIN_XTLO);  //XTLO
-    Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
-    Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);   // 使能RCL时钟
-    Sysctrl_SetRCLTrim(SysctrlRclFreq32768);        // 配置内部低速时钟频率为32.768kHz
-
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);  // 开启LCD时钟
-    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 开启GPIO外设时钟
-    App_LcdPortInit();
-    App_LcdInit();
-    App_LcdBlInit();
-    Lcd_ClearDisp();    // 清屏
-
-    App_WdtInit();
-    App_KeyInit();
-    App_PumpInit();
-
-    EnableNvic(RTC_IRQn, IrqLevel3, TRUE);
-    Rtc_StartWait();
-
-    ///< 确保初始化正确执行后方能进行FLASH编程操作，FLASH初始化（编程时间,休眠模式配置）
-    while(Ok != Flash_Init(1, TRUE))
-    {
-        ;
-    }
-
-    Lcd_ClearDisp();
-#endif
 }
 
 void App_DeepSleepModeEnter(void)
@@ -2059,10 +2016,10 @@ void App_DeepSleepModeEnter(void)
     u16NoKeyPressedCnt = 0;
     Bt_M0_Stop(TIM0);
 
-    // 配置为端口输入, LCD背光和水泵为输出
+    // 配置为端口输入, LCD背光输出
     M0P_GPIO->PADIR = 0XFFFF;
     M0P_GPIO->PBDIR = 0XFFFF;
-    M0P_GPIO->PCDIR = 0X3FFE;   // PC00(BL ON)这个IO在进入深度休眠前暂时不能清零, 否则系统会自动复位, 原因待查
+    M0P_GPIO->PCDIR = 0X3FFE;   // PC00(BL ON)这个IO在进入深度休眠前暂时不能配置为输入, 否则系统会自动复位, 原因待查
     M0P_GPIO->PDDIR = 0XFFFF;
 
     // 配置为端口下拉, 1为下拉
@@ -2071,17 +2028,21 @@ void App_DeepSleepModeEnter(void)
     M0P_GPIO->PCPD = 0x3FFF;    // PC14 PC15 为 RTC 晶振输入脚不能下拉
     M0P_GPIO->PDPD = 0xFF0C;    // 按键不下拉
 
+    // 端口清零
     M0P_GPIO->PABCLR=0XFFFF;
     M0P_GPIO->PBBCLR=0XFFFF;
     M0P_GPIO->PCBCLR=0X3FFE;    // PC00(BL ON)这个IO在进入深度休眠前暂时不能清零, 否则系统会自动复位, 原因待查
     M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
-    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
-    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
-    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
-    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
-    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+    if(1 == u8PowerOnFlag)
+    {
+        Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+        Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+        Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+        Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+        Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+    }
     EnableNvic(PORTD_IRQn, IrqLevel3, TRUE);
 
     Rtc_StartWait();

@@ -278,7 +278,6 @@ int32_t main(void)
                             stcRtcTime.u8Minute == u32GroupDataAuto[u8WateringGroupIdx][AUTOMODE_GROUP_DATA_STARTMIN] &&
                             FALSE == bJustWatered)
                         {
-                            App_PumpInit();
                             bJustWatered = TRUE;
                             bStartWateringFlag = TRUE;
                             u8GroupNum = u8WateringGroupIdx;
@@ -324,6 +323,7 @@ int32_t main(void)
             App_DeepSleepModeEnter();
             M0P_LCD->CR0_f.EN = LcdEnable;
             u16NoKeyPressedCnt = 0;
+            App_PumpInit();
             Bt_M0_Run(TIM0);
         }
         else
@@ -2064,10 +2064,19 @@ void App_DeepSleepModeEnter(void)
     M0P_GPIO->PCPD = 0x3FFF;    // PC14 PC15 为 RTC 晶振输入脚不能下拉
     M0P_GPIO->PDPD = 0xFF0C;    // 按键不下拉
 
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+    Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+    EnableNvic(PORTD_IRQn, IrqLevel3, TRUE);
+
     Rtc_StartWait();
     delay1ms(10);
     Lpm_GotoDeepSleep(FALSE);
     delay1ms(10);
+    Wdt_Feed();
 }
 
 void App_ExitLowPowerModeGpioSet(void)

@@ -21,7 +21,7 @@
 #include "flash_manager.h"
 #include "general_define.h"
 #include "core_cm0plus.h"
-//#include "wdt.h"
+#include "wdt.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -120,7 +120,7 @@ void App_Timer0Init(uint16_t u16Period);
 void App_UserDataSetDefaultVal(void);
 void App_ConvertFlashData2UserData(void);
 void App_ConvertUserData2FlashData(void);
-//void App_WdtInit(void);
+void App_WdtInit(void);
 void App_SysInit(void);
 void App_SysInitWakeUp(void);
 void App_DeepSleepModeEnter(void);
@@ -225,6 +225,7 @@ int32_t main(void)
     bPortDIrFlag = FALSE;
 
     while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) == TRUE);
+    Wdt_Start();
     Bt_M0_Run(TIM0);    // Timer0 运行
 
     while(1)
@@ -246,6 +247,7 @@ int32_t main(void)
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
+            Wdt_Feed();
             if(TRUE == App_GetRtcTime())
             {
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
@@ -1785,6 +1787,7 @@ void App_WateringTimeCntDown(void)
         if(++u8Tim0Cnt > TIMER0_CNT_WATER_TIME)
         {
             u8Tim0Cnt = 0;
+            Wdt_Feed();
             // 每隔1s, 浇水倒计时变量减1
             if(ModeAutomatic == enWorkingMode)
             {
@@ -1965,7 +1968,7 @@ void App_ConvertUserData2FlashData(void)
 
     stcFlashManager.u32FlashData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u32FlashData, FLASH_MANAGER_DATA_LEN);
 }
-#if 0
+
 void App_WdtInit(void)
 {
     ///< 开启WDT外设时钟
@@ -1973,7 +1976,7 @@ void App_WdtInit(void)
     ///< WDT 初始化
     Wdt_Init(WdtResetEn, WdtT52s4);
 }
-#endif
+
 void App_SysInit(void)
 {
     App_ClkInit();
@@ -1993,7 +1996,7 @@ void App_SysInit(void)
     Lcd_ClearDisp();    // 清屏
 
     App_RtcInit();
-    //App_WdtInit();
+    App_WdtInit();
     App_KeyInit();
     App_PumpInit();
 
@@ -2023,7 +2026,7 @@ void App_SysInitWakeUp(void)
     App_LcdBlInit();
     Lcd_ClearDisp();    // 清屏
 
-    //App_WdtInit();
+    App_WdtInit();
     App_KeyInit();
     App_PumpInit();
 
@@ -2041,6 +2044,8 @@ void App_SysInitWakeUp(void)
 
 void App_DeepSleepModeEnter(void)
 {
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 打开GPIO外设时钟门控
+    Sysctrl_SetFunc(SysctrlSWDUseIOEn, TRUE);   //swd as gpio
     M0P_LCD->CR0_f.EN = LcdDisable;
     //Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     u8DeepSleepFlag = 0;

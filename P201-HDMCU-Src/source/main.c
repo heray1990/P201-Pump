@@ -124,7 +124,6 @@ void App_WdtInit(void);
 void App_SysInit(void);
 void App_SysInitWakeUp(void);
 void App_DeepSleepModeEnter(void);
-void App_ExitLowPowerModeGpioSet(void);
 
 
 void Rtc_IRQHandler(void)
@@ -170,6 +169,7 @@ void PortD_IRQHandler(void)
         TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
     {
         bPortDIrFlag = TRUE;
+        M0P_LCD->CR0_f.EN = LcdEnable;
 
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
@@ -321,10 +321,7 @@ int32_t main(void)
         if(1 == u8DeepSleepFlag)
         {
             App_DeepSleepModeEnter();
-            M0P_LCD->CR0_f.EN = LcdEnable;
-            u16NoKeyPressedCnt = 0;
-            App_PumpInit();
-            Bt_M0_Run(TIM0);
+            App_SysInitWakeUp();
         }
         else
         {
@@ -2009,6 +2006,11 @@ void App_SysInit(void)
 
 void App_SysInitWakeUp(void)
 {
+    //M0P_LCD->CR0_f.EN = LcdEnable;
+    u16NoKeyPressedCnt = 0;
+    App_PumpInit();
+    Bt_M0_Run(TIM0);
+#if 0
     App_ClkInit();
 
     App_Timer0Init(160); //周期 = 160*(1/(4*1024)*256 = 10ms
@@ -2040,6 +2042,7 @@ void App_SysInitWakeUp(void)
     }
 
     Lcd_ClearDisp();
+#endif
 }
 
 void App_DeepSleepModeEnter(void)
@@ -2077,25 +2080,6 @@ void App_DeepSleepModeEnter(void)
     Lpm_GotoDeepSleep(FALSE);
     delay1ms(10);
     Wdt_Feed();
-}
-
-void App_ExitLowPowerModeGpioSet(void)
-{
-    stc_gpio_cfg_t stcGpioCfg;
-
-    ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
-    stcGpioCfg.enDir = GpioDirOut;
-    ///< 端口上下拉配置->下拉
-    stcGpioCfg.enPu = GpioPuDisable;
-    stcGpioCfg.enPd = GpioPdEnable;
-
-    ///< GPIO IO BL_ON Pump 端口初始化
-    Gpio_Init(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL, &stcGpioCfg);
-    Gpio_Init(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1, &stcGpioCfg);
-    Gpio_Init(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2, &stcGpioCfg);
-
-    App_KeyInit();
-    App_LcdPortInit();  // 重新配置 LCD 端口
 }
 /******************************************************************************
  * EOF (not truncated)

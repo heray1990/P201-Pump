@@ -161,30 +161,36 @@ void Tim0_IRQHandler(void)
 
 void PortD_IRQHandler(void)
 {
-    if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) ||
-        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
+    if((TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
         TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_SET) ||
         TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_OK) ||
         TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN) ||
-        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP)) &&
+        1 == u8PowerOnFlag)
+    {
+        bPortDIrFlag = TRUE;
+        bLcdUpdate = TRUE;
+        M0P_LCD->CR0_f.EN = LcdEnable;
+
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
+    }
+
+    if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER))
     {
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
         M0P_LCD->CR0_f.EN = LcdEnable;
 
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
-
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
     }
 }
@@ -225,7 +231,7 @@ int32_t main(void)
     u8RtcFlag = 0;
     bPortDIrFlag = FALSE;
 
-    while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) == TRUE);
+    //while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) == TRUE);
     Wdt_Start();
     Bt_M0_Run(TIM0);    // Timer0 运行
 
@@ -2020,7 +2026,7 @@ void App_DeepSleepModeEnter(void)
     // 配置为端口输入, LCD背光输出
     M0P_GPIO->PADIR = 0XFFFF;
     M0P_GPIO->PBDIR = 0XFFFF;
-    M0P_GPIO->PCDIR = 0X3FFE;   // PC00(BL ON)这个IO在进入深度休眠前暂时不能配置为输入, 否则系统会自动复位, 原因待查
+    M0P_GPIO->PCDIR = 0X3FFF;   // PC00(BL ON)这个IO在进入深度休眠前暂时不能配置为输入, 否则系统会自动复位, 原因待查
     M0P_GPIO->PDDIR = 0XFFFF;
 
     // 配置为端口下拉, 1为下拉
@@ -2032,7 +2038,7 @@ void App_DeepSleepModeEnter(void)
     // 端口清零
     M0P_GPIO->PABCLR=0XFFFF;
     M0P_GPIO->PBBCLR=0XFFFF;
-    M0P_GPIO->PCBCLR=0X3FFE;    // PC00(BL ON)这个IO在进入深度休眠前暂时不能清零, 否则系统会自动复位, 原因待查
+    M0P_GPIO->PCBCLR=0X3FFF;    // PC00(BL ON)这个IO在进入深度休眠前暂时不能清零, 否则系统会自动复位, 原因待查
     M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);

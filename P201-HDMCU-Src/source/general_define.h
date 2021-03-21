@@ -34,7 +34,7 @@
 #define GPIO_PIN_PUMP_2     GpioPin7
 
 #define GPIO_PORT_LCD_BL    GpioPortC
-#define GPIO_PIN_LCD_BL     GpioPin0
+#define GPIO_PIN_LCD_BL     GpioPin2
 
 #define GPIO_PORT_XTL       GpioPortC
 #define GPIO_PIN_XTLI       GpioPin14

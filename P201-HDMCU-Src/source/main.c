@@ -1588,9 +1588,6 @@ void App_PumpInit(void)
     stcGpioCfg.enPu = GpioPuDisable;
     stcGpioCfg.enPd = GpioPdEnable;
 
-    Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
-    Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
-
     Gpio_Init(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1, &stcGpioCfg);
     Gpio_Init(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2, &stcGpioCfg);
 }
@@ -1994,6 +1991,8 @@ void App_SysInit(void)
     App_WdtInit();
     App_KeyInit();
     App_PumpInit();
+    Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
+    Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
 
     ///< 确保初始化正确执行后方能进行FLASH编程操作，FLASH初始化（编程时间,休眠模式配置）
     while(Ok != Flash_Init(1, TRUE))

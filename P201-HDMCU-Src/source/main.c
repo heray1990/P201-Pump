@@ -2003,10 +2003,10 @@ void App_SysInit(void)
 
 void App_SysInitWakeUp(void)
 {
-    //M0P_LCD->CR0_f.EN = LcdEnable;
     u16NoKeyPressedCnt = 0;
     Lcd_ClearDisp();
     App_LcdBlInit();
+    Wdt_Feed();
     App_PumpInit();
     Bt_M0_Run(TIM0);
 }
@@ -2056,7 +2056,6 @@ void App_DeepSleepModeEnter(void)
     delay1ms(10);
     Lpm_GotoDeepSleep(FALSE);
     delay1ms(10);
-    Wdt_Feed();
 }
 /******************************************************************************
  * EOF (not truncated)

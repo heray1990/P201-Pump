@@ -2007,6 +2007,7 @@ void App_SysInitWakeUp(void)
     //M0P_LCD->CR0_f.EN = LcdEnable;
     u16NoKeyPressedCnt = 0;
     Lcd_ClearDisp();
+    App_LcdBlInit();
     App_PumpInit();
     Bt_M0_Run(TIM0);
 }

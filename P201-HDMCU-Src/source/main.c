@@ -119,6 +119,7 @@ void App_AutoDeepSleepCnt(void);
 void App_Timer0Init(uint16_t u16Period);
 void App_UserDataSetDefaultVal(void);
 void App_ConvertFlashData2UserData(void);
+boolean_t App_IsFlashDataUpdate(void);
 void App_ConvertUserData2FlashData(void);
 void App_WdtInit(void);
 void App_SysInit(void);
@@ -841,6 +842,11 @@ void App_KeyHandler(void)
                                             (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
                                             TRUE,
                                             enFocusOn);
+                        if(TRUE == App_IsFlashDataUpdate())
+                        {
+                            App_ConvertUserData2FlashData();
+                            Flash_Manager_Update();
+                        }
                         break;
 
                     case WateringTime:
@@ -849,6 +855,11 @@ void App_KeyHandler(void)
                                                     (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
                                                     TRUE,
                                                     enFocusOn);
+                        if(TRUE == App_IsFlashDataUpdate())
+                        {
+                            App_ConvertUserData2FlashData();
+                            Flash_Manager_Update();
+                        }
                         break;
 
                     case StartingTimeH:
@@ -859,6 +870,11 @@ void App_KeyHandler(void)
                                                     enWorkingMode,
                                                     TRUE,
                                                     enFocusOn);
+                        if(TRUE == App_IsFlashDataUpdate())
+                        {
+                            App_ConvertUserData2FlashData();
+                            Flash_Manager_Update();
+                        }
                         break;
 
                     case StartingTimeM:
@@ -869,6 +885,11 @@ void App_KeyHandler(void)
                                                     enWorkingMode,
                                                     TRUE,
                                                     enFocusOn);
+                        if(TRUE == App_IsFlashDataUpdate())
+                        {
+                            App_ConvertUserData2FlashData();
+                            Flash_Manager_Update();
+                        }
                         break;
 
                     case DaysApart:
@@ -880,8 +901,11 @@ void App_KeyHandler(void)
                                                 enFocusOn);
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-                        App_ConvertUserData2FlashData();
-                        Flash_Manager_Update();
+                        if(TRUE == App_IsFlashDataUpdate())
+                        {
+                            App_ConvertUserData2FlashData();
+                            Flash_Manager_Update();
+                        }
                         break;
 
                     default:
@@ -895,8 +919,11 @@ void App_KeyHandler(void)
                 {
                     enFocusOn = Nothing;
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
-                    App_ConvertUserData2FlashData();
-                    Flash_Manager_Update();
+                    if(TRUE == App_IsFlashDataUpdate())
+                    {
+                        App_ConvertUserData2FlashData();
+                        Flash_Manager_Update();
+                    }
                 }
                 else
                 {
@@ -1931,6 +1958,62 @@ void App_ConvertFlashData2UserData(void)
                 (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] << 2);
         u8DaysAddUp[u8GroupIdx] = 0;
     }
+}
+
+/**
+ * \brief   检测当前UI设置的数据是否需要更新到Flash中, 避免对Flash做不必要的插写
+ *
+ * \param   无
+ *
+ * \retval  TRUE: 当前UI设置的数据和Flash中不一样, 需要更新到Flash中
+ *          FALSE: 当前UI设置的数据和Flash中一样, 不需要更新到Flash中
+ */
+boolean_t App_IsFlashDataUpdate(void)
+{
+    uint8_t u8GroupIdx = 0;
+
+    if(ModeAutomatic == enWorkingMode)
+    {
+        if(u8GroupNum != (stcFlashManager.u32FlashData[1] & 0x0F))
+            return TRUE;
+
+        for(u8GroupIdx = 0; u8GroupIdx < GROUP_NUM_MAX; u8GroupIdx++)
+        {
+            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_DAYSAPART] !=
+                (stcFlashManager.u32FlashData[5 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0x7F))
+                return TRUE;
+
+            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_CHANNEL] !=
+                ((stcFlashManager.u32FlashData[5 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0x80) >> 7))
+                return TRUE;
+
+            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_STARTHOUR] !=
+                stcFlashManager.u32FlashData[6 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx])
+                return TRUE;
+
+            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_STARTMIN] !=
+                (stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0x3F))
+                return TRUE;
+
+            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_WATER_TIME] !=
+                (((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0xC0) >> 6) |
+                (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] << 2)))
+                return TRUE;
+        }
+    }
+    else
+    {
+        if(u8ChannelManual != ((stcFlashManager.u32FlashData[1] & 0x40) >> 6))
+            return TRUE;
+
+        if(u16WateringTimeManual[0] != (stcFlashManager.u32FlashData[2] | ((stcFlashManager.u32FlashData[3] & 0x03) << 8)))
+            return TRUE;
+
+        if(u16WateringTimeManual[1] != (((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) | (stcFlashManager.u32FlashData[4] << 2)))
+            return TRUE;
+    }
+
+    return FALSE;
 }
 
 void App_ConvertUserData2FlashData(void)

@@ -173,6 +173,7 @@ void PortD_IRQHandler(void)
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
         M0P_LCD->CR0_f.EN = LcdEnable;
+        Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
@@ -191,6 +192,7 @@ void PortD_IRQHandler(void)
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
         M0P_LCD->CR0_f.EN = LcdEnable;
+        Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
@@ -1544,7 +1546,6 @@ void App_LcdBlInit(void)
     stcGpioCfg.enPu = GpioPuDisable;
     stcGpioCfg.enPd = GpioPdEnable;
 
-    Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
     ///< GPIO IO LCD BL_ON 端口初始化
     Gpio_Init(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL, &stcGpioCfg);
 }

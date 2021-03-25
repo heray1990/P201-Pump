@@ -113,6 +113,7 @@ void App_LcdRam_Init(un_Ram_Data* pu32Data);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
 void App_PumpInit(void);
 void App_PumpCtrl(void);
+void App_LcdRamFlipCtrl(boolean_t bFlipFlag);
 void App_LcdStrobeControl(void);
 void App_WateringTimeCntDown(void);
 void App_AutoDeepSleepCnt(void);
@@ -1700,6 +1701,78 @@ void App_PumpCtrl(void)
     }
 }
 
+/**
+ * \brief   更新 LCD 控件闪烁的 Ram
+ *
+ * \param   [in]  bFlipFlag  控制某个空间亮或灭
+ *
+ * \retval  无
+ */
+void App_LcdRamFlipCtrl(boolean_t bFlipFlag)
+{
+    switch(enFocusOn)
+    {
+    case Mode:
+        Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, bFlipFlag);
+        break;
+
+    case Group:
+        Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, bFlipFlag, enFocusOn);
+        break;
+
+    case Channel:
+        Lcd_D61593A_GenRam_Channel(u32LcdRamData,
+                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
+                            bFlipFlag,
+                            enFocusOn);
+        break;
+
+    case WateringTime:
+        if(ModeAutomatic == enWorkingMode)
+        {
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
+                                        (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                        bFlipFlag,
+                                        enFocusOn);
+        }
+        else
+        {
+            Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], bFlipFlag, enFocusOn);
+        }
+        break;
+
+    case StartingTimeH:
+    case StartingTimeM:
+        Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
+                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
+                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
+                                    enWorkingMode,
+                                    bFlipFlag,
+                                    enFocusOn);
+        break;
+
+    case DaysApart:
+        Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART],
+                                enWorkingMode,
+                                bFlipFlag,
+                                enFocusOn);
+        break;
+
+    case RtcYear:
+    case RtcMonth:
+    case RtcDay:
+    case RtcHour:
+    case RtcMin:
+        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, bFlipFlag, enFocusOn);
+        break;
+
+    default:
+        break;
+    }
+}
+
+// 控制 LCD 部分控件闪烁
 void App_LcdStrobeControl(void)
 {
     static uint8_t u8LcdContentSDCnt = 0;
@@ -1722,67 +1795,7 @@ void App_LcdStrobeControl(void)
                 bFlipFlag = TRUE;
             }
 
-            switch(enFocusOn)
-            {
-            case Mode:
-                Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, bFlipFlag);
-                break;
-
-            case Group:
-                Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, bFlipFlag, enFocusOn);
-                break;
-
-            case Channel:
-                Lcd_D61593A_GenRam_Channel(u32LcdRamData,
-                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
-                                    bFlipFlag,
-                                    enFocusOn);
-                break;
-
-            case WateringTime:
-                if(ModeAutomatic == enWorkingMode)
-                {
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                                (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                                bFlipFlag,
-                                                enFocusOn);
-                }
-                else
-                {
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], bFlipFlag, enFocusOn);
-                }
-                break;
-
-            case StartingTimeH:
-            case StartingTimeM:
-                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
-                                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
-                                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
-                                            enWorkingMode,
-                                            bFlipFlag,
-                                            enFocusOn);
-                break;
-
-            case DaysApart:
-                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
-                                        (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART],
-                                        enWorkingMode,
-                                        bFlipFlag,
-                                        enFocusOn);
-                break;
-
-            case RtcYear:
-            case RtcMonth:
-            case RtcDay:
-            case RtcHour:
-            case RtcMin:
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, bFlipFlag, enFocusOn);
-                break;
-
-            default:
-                bFlipFlag = TRUE;
-                break;
-            }
+            App_LcdRamFlipCtrl(bFlipFlag);
 
             if((enFocusOn > Nothing) && (enKeyState < WaitForRelease))
             {
@@ -2087,6 +2100,11 @@ void App_SysInit(void)
 void App_SysInitWakeUp(void)
 {
     u16NoKeyPressedCnt = 0;
+
+    // 下面两行顺序不能更换. 如果休眠前LCD有控件处于闪烁(灭)的状态, 那么唤醒后强制显示该控件
+    App_LcdRamFlipCtrl(TRUE);
+    enFocusOn = Nothing;
+
     Lcd_ClearDisp();
     App_LcdBlInit();
     Wdt_Feed();

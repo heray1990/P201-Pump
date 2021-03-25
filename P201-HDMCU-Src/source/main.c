@@ -153,7 +153,7 @@ void Tim0_IRQHandler(void)
 
         if((enFocusOn == Nothing) && (enKeyState < WaitForRelease) && FALSE == bStartWateringFlag)
         {
-            // 无操作10s后关闭LCD和背光.
+            // 无操作10s进入深度休眠.
             App_AutoDeepSleepCnt();
         }
 
@@ -2081,7 +2081,7 @@ void App_SysInit(void)
     App_LcdInit();
     App_LcdBlInit();
     Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
-    Lcd_ClearDisp();    // 清屏
+    Lcd_ClearDisp();
 
     App_RtcInit();
     App_WdtInit();
@@ -2100,6 +2100,9 @@ void App_SysInit(void)
 void App_SysInitWakeUp(void)
 {
     u16NoKeyPressedCnt = 0;
+    u8DeepSleepFlag = 0;
+
+    App_LcdPortInit();
 
     // 下面两行顺序不能更换. 如果休眠前LCD有控件处于闪烁(灭)的状态, 那么唤醒后强制显示该控件
     App_LcdRamFlipCtrl(TRUE);
@@ -2119,27 +2122,32 @@ void App_DeepSleepModeEnter(void)
 
     M0P_LCD->CR0_f.EN = LcdDisable;
     Lcd_ClearDisp();
-    //Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
-    u8DeepSleepFlag = 0;
     u16NoKeyPressedCnt = 0;
     Bt_M0_Stop(TIM0);
 
-    // 配置为端口输入, LCD背光输出
+    // PC14, PC15为RTC晶振输入脚, 进入深度休眠前不改变其状态
+    // XTLI和XTLO两个口保持模拟, 其它端口配置为数字(0为数字)
+    M0P_GPIO->PAADS = 0;
+    M0P_GPIO->PBADS = 0;
+    M0P_GPIO->PCADS = 0xC000;
+    M0P_GPIO->PDADS = 0;
+
+    // XTLI和XTLO两个口保持输出, 其它端口配置为输入
     M0P_GPIO->PADIR = 0XFFFF;
     M0P_GPIO->PBDIR = 0XFFFF;
-    M0P_GPIO->PCDIR = 0X3FFF;   // PC00(BL ON)这个IO在进入深度休眠前暂时不能配置为输入, 否则系统会自动复位, 原因待查
+    M0P_GPIO->PCDIR = 0X3FFF;
     M0P_GPIO->PDDIR = 0XFFFF;
 
-    // 配置为端口下拉, 1为下拉
+    // XTLI和XTLO两个口保持, 其它端口配置为端口下拉(1为下拉)
     M0P_GPIO->PAPD = 0xFFFF;
     M0P_GPIO->PBPD = 0xFFFF;
-    M0P_GPIO->PCPD = 0x3FFF;    // PC14 PC15 为 RTC 晶振输入脚不能下拉
-    M0P_GPIO->PDPD = 0xFF0C;    // 按键不下拉
+    M0P_GPIO->PCPD = 0x3FFF;
+    M0P_GPIO->PDPD = 0xFF0C;
 
     // 端口清零
     M0P_GPIO->PABCLR=0XFFFF;
     M0P_GPIO->PBBCLR=0XFFFF;
-    M0P_GPIO->PCBCLR=0X3FFF;    // PC00(BL ON)这个IO在进入深度休眠前暂时不能清零, 否则系统会自动复位, 原因待查
+    M0P_GPIO->PCBCLR=0X3FFF;
     M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);

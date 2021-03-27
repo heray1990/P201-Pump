@@ -43,9 +43,13 @@ P201 SWD 烧录模式实物接线图如下：
 
 ### Flash 数据存储结构
 
-HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯片用户手册）。本项目利用 0x0000E000~0x0000FFFF 这个区域来保存数据，共 6 个 Sector，每个 Sector 512 Bytes，共 8192 Bytes。
+HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯片用户手册）。本项目利用 0x0000E000~0x0000FFFF 这个区域来保存数据，共 16 个 Sector，每个 Sector 512 Bytes，共 8192 Bytes。每个 Sector 能容纳 17 个分区（Partition）的数据。每个分区保存着程序中需要的数据，共 30 Bytes。
+
+**Sector 地址对照表**
 
 ![](./Sectors_Addresses.PNG)
+
+**每个 Sector 分区表**
 
 ![](./Data_in_one_Sector_01.PNG)
 
@@ -53,6 +57,7 @@ HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯
 
 #### 数据取值范围与最小需要的位数
 
+* **Start Code**: 0x5A, 8bits
 * **u8GroupNum**: 0~9, 4bits
 * **enWorkingMode**: 0~1, 1bit
 * **u8StopFlag**: 0~1, 1bit
@@ -71,5 +76,8 @@ HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯
 * **u8StartHour[5]**: 0~24, 5bits
 * **u8StartMin[5]**: 0~60, 6bits
 * **u16WateringTimeAuto[5]**: 0~999, 10bits
+* **u8CheckSumBCC**: 校验位, 8bits
+
+**分区（Partition）数据**
 
 ![](./Data_in_one_Partition.PNG)

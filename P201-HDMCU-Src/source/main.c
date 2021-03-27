@@ -88,7 +88,7 @@ __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
 __IO stc_rtc_time_t stcRtcTime;
 __IO boolean_t bLcdUpdate, bPortDIrFlag;
-__IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16NoKeyPressedCnt;
+__IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16NoKeyPressedCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl;
 
@@ -245,6 +245,8 @@ int32_t main(void)
     u16RtcCnt = 0;
     u8RtcFlag = 0;
     bPortDIrFlag = FALSE;
+    u16WTPump1 = 0;
+    u16WTPump2 = 0;
 
     //while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) == TRUE);
     Wdt_Start();
@@ -296,36 +298,36 @@ int32_t main(void)
                         stcRtcTime.u8Minute == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTMIN] &&
                         FALSE == bJustWatered && 1 == u8PowerOnFlag)
                     {
-                        if(0x00 == u8PumpCtrl)
+                        /* 如果有多组是同一时间同一通道进行浇水, 那么激活浇水时间长的那一组
+                            如果有多组是同一时间不同通道进行浇水, 那么两路水泵都工作, 并且显示胶水时间长的那一组 */
+                        if(0 == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_CHANNEL])
                         {
-                            u8GroupNum = u8GroupIdxTmp;
+                            u8PumpCtrl |= 0x01;
 
-                            if(0 == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_CHANNEL])
+                            if(u16WTPump1 < u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
                             {
-                                u8PumpCtrl |= 0x01;
-                            }
-                            else
-                            {
-                                u8PumpCtrl |= 0x10;
+                                u16WTPump1 = u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME];
+
+                                if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] <
+                                    u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
+                                {
+                                    u8GroupNum = u8GroupIdxTmp;
+                                }
                             }
                         }
                         else
                         {
-                            /* 如果有多组是同一时间同一通道进行浇水, 那么激活浇水时间长的那一组
-                               如果有多组是同一时间不同通道进行浇水, 那么两路水泵都工作, 并且显示胶水时间长的那一组 */
-                            if(0 == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_CHANNEL])
-                            {
-                                u8PumpCtrl |= 0x01;
-                            }
-                            else
-                            {
-                                u8PumpCtrl |= 0x10;
-                            }
+                            u8PumpCtrl |= 0x10;
 
-                            if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] <=
-                                u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
+                            if(u16WTPump2 < u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
                             {
-                                u8GroupNum = u8GroupIdxTmp;
+                                u16WTPump2 = u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME];
+
+                                if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] <
+                                    u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
+                                {
+                                    u8GroupNum = u8GroupIdxTmp;
+                                }
                             }
                         }
                     }
@@ -1855,7 +1857,7 @@ void App_WateringTimeCntDown(void)
 
                 if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME])
                 {
-                    u8PumpCtrl = 0x00;
+                    //u8PumpCtrl = 0x00;
                     u16NoKeyPressedCnt = 0;
 
                     u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
@@ -1867,6 +1869,24 @@ void App_WateringTimeCntDown(void)
                                         TRUE,
                                         enFocusOn);
                 bLcdUpdate = TRUE;
+
+                if(u16WTPump1 > 0)
+                {
+                    u16WTPump1--;
+                }
+                if(0 == u16WTPump1)
+                {
+                    u8PumpCtrl &= 0x10;
+                }
+
+                if(u16WTPump2 > 0)
+                {
+                    u16WTPump2--;
+                }
+                if(0 == u16WTPump2)
+                {
+                    u8PumpCtrl &= 0x01;
+                }
             }
             else
             {

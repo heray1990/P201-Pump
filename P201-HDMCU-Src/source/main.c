@@ -189,6 +189,8 @@ void PortD_IRQHandler(void)
 
     if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER))
     {
+        u8PowerOnFlag = 1;
+        enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
         M0P_LCD->CR0_f.EN = LcdEnable;
@@ -490,7 +492,7 @@ void App_KeyStateChkSet(void)
                     }
                     else
                     {
-                        if(u32Tim0Cnt >= SET_OK_KEY_LONG_PRESS_CNT)
+                        if(u32Tim0Cnt >= SET_OK_KEY_LONG_PRESS_CNT && FALSE == bPortDIrFlag)
                         {
                             enKeyState = Update;
                             unKeyPressTemp.Lock = 1;
@@ -507,7 +509,7 @@ void App_KeyStateChkSet(void)
                     }
                     else
                     {
-                        if(u32Tim0Cnt >= SET_OK_KEY_LONG_PRESS_CNT)
+                        if(u32Tim0Cnt >= SET_OK_KEY_LONG_PRESS_CNT && FALSE == bPortDIrFlag)
                         {
                             enKeyState = Update;
                             unKeyPressTemp.SetHold = 1;
@@ -524,31 +526,42 @@ void App_KeyStateChkSet(void)
                     }
                     else
                     {
-                        if(u32Tim0Cnt >= MODE_KEY_LONG_PRESS_CNT)
+                        if(u32Tim0Cnt >= MODE_KEY_LONG_PRESS_CNT && FALSE == bPortDIrFlag)
                         {
                             enKeyState = Update;
                             unKeyPressTemp.Reset = 1;
                         }
                     }
                 }
-                else if(unKeyPressDetected.Up || unKeyPressDetected.Down)
+                else if(unKeyPressDetected.Up || unKeyPressDetected.Down && FALSE == bPortDIrFlag)
                 {
                     // 识别到长按上/下键
                     u32UpDownCnt++;
                     enKeyState = Update;
                 }
-                else if(!unKeyPressDetected.Full)
+
+                if(!unKeyPressDetected.Full)
                 {
-                    if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold || unKeyPressTemp.Reset)
+                    if(FALSE == bPortDIrFlag)
                     {
-                        enKeyState = Waiting;
-                        u32Tim0Cnt = 0;
-                        unKeyPressTemp.Full = 0x0000;
+                        if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold || unKeyPressTemp.Reset)
+                        {
+                            enKeyState = Waiting;
+                            u32Tim0Cnt = 0;
+                            unKeyPressTemp.Full = 0x0000;
+                        }
+                        else
+                        {
+                            enKeyState = Update;
+                            u32UpDownCnt = 0;
+                        }
                     }
                     else
                     {
-                        enKeyState = Update;
-                        u32UpDownCnt = 0;
+                        bPortDIrFlag = FALSE;
+                        enKeyState = Waiting;
+                        u32Tim0Cnt = 0;
+                        unKeyPressTemp.Full = 0x0000;
                     }
                 }
             }
@@ -556,16 +569,26 @@ void App_KeyStateChkSet(void)
             {
                 if(!unKeyPressDetected.Full)
                 {
-                    if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold || unKeyPressTemp.Reset)
+                    if(FALSE == bPortDIrFlag)
                     {
-                        enKeyState = Waiting;
-                        u32Tim0Cnt = 0;
-                        unKeyPressTemp.Full = 0x0000;
+                        if(unKeyPressTemp.Lock || unKeyPressTemp.SetHold || unKeyPressTemp.Reset)
+                        {
+                            enKeyState = Waiting;
+                            u32Tim0Cnt = 0;
+                            unKeyPressTemp.Full = 0x0000;
+                        }
+                        else
+                        {
+                            enKeyState = Update;   //state transition when all buttons released
+                            u32UpDownCnt = 0;
+                        }
                     }
                     else
                     {
-                        enKeyState = Update;   //state transition when all buttons released
-                        u32UpDownCnt = 0;
+                        bPortDIrFlag = FALSE;
+                        enKeyState = Waiting;
+                        u32Tim0Cnt = 0;
+                        unKeyPressTemp.Full = 0x0000;
                     }
                 }
             }

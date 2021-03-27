@@ -163,31 +163,36 @@ void Tim0_IRQHandler(void)
 
 void PortD_IRQHandler(void)
 {
-    if((TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
-        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_SET) ||
-        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_OK) ||
-        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN) ||
-        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP)) &&
-        1 == u8PowerOnFlag)
+    if(1 == u8PowerOnFlag)
     {
-        bPortDIrFlag = TRUE;
-        bLcdUpdate = TRUE;
-        M0P_LCD->CR0_f.EN = LcdEnable;
-        Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+        if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) ||
+            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
+            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_SET) ||
+            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_OK) ||
+            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN) ||
+            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
+        {
+            enLockStatus = Unlock;
+            bPortDIrFlag = TRUE;
+            bLcdUpdate = TRUE;
+            M0P_LCD->CR0_f.EN = LcdEnable;
+            Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
-        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
-        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
+            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
+            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
+            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
+            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
+            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
+            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+        }
     }
-
-    if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER))
+    else
     {
         u8PowerOnFlag = 1;
         enLockStatus = Unlock;
@@ -533,7 +538,7 @@ void App_KeyStateChkSet(void)
                         }
                     }
                 }
-                else if(unKeyPressDetected.Up || unKeyPressDetected.Down && FALSE == bPortDIrFlag)
+                else if((unKeyPressDetected.Up || unKeyPressDetected.Down) && FALSE == bPortDIrFlag)
                 {
                     // 识别到长按上/下键
                     u32UpDownCnt++;

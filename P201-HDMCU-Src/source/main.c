@@ -339,7 +339,7 @@ int32_t main(void)
                 }
             }
 
-            if(0x00 != u8PumpCtrl)
+            if(0x00 != u8PumpCtrl && 1 == u8PowerOnFlag)
             {
                 bJustWatered = TRUE;
                 enWorkingMode = ModeAutomatic;
@@ -367,11 +367,25 @@ int32_t main(void)
                                         enWorkingMode,
                                         TRUE,
                                         enFocusOn);
-                bLcdUpdate = TRUE;
 
-                //开LCD和背光
+                bLcdUpdate = TRUE;
                 M0P_LCD->CR0_f.EN = LcdEnable;
                 Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+
+                bPortDIrFlag = FALSE;
+
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
             }
         }
 

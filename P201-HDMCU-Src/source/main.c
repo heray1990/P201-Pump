@@ -1913,6 +1913,7 @@ void App_WateringTimeCntDown(void)
                 {
                     u8PumpCtrl = 0x00;
                     u16NoKeyPressedCnt = 0;
+                    u8StopFlag = 1;
 
                     if(0 == u8ChannelManual)
                     {
@@ -1927,6 +1928,7 @@ void App_WateringTimeCntDown(void)
                 }
 
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                 bLcdUpdate = TRUE;
             }
         }

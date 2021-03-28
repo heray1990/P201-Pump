@@ -267,7 +267,7 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
-        if(1 == u8RtcFlag)
+        if((1 == u8RtcFlag) && (enFocusOn < RtcYear) && (RtcYear > RtcMin))
         {
             u8RtcFlag = 0;
             Wdt_Feed();
@@ -1585,6 +1585,8 @@ uint8_t App_DaysInAMonth(stc_rtc_time_t *time)
             u8DaysInAMonth = 30;
         }
     }
+
+    return u8DaysInAMonth;
 }
 
 void App_LcdPortInit(void)

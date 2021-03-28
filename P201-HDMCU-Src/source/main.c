@@ -1185,7 +1185,7 @@ void App_KeyHandler(void)
                 }
                 else
                 {
-                    stcRtcTime.u8Year--;
+                    stcRtcTime.u8Year = DEC2BCD(BCD2DEC(stcRtcTime.u8Year) - 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
@@ -1197,7 +1197,7 @@ void App_KeyHandler(void)
                 }
                 else
                 {
-                    stcRtcTime.u8Month--;
+                    stcRtcTime.u8Month = DEC2BCD(BCD2DEC(stcRtcTime.u8Month) - 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
@@ -1209,7 +1209,7 @@ void App_KeyHandler(void)
                 }
                 else
                 {
-                    stcRtcTime.u8Day--;
+                    stcRtcTime.u8Day = DEC2BCD(BCD2DEC(stcRtcTime.u8Day) - 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
@@ -1221,7 +1221,7 @@ void App_KeyHandler(void)
                 }
                 else
                 {
-                    stcRtcTime.u8Hour--;
+                    stcRtcTime.u8Hour = DEC2BCD(BCD2DEC(stcRtcTime.u8Hour) - 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
@@ -1233,7 +1233,7 @@ void App_KeyHandler(void)
                 }
                 else
                 {
-                    stcRtcTime.u8Minute--;
+                    stcRtcTime.u8Minute = DEC2BCD(BCD2DEC(stcRtcTime.u8Minute) - 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
@@ -1390,41 +1390,61 @@ void App_KeyHandler(void)
                 break;
 
             case RtcYear:
-                if(++stcRtcTime.u8Year > DEC2BCD(99))
+                if(stcRtcTime.u8Year >= DEC2BCD(99))
                 {
                     stcRtcTime.u8Year = DEC2BCD(0);
+                }
+                else
+                {
+                    stcRtcTime.u8Year = DEC2BCD(BCD2DEC(stcRtcTime.u8Year) + 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMonth:
-                if(++stcRtcTime.u8Month > DEC2BCD(12))
+                if(stcRtcTime.u8Month >= DEC2BCD(12))
                 {
                     stcRtcTime.u8Month = DEC2BCD(1);
+                }
+                else
+                {
+                    stcRtcTime.u8Month = DEC2BCD(BCD2DEC(stcRtcTime.u8Month) + 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcDay:
-                if(++stcRtcTime.u8Day > DEC2BCD(App_DaysInAMonth(&stcRtcTime)))
+                if(stcRtcTime.u8Day >= DEC2BCD(App_DaysInAMonth(&stcRtcTime)))
                 {
                     stcRtcTime.u8Day = DEC2BCD(1);
+                }
+                else
+                {
+                    stcRtcTime.u8Day = DEC2BCD(BCD2DEC(stcRtcTime.u8Day) + 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcHour:
-                if(++stcRtcTime.u8Hour > DEC2BCD(23))
+                if(stcRtcTime.u8Hour >= DEC2BCD(23))
                 {
                     stcRtcTime.u8Hour = DEC2BCD(0);
+                }
+                else
+                {
+                    stcRtcTime.u8Hour = DEC2BCD(BCD2DEC(stcRtcTime.u8Hour) + 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMin:
-                if(++stcRtcTime.u8Minute > DEC2BCD(59))
+                if(stcRtcTime.u8Minute >= DEC2BCD(59))
                 {
                     stcRtcTime.u8Minute = DEC2BCD(0);
+                }
+                else
+                {
+                    stcRtcTime.u8Minute = DEC2BCD(BCD2DEC(stcRtcTime.u8Minute) + 1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;

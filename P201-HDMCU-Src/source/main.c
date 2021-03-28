@@ -256,6 +256,7 @@ int32_t main(void)
     {
         if(unKeyPress.Full != 0x0000)    // Key pressed detected
         {
+            Wdt_Feed();
             App_KeyHandler();
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;

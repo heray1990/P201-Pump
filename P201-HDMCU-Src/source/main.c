@@ -267,7 +267,7 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
-        if((1 == u8RtcFlag) && (enFocusOn < RtcYear) && (RtcYear > RtcMin))
+        if(1 == u8RtcFlag && (enFocusOn < RtcYear || enFocusOn > RtcMin))
         {
             u8RtcFlag = 0;
             Wdt_Feed();

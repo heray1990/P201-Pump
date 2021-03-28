@@ -650,6 +650,12 @@ void App_KeyHandler(void)
         }
         else
         {
+            if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
+            {
+                Rtc_SetTime(&stcRtcTime);
+                Rtc_Cmd(TRUE);
+            }
+
             u8PowerOnFlag = 0;
             enLockStatus = LockExceptPowerKey;
             u8DeepSleepFlag = 1;
@@ -658,6 +664,12 @@ void App_KeyHandler(void)
 
     if(Unlock == enLockStatus && unKeyPress.Mode)
     {
+        if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
+        {
+            Rtc_SetTime(&stcRtcTime);
+            Rtc_Cmd(TRUE);
+        }
+
         enFocusOn = Mode;
 
         if(ModeAutomatic == enWorkingMode)
@@ -773,6 +785,7 @@ void App_KeyHandler(void)
                 case RtcMin:
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     Rtc_SetTime(&stcRtcTime);
+                    Rtc_Cmd(TRUE);
                     break;
 
                 default:
@@ -784,6 +797,12 @@ void App_KeyHandler(void)
         }
         else
         {
+            if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
+            {
+                Rtc_SetTime(&stcRtcTime);
+                Rtc_Cmd(TRUE);
+            }
+
             u8StopFlag = 1;
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
             if(Nothing == enFocusOn)
@@ -812,31 +831,28 @@ void App_KeyHandler(void)
                 case RtcYear:
                     enFocusOn = RtcMonth;
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                    Rtc_SetTime(&stcRtcTime);
                     break;
 
                 case RtcMonth:
                     enFocusOn = RtcDay;
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                    Rtc_SetTime(&stcRtcTime);
                     break;
 
                 case RtcDay:
                     enFocusOn = RtcHour;
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                    Rtc_SetTime(&stcRtcTime);
                     break;
 
                 case RtcHour:
                     enFocusOn = RtcMin;
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                    Rtc_SetTime(&stcRtcTime);
                     break;
 
                 case RtcMin:
                     enFocusOn = Nothing;
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     Rtc_SetTime(&stcRtcTime);
+                    Rtc_Cmd(TRUE);
                     if(ModeAutomatic == enWorkingMode)
                     {
                         u8StopFlag = 0;
@@ -1440,6 +1456,8 @@ void App_KeyHandler(void)
             enFocusOn = RtcYear;
             u8StopFlag = 1;
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+            Rtc_Cmd(FALSE);
+            stcRtcTime.u8Second = 0;
         }
     }
 
@@ -1896,6 +1914,11 @@ void App_LcdStrobeControl(void)
     }
     else
     {
+        if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
+        {
+            Rtc_SetTime(&stcRtcTime);
+            Rtc_Cmd(TRUE);
+        }
         enFocusOn = Nothing;
     }
 }

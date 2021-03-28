@@ -1686,7 +1686,7 @@ void App_LcdInit(void)
     LcdInitStruct.LcdDuty = LcdDuty8;                              ///< 1/8 Duty
     LcdInitStruct.LcdBias = LcdBias3;                              ///< 1/3 BIAS
     LcdInitStruct.LcdCpClk = LcdClk2k;                             ///< 电压泵时钟频率选择2kHz
-    LcdInitStruct.LcdScanClk = LcdClk256hz;                        ///< LCD扫描频率选择256Hz
+    LcdInitStruct.LcdScanClk = LcdClk512hz;                        ///< LCD扫描频率选择512Hz
     LcdInitStruct.LcdMode = LcdMode0;                              ///< 选择模式0
     LcdInitStruct.LcdClkSrc = LcdRCL;                              ///< LCD时钟选择RCL
     LcdInitStruct.LcdEn   = LcdEnable;                             ///< 使能LCD模块

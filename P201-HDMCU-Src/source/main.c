@@ -1179,9 +1179,9 @@ void App_KeyHandler(void)
                 break;
 
             case RtcYear:
-                if(stcRtcTime.u8Year == 0)
+                if(stcRtcTime.u8Year == DEC2BCD(0))
                 {
-                    stcRtcTime.u8Year = 99;
+                    stcRtcTime.u8Year = DEC2BCD(99);
                 }
                 else
                 {
@@ -1191,9 +1191,9 @@ void App_KeyHandler(void)
                 break;
 
             case RtcMonth:
-                if(stcRtcTime.u8Month <= 1)
+                if(stcRtcTime.u8Month <= DEC2BCD(1))
                 {
-                    stcRtcTime.u8Month = 12;
+                    stcRtcTime.u8Month = DEC2BCD(12);
                 }
                 else
                 {
@@ -1203,9 +1203,9 @@ void App_KeyHandler(void)
                 break;
 
             case RtcDay:
-                if(stcRtcTime.u8Day <= 1)
+                if(stcRtcTime.u8Day <= DEC2BCD(1))
                 {
-                    stcRtcTime.u8Day = App_DaysInAMonth(&stcRtcTime);
+                    stcRtcTime.u8Day = DEC2BCD(App_DaysInAMonth(&stcRtcTime));
                 }
                 else
                 {
@@ -1215,9 +1215,9 @@ void App_KeyHandler(void)
                 break;
 
             case RtcHour:
-                if(stcRtcTime.u8Hour == 0)
+                if(stcRtcTime.u8Hour == DEC2BCD(0))
                 {
-                    stcRtcTime.u8Hour = 23;
+                    stcRtcTime.u8Hour = DEC2BCD(23);
                 }
                 else
                 {
@@ -1227,9 +1227,9 @@ void App_KeyHandler(void)
                 break;
 
             case RtcMin:
-                if(stcRtcTime.u8Minute == 0)
+                if(stcRtcTime.u8Minute == DEC2BCD(0))
                 {
-                    stcRtcTime.u8Minute = 59;
+                    stcRtcTime.u8Minute = DEC2BCD(59);
                 }
                 else
                 {
@@ -1390,41 +1390,41 @@ void App_KeyHandler(void)
                 break;
 
             case RtcYear:
-                if(++stcRtcTime.u8Year > 99)
+                if(++stcRtcTime.u8Year > DEC2BCD(99))
                 {
-                    stcRtcTime.u8Year = 0;
+                    stcRtcTime.u8Year = DEC2BCD(0);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMonth:
-                if(++stcRtcTime.u8Month > 12)
+                if(++stcRtcTime.u8Month > DEC2BCD(12))
                 {
-                    stcRtcTime.u8Month = 1;
+                    stcRtcTime.u8Month = DEC2BCD(1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcDay:
-                if(++stcRtcTime.u8Day > App_DaysInAMonth(&stcRtcTime))
+                if(++stcRtcTime.u8Day > DEC2BCD(App_DaysInAMonth(&stcRtcTime)))
                 {
-                    stcRtcTime.u8Day = 1;
+                    stcRtcTime.u8Day = DEC2BCD(1);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcHour:
-                if(++stcRtcTime.u8Hour > 23)
+                if(++stcRtcTime.u8Hour > DEC2BCD(23))
                 {
-                    stcRtcTime.u8Hour = 0;
+                    stcRtcTime.u8Hour = DEC2BCD(0);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
 
             case RtcMin:
-                if(++stcRtcTime.u8Minute > 59)
+                if(++stcRtcTime.u8Minute > DEC2BCD(59))
                 {
-                    stcRtcTime.u8Minute = 0;
+                    stcRtcTime.u8Minute = DEC2BCD(0);
                 }
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 break;
@@ -1488,7 +1488,7 @@ void App_RtcInit(void)
     RtcInitStruct.rtcTime.u8Day    = 0x01;
     RtcInitStruct.rtcTime.u8DayOfWeek = 0x01;
     RtcInitStruct.rtcTime.u8Month  = 0x01;
-    RtcInitStruct.rtcTime.u8Year   = 0x15;
+    RtcInitStruct.rtcTime.u8Year   = 0x21;
     RtcInitStruct.rtcCompen = RtcCompenEnable;
     RtcInitStruct.rtcCompValue = 0;                         //补偿值根据实际情况进行补偿
     Rtc_Init(&RtcInitStruct);
@@ -1529,19 +1529,19 @@ uint8_t App_DaysInAMonth(stc_rtc_time_t *time)
 {
     uint8_t u8DaysInAMonth = 0;
 
-    if(time->u8Month == 2)
+    if(BCD2DEC(time->u8Month) == 2)
     {
-        u8DaysInAMonth = Get_Month2_Day(time->u8Year);
+        u8DaysInAMonth = Get_Month2_Day(BCD2DEC(time->u8Year));
     }
     else
     {
-        if(time->u8Month == 1 ||
-            time->u8Month == 3 ||
-            time->u8Month == 5 ||
-            time->u8Month == 7 ||
-            time->u8Month == 8 ||
-            time->u8Month == 10 ||
-            time->u8Month == 12)
+        if(BCD2DEC(time->u8Month) == 1 ||
+            BCD2DEC(time->u8Month) == 3 ||
+            BCD2DEC(time->u8Month) == 5 ||
+            BCD2DEC(time->u8Month) == 7 ||
+            BCD2DEC(time->u8Month) == 8 ||
+            BCD2DEC(time->u8Month) == 10 ||
+            BCD2DEC(time->u8Month) == 12)
         {
             u8DaysInAMonth = 31;
         }
@@ -1571,8 +1571,8 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
         if(u8DaysAddUp[u8GroupIdxTmp] >= u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_DAYSAPART] &&
             u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME] != 0)
         {
-            if(stcRtcTime.u8Hour == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTHOUR] &&
-                stcRtcTime.u8Minute == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTMIN] &&
+            if(stcRtcTime.u8Hour == DEC2BCD(u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTHOUR]) &&
+                stcRtcTime.u8Minute == DEC2BCD(u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTMIN]) &&
                 FALSE == bJustWatered && 1 == u8PowerOnFlag)
             {
                 /* 如果有多组是同一时间同一通道进行浇水, 那么激活浇水时间长的那一组

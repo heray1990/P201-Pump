@@ -156,9 +156,9 @@ void Tim0_IRQHandler(void)
             App_WateringTimeCntDown();
         }
 
-        if((enFocusOn == Nothing) && (enKeyState < WaitForRelease) && 0x00 == u8PumpCtrl)
+        if((enFocusOn == Nothing) && (enKeyState < WaitForRelease) && (0x00 == u8PumpCtrl) && (ModeAutomatic == enWorkingMode))
         {
-            // 无操作10s进入深度休眠.
+            // 自动模式下无操作10s进入深度休眠.
             App_AutoDeepSleepCnt();
         }
 
@@ -682,6 +682,21 @@ void App_KeyHandler(void)
         }
         else
         {
+            if(u8PumpCtrl != 0x00)
+            {
+                u8PumpCtrl = 0x00;
+
+                if(0 == u8ChannelManual)
+                {
+                    u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
+                                        ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
+                }
+                else
+                {
+                    u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
+                                        (stcFlashManager.u32FlashData[4] << 2);
+                }
+            }
             enWorkingMode = ModeAutomatic;
             u8StopFlag = 0;
             Lcd_D61593A_GenRam_Channel(u32LcdRamData,
@@ -1968,7 +1983,6 @@ void App_WateringTimeCntDown(void)
 
                 if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME])
                 {
-                    //u8PumpCtrl = 0x00;
                     u16NoKeyPressedCnt = 0;
 
                     u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
@@ -2038,10 +2052,7 @@ void App_AutoDeepSleepCnt(void)
     if(u16NoKeyPressedCnt >= AUTO_DEEP_SLEEP_CNT)
     {
         u16NoKeyPressedCnt = 0;
-        if(ModeAutomatic == enWorkingMode)
-        {
-            u8DeepSleepFlag = 1;
-        }
+        u8DeepSleepFlag = 1;
     }
 }
 

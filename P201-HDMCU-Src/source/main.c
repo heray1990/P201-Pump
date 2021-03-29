@@ -289,12 +289,11 @@ int32_t main(void)
                 if(TRUE == IsTimeToWater(bJustWatered) && 1 == u8PowerOnFlag)
                 {
                     bJustWatered = TRUE;
-                    enWorkingMode = ModeAutomatic;
                     u8StopFlag = 0;
 
-                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
+                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
                     Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-                    Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, enWorkingMode, TRUE, enFocusOn);
+                    Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, ModeAutomatic, TRUE, enFocusOn);
                     Lcd_D61593A_GenRam_Channel(u32LcdRamData,
                                         (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
                                         TRUE,
@@ -306,12 +305,12 @@ int32_t main(void)
                     Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
                                             (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
                                             (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
-                                            enWorkingMode,
+                                            ModeAutomatic,
                                             TRUE,
                                             enFocusOn);
                     Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
                                             (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] - u8DaysAddUp[u8GroupNum],
-                                            enWorkingMode,
+                                            ModeAutomatic,
                                             TRUE,
                                             enFocusOn);
 
@@ -1579,6 +1578,11 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
 {
     uint8_t u8GroupIdxTmp = 0;
 
+    if(ModeManual == enWorkingMode)
+    {
+        return FALSE;
+    }
+
     u16RtcCnt++;
 
     for(u8GroupIdxTmp = 0; u8GroupIdxTmp < GROUP_NUM_MAX; u8GroupIdxTmp++)
@@ -2034,7 +2038,10 @@ void App_AutoDeepSleepCnt(void)
     if(u16NoKeyPressedCnt >= AUTO_DEEP_SLEEP_CNT)
     {
         u16NoKeyPressedCnt = 0;
-        u8DeepSleepFlag = 1;
+        if(ModeAutomatic == enWorkingMode)
+        {
+            u8DeepSleepFlag = 1;
+        }
     }
 }
 

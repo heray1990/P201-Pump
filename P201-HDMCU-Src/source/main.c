@@ -500,6 +500,7 @@ void App_KeyStateChkSet(void)
                         if(u32Tim0Cnt >= SET_OK_KEY_LONG_PRESS_CNT && FALSE == bPortDIrFlag)
                         {
                             enKeyState = Update;
+                            unKeyPressTemp.OK = 0;
                             unKeyPressTemp.Lock = 1;
                         }
                     }
@@ -517,6 +518,7 @@ void App_KeyStateChkSet(void)
                         if(u32Tim0Cnt >= SET_OK_KEY_LONG_PRESS_CNT && FALSE == bPortDIrFlag)
                         {
                             enKeyState = Update;
+                            unKeyPressTemp.Set = 0;
                             unKeyPressTemp.SetHold = 1;
                         }
                     }
@@ -534,6 +536,7 @@ void App_KeyStateChkSet(void)
                         if(u32Tim0Cnt >= MODE_KEY_LONG_PRESS_CNT && FALSE == bPortDIrFlag)
                         {
                             enKeyState = Update;
+                            unKeyPressTemp.Mode = 0;
                             unKeyPressTemp.Reset = 1;
                         }
                     }
@@ -1820,7 +1823,7 @@ void App_PumpInit(void)
 
 void App_PumpCtrl(void)
 {
-    switch (u8PumpCtrl)
+    switch(u8PumpCtrl)
     {
     case 0x00:
         Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);

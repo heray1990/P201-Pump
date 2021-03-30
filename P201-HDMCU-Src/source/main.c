@@ -1940,7 +1940,7 @@ void App_LcdStrobeControl(void)
 
             bFlipFlag = !bFlipFlag;
 
-            if(enKeyState > Waiting)
+            if(enKeyState > Waiting && enFocusOn != RtcYear)
             {
                 // 正在处理按键时不闪烁
                 bFlipFlag = TRUE;
@@ -1948,7 +1948,8 @@ void App_LcdStrobeControl(void)
 
             App_LcdRamFlipCtrl(bFlipFlag);
 
-            if((enFocusOn > Nothing) && (enKeyState < WaitForRelease))
+            if((enFocusOn > Nothing && enKeyState < WaitForRelease) ||
+                (enFocusOn == RtcYear && enKeyState == WaitForRelease))
             {
                 // 当焦点处于会闪烁的控件并且没有处理按键时, 刷新LCD显示.
                 bLcdUpdate = TRUE;

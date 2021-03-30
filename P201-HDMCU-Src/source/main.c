@@ -1823,32 +1823,40 @@ void App_PumpInit(void)
 
 void App_PumpCtrl(void)
 {
-    switch(u8PumpCtrl)
+    if(0 == u8StopFlag)
     {
-    case 0x00:
+        switch(u8PumpCtrl)
+        {
+        case 0x00:
+            Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
+            Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
+            break;
+
+        case 0x01:
+            Gpio_SetIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
+            Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
+            break;
+
+        case 0x10:
+            Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
+            Gpio_SetIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
+            break;
+
+        case 0x11:
+            Gpio_SetIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
+            Gpio_SetIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
+            break;
+
+        default:
+            Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
+            Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
+            break;
+        }
+    }
+    else
+    {
         Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
         Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
-        break;
-
-    case 0x01:
-        Gpio_SetIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
-        Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
-        break;
-
-    case 0x10:
-        Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
-        Gpio_SetIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
-        break;
-
-    case 0x11:
-        Gpio_SetIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
-        Gpio_SetIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
-        break;
-
-    default:
-        Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
-        Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
-        break;
     }
 }
 

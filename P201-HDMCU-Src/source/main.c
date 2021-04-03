@@ -108,7 +108,7 @@ void App_RtcInit(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 boolean_t IsTimeToWater(boolean_t bJustWatered);
-void App_RecountRtcCntAutoMode(void);
+void App_RecountRtcCntDaysAddUp(boolean_t bClearAll);
 void App_LcdPortInit(void);
 void App_LcdInit(void);
 void App_LcdBlInit(void);
@@ -280,7 +280,7 @@ int32_t main(void)
     u16WTPump1 = 0;
     u16WTPump2 = 0;
 
-    App_RecountRtcCntAutoMode();
+    App_RecountRtcCntDaysAddUp(TRUE);
 
     //while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) == TRUE);
     Wdt_Start();
@@ -770,7 +770,7 @@ void App_KeyHandler(void)
             {
                 App_ConvertUserData2FlashData();
                 Flash_Manager_Update();
-                App_RecountRtcCntAutoMode();
+                App_RecountRtcCntDaysAddUp(FALSE);
             }
 
             switch(enFocusOn)
@@ -959,7 +959,7 @@ void App_KeyHandler(void)
 
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntAutoMode();
+                        App_RecountRtcCntDaysAddUp(FALSE);
                         break;
 
                     case WateringTime:
@@ -970,7 +970,7 @@ void App_KeyHandler(void)
                                                     enFocusOn);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntAutoMode();
+                        App_RecountRtcCntDaysAddUp(FALSE);
                         break;
 
                     case StartingTimeH:
@@ -983,7 +983,7 @@ void App_KeyHandler(void)
                                                     enFocusOn);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntAutoMode();
+                        App_RecountRtcCntDaysAddUp(FALSE);
                         break;
 
                     case StartingTimeM:
@@ -996,7 +996,7 @@ void App_KeyHandler(void)
                                                     enFocusOn);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntAutoMode();
+                        App_RecountRtcCntDaysAddUp(FALSE);
                         break;
 
                     case DaysApart:
@@ -1010,7 +1010,7 @@ void App_KeyHandler(void)
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntAutoMode();
+                        App_RecountRtcCntDaysAddUp(FALSE);
                         break;
 
                     default:
@@ -1718,15 +1718,22 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
     }
 }
 
-void App_RecountRtcCntAutoMode(void)
+void App_RecountRtcCntDaysAddUp(boolean_t bClearAll)
 {
     uint8_t u8Idx = 0;
 
     u16RtcCnt = 0;
 
-    for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
+    if(TRUE == bClearAll)
     {
-        u8DaysAddUp[u8Idx] = 0;
+        for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
+        {
+            u8DaysAddUp[u8Idx] = 0;
+        }
+    }
+    else
+    {
+        u8DaysAddUp[u8GroupNum] = 0;
     }
 }
 

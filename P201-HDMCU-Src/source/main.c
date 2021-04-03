@@ -108,6 +108,7 @@ void App_RtcInit(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 boolean_t IsTimeToWater(boolean_t bJustWatered);
+void App_RecountRtcCntAutoMode(void);
 void App_LcdPortInit(void);
 void App_LcdInit(void);
 void App_LcdBlInit(void);
@@ -122,7 +123,6 @@ void App_AutoDeepSleepCnt(void);
 void App_Timer0Init(uint16_t u16Period);
 void App_UserDataSetDefaultVal(void);
 void App_ConvertFlashData2UserData(void);
-boolean_t App_IsFlashDataUpdate(void);
 void App_ConvertUserData2FlashData(void);
 void App_WdtInit(void);
 void App_SysInit(void);
@@ -242,11 +242,12 @@ int32_t main(void)
     u32UpDownCnt = 0;
     u8PumpCtrl = 0x00;
     bLcdUpdate = TRUE;
-    u16RtcCnt = 0;
     u8RtcFlag = 0;
     bPortDIrFlag = FALSE;
     u16WTPump1 = 0;
     u16WTPump2 = 0;
+
+    App_RecountRtcCntAutoMode();
 
     //while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) == TRUE);
     Wdt_Start();
@@ -732,6 +733,13 @@ void App_KeyHandler(void)
     {
         if(ModeAutomatic == enWorkingMode)
         {
+            if(enFocusOn >= Channel && enFocusOn <= DaysApart)
+            {
+                App_ConvertUserData2FlashData();
+                Flash_Manager_Update();
+                App_RecountRtcCntAutoMode();
+            }
+
             switch(enFocusOn)
             {
                 case Nothing:
@@ -832,6 +840,13 @@ void App_KeyHandler(void)
                 enFocusOn = WateringTime;
                 Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, enWorkingMode, TRUE);
             }
+            else if(WateringTime == enFocusOn)
+            {
+                App_ConvertUserData2FlashData();
+                Flash_Manager_Update();
+                enFocusOn = Nothing;
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+            }
             else
             {
                 enFocusOn = Nothing;
@@ -908,11 +923,10 @@ void App_KeyHandler(void)
                                             (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
                                             TRUE,
                                             enFocusOn);
-                        if(TRUE == App_IsFlashDataUpdate())
-                        {
-                            App_ConvertUserData2FlashData();
-                            Flash_Manager_Update();
-                        }
+
+                        App_ConvertUserData2FlashData();
+                        Flash_Manager_Update();
+                        App_RecountRtcCntAutoMode();
                         break;
 
                     case WateringTime:
@@ -921,11 +935,9 @@ void App_KeyHandler(void)
                                                     (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
                                                     TRUE,
                                                     enFocusOn);
-                        if(TRUE == App_IsFlashDataUpdate())
-                        {
-                            App_ConvertUserData2FlashData();
-                            Flash_Manager_Update();
-                        }
+                        App_ConvertUserData2FlashData();
+                        Flash_Manager_Update();
+                        App_RecountRtcCntAutoMode();
                         break;
 
                     case StartingTimeH:
@@ -936,11 +948,9 @@ void App_KeyHandler(void)
                                                     enWorkingMode,
                                                     TRUE,
                                                     enFocusOn);
-                        if(TRUE == App_IsFlashDataUpdate())
-                        {
-                            App_ConvertUserData2FlashData();
-                            Flash_Manager_Update();
-                        }
+                        App_ConvertUserData2FlashData();
+                        Flash_Manager_Update();
+                        App_RecountRtcCntAutoMode();
                         break;
 
                     case StartingTimeM:
@@ -951,11 +961,9 @@ void App_KeyHandler(void)
                                                     enWorkingMode,
                                                     TRUE,
                                                     enFocusOn);
-                        if(TRUE == App_IsFlashDataUpdate())
-                        {
-                            App_ConvertUserData2FlashData();
-                            Flash_Manager_Update();
-                        }
+                        App_ConvertUserData2FlashData();
+                        Flash_Manager_Update();
+                        App_RecountRtcCntAutoMode();
                         break;
 
                     case DaysApart:
@@ -967,11 +975,9 @@ void App_KeyHandler(void)
                                                 enFocusOn);
                         u8StopFlag = 0;
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-                        if(TRUE == App_IsFlashDataUpdate())
-                        {
-                            App_ConvertUserData2FlashData();
-                            Flash_Manager_Update();
-                        }
+                        App_ConvertUserData2FlashData();
+                        Flash_Manager_Update();
+                        App_RecountRtcCntAutoMode();
                         break;
 
                     default:
@@ -985,11 +991,8 @@ void App_KeyHandler(void)
                 {
                     enFocusOn = Nothing;
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
-                    if(TRUE == App_IsFlashDataUpdate())
-                    {
-                        App_ConvertUserData2FlashData();
-                        Flash_Manager_Update();
-                    }
+                    App_ConvertUserData2FlashData();
+                    Flash_Manager_Update();
                 }
                 else
                 {
@@ -1594,50 +1597,57 @@ uint8_t App_DaysInAMonth(stc_rtc_time_t *time)
 
 boolean_t IsTimeToWater(boolean_t bJustWatered)
 {
-    uint8_t u8GroupIdxTmp = 0;
+    uint8_t u8Idx = 0;
 
     if(ModeManual == enWorkingMode)
     {
         return FALSE;
+    }
+    else
+    {
+        if(enFocusOn >= Channel && enFocusOn <= DaysApart)
+        {
+            return FALSE;
+        }
     }
 
     u16RtcCnt++;
     u16WTPump1 = 0;
     u16WTPump2 = 0;
 
-    for(u8GroupIdxTmp = 0; u8GroupIdxTmp < GROUP_NUM_MAX; u8GroupIdxTmp++)
+    for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
     {
         if(u16RtcCnt >= 2880)    // 24 * 60 * 60 / 30 = 2880
         {
             u16RtcCnt = 0;
-            u8DaysAddUp[u8GroupIdxTmp]++;
+            u8DaysAddUp[u8Idx]++;
         }
 
-        if(u8DaysAddUp[u8GroupIdxTmp] >= u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_DAYSAPART] &&
-            u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME] != 0)
+        if(u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] &&
+            u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0)
         {
-            if(stcRtcTime.u8Hour == DEC2BCD(u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTHOUR]) &&
-                stcRtcTime.u8Minute == DEC2BCD(u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTMIN]) &&
+            if(stcRtcTime.u8Hour == DEC2BCD(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR]) &&
+                stcRtcTime.u8Minute == DEC2BCD(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN]) &&
                 FALSE == bJustWatered && 1 == u8PowerOnFlag)
             {
                 if(u16WTPump1 == 0 && u16WTPump2 == 0)
                 {
-                    u8GroupNum = u8GroupIdxTmp;
+                    u8GroupNum = u8Idx;
                 }
                 /* 如果有多组是同一时间同一通道进行浇水, 那么激活浇水时间长的那一组
                     如果有多组是同一时间不同通道进行浇水, 那么两路水泵都工作, 并且显示胶水时间长的那一组 */
-                if(0 == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_CHANNEL])
+                if(0 == u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL])
                 {
                     u8PumpCtrl |= 0x01;
 
-                    if(u16WTPump1 < u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
+                    if(u16WTPump1 < u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME])
                     {
-                        u16WTPump1 = u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME];
+                        u16WTPump1 = u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME];
 
                         if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] <
-                            u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
+                            u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME])
                         {
-                            u8GroupNum = u8GroupIdxTmp;
+                            u8GroupNum = u8Idx;
                         }
                     }
                 }
@@ -1645,23 +1655,23 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
                 {
                     u8PumpCtrl |= 0x10;
 
-                    if(u16WTPump2 < u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
+                    if(u16WTPump2 < u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME])
                     {
-                        u16WTPump2 = u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME];
+                        u16WTPump2 = u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME];
 
                         if(u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] <
-                            u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_WATER_TIME])
+                            u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME])
                         {
-                            u8GroupNum = u8GroupIdxTmp;
+                            u8GroupNum = u8Idx;
                         }
                     }
                 }
             }
         }
 
-        if(u8DaysAddUp[u8GroupIdxTmp] > 99)
+        if(u8DaysAddUp[u8Idx] > 99)
         {
-            u8DaysAddUp[u8GroupIdxTmp] = 0;
+            u8DaysAddUp[u8Idx] = 0;
         }
     }
 
@@ -1672,6 +1682,18 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
     else
     {
         return TRUE;
+    }
+}
+
+void App_RecountRtcCntAutoMode(void)
+{
+    uint8_t u8Idx = 0;
+
+    u16RtcCnt = 0;
+
+    for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
+    {
+        u8DaysAddUp[u8Idx] = 0;
     }
 }
 
@@ -2127,7 +2149,6 @@ void App_UserDataSetDefaultVal(void)
         u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_STARTHOUR] = 0;
         u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_STARTMIN] = 0;
         u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_WATER_TIME] = 0;
-        u8DaysAddUp[u8GroupIdx] = 0;
     }
 
     App_ConvertUserData2FlashData();
@@ -2159,64 +2180,7 @@ void App_ConvertFlashData2UserData(void)
         u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_WATER_TIME]
             = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0xC0) >> 6) |
                 (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] << 2);
-        u8DaysAddUp[u8GroupIdx] = 0;
     }
-}
-
-/**
- * \brief   检测当前UI设置的数据是否需要更新到Flash中, 避免对Flash做不必要的插写
- *
- * \param   无
- *
- * \retval  TRUE: 当前UI设置的数据和Flash中不一样, 需要更新到Flash中
- *          FALSE: 当前UI设置的数据和Flash中一样, 不需要更新到Flash中
- */
-boolean_t App_IsFlashDataUpdate(void)
-{
-    uint8_t u8GroupIdx = 0;
-
-    if(ModeAutomatic == enWorkingMode)
-    {
-        if(u8GroupNum != (stcFlashManager.u32FlashData[1] & 0x0F))
-            return TRUE;
-
-        for(u8GroupIdx = 0; u8GroupIdx < GROUP_NUM_MAX; u8GroupIdx++)
-        {
-            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_DAYSAPART] !=
-                (stcFlashManager.u32FlashData[5 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0x7F))
-                return TRUE;
-
-            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_CHANNEL] !=
-                ((stcFlashManager.u32FlashData[5 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0x80) >> 7))
-                return TRUE;
-
-            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_STARTHOUR] !=
-                stcFlashManager.u32FlashData[6 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx])
-                return TRUE;
-
-            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_STARTMIN] !=
-                (stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0x3F))
-                return TRUE;
-
-            if(u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_WATER_TIME] !=
-                (((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] & 0xC0) >> 6) |
-                (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupIdx] << 2)))
-                return TRUE;
-        }
-    }
-    else
-    {
-        if(u8ChannelManual != ((stcFlashManager.u32FlashData[1] & 0x40) >> 6))
-            return TRUE;
-
-        if(u16WateringTimeManual[0] != (stcFlashManager.u32FlashData[2] | ((stcFlashManager.u32FlashData[3] & 0x03) << 8)))
-            return TRUE;
-
-        if(u16WateringTimeManual[1] != (((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) | (stcFlashManager.u32FlashData[4] << 2)))
-            return TRUE;
-    }
-
-    return FALSE;
 }
 
 void App_ConvertUserData2FlashData(void)

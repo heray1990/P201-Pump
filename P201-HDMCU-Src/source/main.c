@@ -2208,7 +2208,7 @@ void App_ConvertUserData2FlashData(void)
             = (uint8_t)((u32GroupDataAuto[u8GroupIdx][AUTOMODE_GROUP_DATA_WATER_TIME] & 0x03FC) >> 2);
     }
 
-    stcFlashManager.u32FlashData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum(stcFlashManager.u32FlashData, FLASH_MANAGER_DATA_LEN);
+    stcFlashManager.u32FlashData[FLASH_MANAGER_DATA_LEN - 1] = Flash_Manager_Data_BCC_Checksum((uint8_t *)stcFlashManager.u32FlashData, FLASH_MANAGER_DATA_LEN);
 }
 
 void App_WdtInit(void)

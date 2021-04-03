@@ -90,7 +90,7 @@ __IO stc_rtc_time_t stcRtcTime;
 __IO boolean_t bLcdUpdate, bPortDIrFlag;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16NoKeyPressedCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
-__IO uint8_t u8PumpCtrl;
+__IO uint8_t u8PumpCtrl, u8WTCntDown;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -202,6 +202,7 @@ void PortD_IRQHandler(void)
         if(0x00 != u8PumpCtrl)
         {
             u8PumpCtrl = 0x00;
+            u8WTCntDown = 0;
 
             if(ModeAutomatic == enWorkingMode)
             {
@@ -274,6 +275,7 @@ int32_t main(void)
     enLockStatus = Unlock;
     u32UpDownCnt = 0;
     u8PumpCtrl = 0x00;
+    u8WTCntDown = 0;
     bLcdUpdate = TRUE;
     u8RtcFlag = 0;
     bPortDIrFlag = FALSE;
@@ -689,6 +691,7 @@ void App_KeyHandler(void)
         {
             if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
             {
+                stcRtcTime.u8Second = 0;
                 Rtc_SetTime(&stcRtcTime);
                 Rtc_Cmd(TRUE);
             }
@@ -703,6 +706,7 @@ void App_KeyHandler(void)
     {
         if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
         {
+            stcRtcTime.u8Second = 0;
             Rtc_SetTime(&stcRtcTime);
             Rtc_Cmd(TRUE);
         }
@@ -843,6 +847,7 @@ void App_KeyHandler(void)
                 case RtcHour:
                 case RtcMin:
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                    stcRtcTime.u8Second = 0;
                     Rtc_SetTime(&stcRtcTime);
                     Rtc_Cmd(TRUE);
                     break;
@@ -858,6 +863,7 @@ void App_KeyHandler(void)
         {
             if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
             {
+                stcRtcTime.u8Second = 0;
                 Rtc_SetTime(&stcRtcTime);
                 Rtc_Cmd(TRUE);
             }
@@ -917,6 +923,7 @@ void App_KeyHandler(void)
                 case RtcMin:
                     enFocusOn = Nothing;
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                    stcRtcTime.u8Second = 0;
                     Rtc_SetTime(&stcRtcTime);
                     Rtc_Cmd(TRUE);
                     if(ModeAutomatic == enWorkingMode)
@@ -1702,7 +1709,7 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
             }
         }
 
-        if(u8DaysAddUp[u8Idx] > 99)
+        if(u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART])
         {
             u8DaysAddUp[u8Idx] = 0;
         }
@@ -2036,6 +2043,7 @@ void App_LcdStrobeControl(void)
     {
         if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
         {
+            stcRtcTime.u8Second = 0;
             Rtc_SetTime(&stcRtcTime);
             Rtc_Cmd(TRUE);
         }
@@ -2045,13 +2053,12 @@ void App_LcdStrobeControl(void)
 
 void App_WateringTimeCntDown(void)
 {
-    static uint8_t u8Tim0Cnt = 0;
 
     if(0x00 != u8PumpCtrl)
     {
-        if(++u8Tim0Cnt > TIMER0_CNT_WATER_TIME)
+        if(++u8WTCntDown > TIMER0_CNT_WATER_TIME)
         {
-            u8Tim0Cnt = 0;
+            u8WTCntDown = 0;
             Wdt_Feed();
             // 每隔1s, 浇水倒计时变量减1
             if(ModeAutomatic == enWorkingMode)

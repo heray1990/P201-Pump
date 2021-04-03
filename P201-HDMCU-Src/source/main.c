@@ -156,7 +156,7 @@ void Tim0_IRQHandler(void)
             App_WateringTimeCntDown();
         }
 
-        if((enFocusOn == Nothing) && (enKeyState < WaitForRelease) && (0x00 == u8PumpCtrl))
+        if((enFocusOn == Nothing || enFocusOn == ChildLock) && (enKeyState < WaitForRelease) && (0x00 == u8PumpCtrl))
         {
             // 无操作且水泵没工作, 倒计时10s进入深度休眠.
             App_AutoDeepSleepCnt();
@@ -1521,17 +1521,18 @@ void App_KeyHandler(void)
 
     if(enLockStatus != LockExceptPowerKey && unKeyPress.Lock)
     {
-        enFocusOn = Nothing;
         // 开机状态下长按"确定"锁定/解锁按键
         if(Unlock == enLockStatus)
         {
             enLockStatus = Lock;
+            enFocusOn = ChildLock;
         }
         else
         {
             enLockStatus = Unlock;
+            enFocusOn = Nothing;
+            Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
         }
-        Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, TRUE);
     }
 
     if(Unlock == enLockStatus && unKeyPress.SetHold)
@@ -2005,6 +2006,10 @@ void App_LcdRamFlipCtrl(boolean_t bFlipFlag)
         Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, bFlipFlag, enFocusOn);
         break;
 
+    case ChildLock:
+        Lcd_D61593A_GenRam_Lock_Icon(u32LcdRamData, enLockStatus, bFlipFlag);
+        break;
+
     default:
         break;
     }
@@ -2045,13 +2050,20 @@ void App_LcdStrobeControl(void)
     }
     else
     {
-        if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
+        if(ChildLock == enFocusOn)
         {
-            stcRtcTime.u8Second = 0;
-            Rtc_SetTime(&stcRtcTime);
-            Rtc_Cmd(TRUE);
+            u16LcdFlickerCnt = 0;
         }
-        enFocusOn = Nothing;
+        else
+        {
+            if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
+            {
+                stcRtcTime.u8Second = 0;
+                Rtc_SetTime(&stcRtcTime);
+                Rtc_Cmd(TRUE);
+            }
+            enFocusOn = Nothing;
+        }
     }
 }
 
@@ -2311,7 +2323,10 @@ void App_SysInitWakeUp(void)
 
     // 下面两行顺序不能更换. 如果休眠前LCD有控件处于闪烁(灭)的状态, 那么唤醒后强制显示该控件
     App_LcdRamFlipCtrl(TRUE);
-    enFocusOn = Nothing;
+    if(enFocusOn != ChildLock)
+    {
+        enFocusOn = Nothing;
+    }
 
     Lcd_ClearDisp();
     App_LcdBlInit();

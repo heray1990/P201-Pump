@@ -156,9 +156,9 @@ void Tim0_IRQHandler(void)
             App_WateringTimeCntDown();
         }
 
-        if((enFocusOn == Nothing) && (enKeyState < WaitForRelease) && (0x00 == u8PumpCtrl) && (ModeAutomatic == enWorkingMode))
+        if((enFocusOn == Nothing) && (enKeyState < WaitForRelease) && (0x00 == u8PumpCtrl))
         {
-            // 自动模式下无操作10s进入深度休眠.
+            // 无操作且水泵没工作, 倒计时10s进入深度休眠.
             App_AutoDeepSleepCnt();
         }
 

@@ -304,6 +304,20 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
+        if(1 == u8PowerOnFlag && (enFocusOn < RtcYear || enFocusOn > RtcMin))
+        {
+            if(TRUE == App_GetRtcTime())
+            {
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                bLcdUpdate = TRUE;
+
+                if(TRUE == bJustWatered)
+                {
+                    bJustWatered = FALSE;
+                }
+            }
+        }
+
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
@@ -311,17 +325,6 @@ int32_t main(void)
 
             if(enFocusOn < RtcYear || enFocusOn > RtcMin)
             {
-                if(TRUE == App_GetRtcTime())
-                {
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                    bLcdUpdate = TRUE;
-
-                    if(TRUE == bJustWatered)
-                    {
-                        bJustWatered = FALSE;
-                    }
-                }
-
                 if(TRUE == IsTimeToWater(bJustWatered) && 1 == u8PowerOnFlag)
                 {
                     bJustWatered = TRUE;

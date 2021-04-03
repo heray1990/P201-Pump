@@ -177,7 +177,6 @@ void PortD_IRQHandler(void)
             TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN) ||
             TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
         {
-            enLockStatus = Unlock;
             bPortDIrFlag = TRUE;
             bLcdUpdate = TRUE;
             M0P_LCD->CR0_f.EN = LcdEnable;

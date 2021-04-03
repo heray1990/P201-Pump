@@ -1602,6 +1602,8 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
     }
 
     u16RtcCnt++;
+    u16WTPump1 = 0;
+    u16WTPump2 = 0;
 
     for(u8GroupIdxTmp = 0; u8GroupIdxTmp < GROUP_NUM_MAX; u8GroupIdxTmp++)
     {
@@ -1618,6 +1620,10 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
                 stcRtcTime.u8Minute == DEC2BCD(u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_STARTMIN]) &&
                 FALSE == bJustWatered && 1 == u8PowerOnFlag)
             {
+                if(u16WTPump1 == 0 && u16WTPump2 == 0)
+                {
+                    u8GroupNum = u8GroupIdxTmp;
+                }
                 /* 如果有多组是同一时间同一通道进行浇水, 那么激活浇水时间长的那一组
                     如果有多组是同一时间不同通道进行浇水, 那么两路水泵都工作, 并且显示胶水时间长的那一组 */
                 if(0 == u32GroupDataAuto[u8GroupIdxTmp][AUTOMODE_GROUP_DATA_CHANNEL])

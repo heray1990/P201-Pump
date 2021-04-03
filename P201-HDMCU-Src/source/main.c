@@ -848,6 +848,7 @@ void App_KeyHandler(void)
                 case RtcDay:
                 case RtcHour:
                 case RtcMin:
+                    enFocusOn = Nothing;
                     Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                     stcRtcTime.u8Second = 0;
                     Rtc_SetTime(&stcRtcTime);
@@ -863,13 +864,6 @@ void App_KeyHandler(void)
         }
         else
         {
-            if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
-            {
-                stcRtcTime.u8Second = 0;
-                Rtc_SetTime(&stcRtcTime);
-                Rtc_Cmd(TRUE);
-            }
-
             u8StopFlag = 1;
             Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
             if(Nothing == enFocusOn)
@@ -887,6 +881,14 @@ void App_KeyHandler(void)
                 Flash_Manager_Update();
                 enFocusOn = Nothing;
                 Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+            }
+            else if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
+            {
+                enFocusOn = Nothing;
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                stcRtcTime.u8Second = 0;
+                Rtc_SetTime(&stcRtcTime);
+                Rtc_Cmd(TRUE);
             }
             else
             {

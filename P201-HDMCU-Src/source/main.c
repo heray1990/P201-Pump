@@ -95,7 +95,7 @@ __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
 __IO stc_rtc_time_t stcRtcTime;
-__IO boolean_t bLcdUpdate, bPortDIrFlag;
+__IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16NoKeyPressedCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl, u8WTCntDown;
@@ -142,6 +142,7 @@ void App_BatAdcPortInit(void);
 void App_BatAdcInit(void);
 void App_AdcSglCfg(void);
 uint8_t App_GetBatPower(void);
+void App_LcdBatCharging(void);
 
 void Rtc_IRQHandler(void)
 {
@@ -163,6 +164,8 @@ void Tim0_IRQHandler(void)
         {
             App_LcdStrobeControl();
         }
+
+        App_LcdBatCharging();
 
         if(0 == u8StopFlag)
         {
@@ -310,6 +313,7 @@ int32_t main(void)
     u16WTPump1 = 0;
     u16WTPump2 = 0;
     u8AdcFlag = 0;
+    bCharging = FALSE;
 
     App_RecountRtcCntDaysAddUp(TRUE);
 
@@ -2525,6 +2529,32 @@ uint8_t App_GetBatPower(void)
     }
 
     return u8RetVal;
+}
+
+void App_LcdBatCharging(void)
+{
+    static uint8_t u8Cnt = 0, u8Idx = 0;
+
+    if(TRUE == bCharging && u8BatteryPower != BATTERY_POWER_100)
+    {
+        if(++u8Cnt > LCD_CONTENT_FLASH_FREQ)
+        {
+            u8Cnt = 0;
+
+            if(++u8Idx > BATTERY_POWER_100 - u8BatteryPower)
+            {
+                u8Idx = 0;
+            }
+
+            Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower + u8Idx, TRUE);
+            bLcdUpdate = TRUE;
+        }
+    }
+    else
+    {
+        u8Cnt = 0;
+        u8Idx = 0;
+    }
 }
 /******************************************************************************
  * EOF (not truncated)

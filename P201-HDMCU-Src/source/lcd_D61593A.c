@@ -561,7 +561,7 @@ void Lcd_D61593A_GenRam_Wifi_Icon(
  *****************************************************************************/
 void Lcd_D61593A_GenRam_Battery_Icon(
                 un_Ram_Data* punRamData,
-                en_remaining_battery_t enBatteryPercent,
+                uint8_t u8VoltageDegree,
                 boolean_t bDisplay)
 {
     // Clean RAM of Z1~Z5 in LCDRAM5.
@@ -572,24 +572,21 @@ void Lcd_D61593A_GenRam_Battery_Icon(
     {
         punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x01;
 
-        if(BatteryPercent25 == enBatteryPercent)
+        if(BATTERY_POWER_25 == u8VoltageDegree)
         {
             punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
         }
-
-        if(BatteryPercent50 == enBatteryPercent)
+        else if(BATTERY_POWER_50 == u8VoltageDegree)
         {
             punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
             punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x08;
         }
-
-        if(BatteryPercent75 == enBatteryPercent)
+        else if(BATTERY_POWER_75 == u8VoltageDegree)
         {
             punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
-            punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x0C;
+            punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x0c;
         }
-
-        if(BatteryPercent100 == enBatteryPercent)
+        else if(BATTERY_POWER_100 == u8VoltageDegree)
         {
             punRamData[LCDRAM_INDEX_5].u8_dis[1] |= 0x08;
             punRamData[LCDRAM_INDEX_5].u8_dis[2] |= 0x0e;

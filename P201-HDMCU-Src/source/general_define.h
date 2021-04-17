@@ -40,6 +40,9 @@
 #define GPIO_PIN_XTLI       GpioPin14
 #define GPIO_PIN_XTLO       GpioPin15
 
+#define GPIO_PORT_BAT_ADC   GpioPortC
+#define GPIO_PIN_BAT_ADC    GpioPin1
+
 
 /******************************************************************************
  ** \brief 智能模式选择
@@ -78,18 +81,6 @@ typedef enum
     WifiSignalWeek = 0,
     WifiSignalStrong = 1,
 }en_wifi_signal_strength_t;
-
-/******************************************************************************
- ** \brief 剩余电量
- *****************************************************************************/
-typedef enum
-{
-    BatteryPercent0 = 0,
-    BatteryPercent25 = 1,
-    BatteryPercent50 = 2,
-    BatteryPercent75 = 3,
-    BatteryPercent100 = 4,
-}en_remaining_battery_t;
 
 typedef enum
 {

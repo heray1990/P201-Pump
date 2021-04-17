@@ -22,6 +22,8 @@
 #include "general_define.h"
 #include "core_cm0plus.h"
 #include "wdt.h"
+#include "adc.h"
+#include "bgr.h"
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                            
@@ -34,6 +36,12 @@
 #define SET_OK_KEY_LONG_PRESS_CNT   200 // 2s
 #define TIMER0_CNT_WATER_TIME       100 // 1s
 #define AUTO_DEEP_SLEEP_CNT         1000    // 10s
+
+// 2.4V ~ 4.2V
+#define COMPARE_VAL_VOLTAGE_0   1420    // 26 * 4096 / 75 -> 2.6V/3(分压)/2.5(Vref)*4096
+#define COMPARE_VAL_VOLTAGE_1   1638    // 30 * 4096 / 75 -> 3.0V/3(分压)/2.5(Vref)*4096
+#define COMPARE_VAL_VOLTAGE_2   1857    // 34 * 4096 / 75 -> 3.4V/3(分压)/2.5(Vref)*4096
+#define COMPARE_VAL_VOLTAGE_3   2075    // 38 * 4096 / 75 -> 3.8V/3(分压)/2.5(Vref)*4096
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -91,6 +99,8 @@ __IO boolean_t bLcdUpdate, bPortDIrFlag;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16NoKeyPressedCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl, u8WTCntDown;
+uint32_t u32AdcRestult;
+__IO uint8_t u8BatteryPower, u8AdcFlag;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -128,7 +138,10 @@ void App_WdtInit(void);
 void App_SysInit(void);
 void App_SysInitWakeUp(void);
 void App_DeepSleepModeEnter(void);
-
+void App_BatAdcPortInit(void);
+void App_BatAdcInit(void);
+void App_AdcSglCfg(void);
+void App_GetBatVoltage(void);
 
 void Rtc_IRQHandler(void)
 {
@@ -244,10 +257,26 @@ void PortD_IRQHandler(void)
     }
 }
 
+///< ADC 中断服务程序
+void Adc_IRQHandler(void)
+{
+    if(TRUE == Adc_GetIrqStatus(AdcMskIrqSgl))
+    {
+        Adc_ClrIrqStatus(AdcMskIrqSgl);       ///< 清除中断标志位
+
+        u32AdcRestult = Adc_GetSglResult();   ///< 获取采样值
+
+        Adc_SGL_Stop();                       ///< ADC 单次转换停止
+        u8AdcFlag = 1;
+    }
+}
+
 int32_t main(void)
 {
     static boolean_t bJustWatered = FALSE;
 
+    u32AdcRestult = 1;
+    u8BatteryPower = BATTERY_POWER_100;
     App_SysInit();
 
     if(Ok == Flash_Manager_Init())
@@ -280,6 +309,7 @@ int32_t main(void)
     bPortDIrFlag = FALSE;
     u16WTPump1 = 0;
     u16WTPump2 = 0;
+    u8AdcFlag = 0;
 
     App_RecountRtcCntDaysAddUp(TRUE);
 
@@ -296,6 +326,10 @@ int32_t main(void)
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;
             u16NoKeyPressedCnt = 0;
+
+            App_GetBatVoltage();
+            Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+            bLcdUpdate = TRUE;
         }
 
         if(Nothing == enFocusOn && u16LcdFlickerCnt != 0)
@@ -1873,7 +1907,7 @@ void App_LcdRam_Init(un_Ram_Data* pu32Data)
     Lcd_D61593A_GenRam_Stop(pu32Data, u8StopFlag);
     Lcd_D61593A_GenRam_Lock_Icon(pu32Data, enLockStatus, TRUE);
     Lcd_D61593A_GenRam_Wifi_Icon(pu32Data, WifiSignalStrong, FALSE);
-    Lcd_D61593A_GenRam_Battery_Icon(pu32Data, BatteryPercent100, TRUE);
+    Lcd_D61593A_GenRam_Battery_Icon(pu32Data, u8BatteryPower, TRUE);
     Lcd_D61593A_GenRam_Date_And_Time(pu32Data, &stcRtcTime, TRUE, enFocusOn);
 }
 
@@ -2295,6 +2329,10 @@ void App_SysInit(void)
 
     Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);  // 开启LCD时钟
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 开启GPIO外设时钟
+    App_BatAdcPortInit();
+    App_BatAdcInit();
+    App_AdcSglCfg();
+
     App_LcdPortInit();
     App_LcdInit();
     App_LcdBlInit();
@@ -2333,6 +2371,9 @@ void App_SysInitWakeUp(void)
     App_LcdBlInit();
     Wdt_Feed();
     App_PumpInit();
+    App_BatAdcPortInit();
+    Adc_Enable();
+    Bgr_BgrEnable();
     Bt_M0_Run(TIM0);
 }
 
@@ -2345,6 +2386,8 @@ void App_DeepSleepModeEnter(void)
     Lcd_ClearDisp();
     u16NoKeyPressedCnt = 0;
     Bt_M0_Stop(TIM0);
+    Adc_Disable();
+    Bgr_BgrDisable();
 
     // PC14, PC15为RTC晶振输入脚, 进入深度休眠前不改变其状态
     // XTLI和XTLO两个口保持模拟, 其它端口配置为数字(0为数字)
@@ -2386,6 +2429,100 @@ void App_DeepSleepModeEnter(void)
     delay1ms(10);
     Lpm_GotoDeepSleep(FALSE);
     delay1ms(10);
+}
+
+///< ADC 采样端口初始化
+void App_BatAdcPortInit(void)
+{
+    Gpio_SetAnalogMode(GPIO_PORT_BAT_ADC, GPIO_PIN_BAT_ADC);
+}
+
+///< ADC模块初始化
+void App_BatAdcInit(void)
+{
+    stc_adc_cfg_t              stcAdcCfg;
+
+    DDL_ZERO_STRUCT(stcAdcCfg);
+
+    ///< 开启ADC/BGR 外设时钟
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralAdcBgr, TRUE);
+
+    Bgr_BgrEnable();        ///< 开启BGR
+
+    ///< ADC 初始化配置
+    stcAdcCfg.enAdcMode         = AdcSglMode;               ///<采样模式-单次
+    stcAdcCfg.enAdcClkDiv       = AdcMskClkDiv1;            ///<采样分频-1
+    stcAdcCfg.enAdcSampCycleSel = AdcMskSampCycle12Clk;     ///<采样周期数-12
+    stcAdcCfg.enAdcRefVolSel    = AdcMskRefVolSelInBgr2p5;  ///<参考电压选择-内部2.5V
+    stcAdcCfg.enAdcOpBuf        = AdcMskBufDisable;         ///<OP BUF配置-关
+    stcAdcCfg.enInRef           = AdcMskInRefEnable;        ///<内部参考电压使能-开
+    stcAdcCfg.enAdcAlign        = AdcAlignRight;            ///<转换结果对齐方式-右
+    Adc_Init(&stcAdcCfg);
+}
+
+///< ADC 单次扫描模式 配置
+void App_AdcSglCfg(void)
+{
+    ///< ADC 采样通道配置
+    Adc_CfgSglChannel(AdcExInputCH11);
+
+    ///< ADC 中断使能
+    Adc_EnableIrq();
+    EnableNvic(ADC_IRQn, IrqLevel3, TRUE);
+
+    Adc_ClrIrqStatus(AdcMskIrqSgl); // 设置 ADC_ICR.SGLIC为 0, 清除 ADC_IFR.SGLIF 标志
+
+    ///< 启动单次转换采样
+    Adc_SGL_Start();
+}
+
+void App_GetBatVoltage(void)
+{
+    uint32_t u32AdcResultTmp = 0;
+	uint32_t u32AdcResultTmpMax = 0;
+	uint32_t u32AdcResultTmpMin = 0xfff;
+    uint8_t u8Idx = 0;
+
+    // 连续获取 6 次 ADC 结果, 然后去掉最大值和最小值, 剩下的 4 个值再求平均
+    for(u8Idx = 0; u8Idx < 6; u8Idx++)
+    {
+        Adc_SGL_Start();
+        u8AdcFlag = 0;
+        while(u8AdcFlag == 0); // 等待执行完 ADC 中断
+
+        u32AdcResultTmp += u32AdcRestult;
+        if(u32AdcResultTmpMax < u32AdcRestult)
+        {
+            u32AdcResultTmpMax = u32AdcRestult;
+        }
+        if(u32AdcResultTmpMin > u32AdcRestult)
+        {
+            u32AdcResultTmpMin = u32AdcRestult;
+        }
+    }
+    u32AdcResultTmp -= (u32AdcResultTmpMax + u32AdcResultTmpMin);
+    u32AdcResultTmp >>= 2;
+
+    if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_0)
+    {
+        u8BatteryPower = BATTERY_POWER_0;
+    }
+    else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_1)
+    {
+        u8BatteryPower = BATTERY_POWER_25;
+    }
+    else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_2)
+    {
+        u8BatteryPower = BATTERY_POWER_50;
+    }
+    else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_3)
+    {
+        u8BatteryPower = BATTERY_POWER_75;
+    }
+    else
+    {
+        u8BatteryPower = BATTERY_POWER_100;
+    }
 }
 /******************************************************************************
  * EOF (not truncated)

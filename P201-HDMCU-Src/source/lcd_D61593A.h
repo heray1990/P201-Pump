@@ -84,6 +84,12 @@
 #define LCDRAM_INDEX_5      5
 #define LCDRAM_INDEX_MAX    5
 
+#define BATTERY_POWER_0     0
+#define BATTERY_POWER_25    1
+#define BATTERY_POWER_50    2
+#define BATTERY_POWER_75    3
+#define BATTERY_POWER_100   4
+
 
 // Mask for each components. The bits with value "0" means the seg for that components.
 #define MASK_LCDRAM0_START_TIME     0x0001ffff
@@ -169,7 +175,7 @@ extern void Lcd_D61593A_GenRam_Wifi_Icon(
                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Battery_Icon(
                 un_Ram_Data* punRamData,
-                en_remaining_battery_t enBatteryPercent,
+                uint8_t u8VoltageDegree,
                 boolean_t bDisplay);
 extern void Lcd_D61593A_GenRam_Date_And_Time(
                 un_Ram_Data *punRamData,

@@ -468,6 +468,16 @@
               <FileType>1</FileType>
               <FilePath>..\driver\src\wdt.c</FilePath>
             </File>
+            <File>
+              <FileName>adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\driver\src\adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>bgr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\driver\src\bgr.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

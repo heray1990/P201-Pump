@@ -141,7 +141,7 @@ void App_DeepSleepModeEnter(void);
 void App_BatAdcPortInit(void);
 void App_BatAdcInit(void);
 void App_AdcSglCfg(void);
-void App_GetBatVoltage(void);
+uint8_t App_GetBatPower(void);
 
 void Rtc_IRQHandler(void)
 {
@@ -191,6 +191,8 @@ void PortD_IRQHandler(void)
             TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
         {
             bPortDIrFlag = TRUE;
+            u8BatteryPower = App_GetBatPower();
+            Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
             bLcdUpdate = TRUE;
             M0P_LCD->CR0_f.EN = LcdEnable;
             Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -248,6 +250,8 @@ void PortD_IRQHandler(void)
         u8PowerOnFlag = 1;
         enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
+        u8BatteryPower = App_GetBatPower();
+        Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
         bLcdUpdate = TRUE;
         M0P_LCD->CR0_f.EN = LcdEnable;
         Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -326,10 +330,6 @@ int32_t main(void)
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;
             u16NoKeyPressedCnt = 0;
-
-            App_GetBatVoltage();
-            Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
-            bLcdUpdate = TRUE;
         }
 
         if(Nothing == enFocusOn && u16LcdFlickerCnt != 0)
@@ -341,6 +341,8 @@ int32_t main(void)
         {
             if(TRUE == App_GetRtcTime())
             {
+                u8BatteryPower = App_GetBatPower();
+                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
                 Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
                 bLcdUpdate = TRUE;
 
@@ -386,6 +388,8 @@ int32_t main(void)
                                             TRUE,
                                             enFocusOn);
 
+                    u8BatteryPower = App_GetBatPower();
+                    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
                     bLcdUpdate = TRUE;
                     M0P_LCD->CR0_f.EN = LcdEnable;
                     Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -2104,7 +2108,6 @@ void App_LcdStrobeControl(void)
 
 void App_WateringTimeCntDown(void)
 {
-
     if(0x00 != u8PumpCtrl)
     {
         if(++u8WTCntDown > TIMER0_CNT_WATER_TIME)
@@ -2332,6 +2335,7 @@ void App_SysInit(void)
     App_BatAdcPortInit();
     App_BatAdcInit();
     App_AdcSglCfg();
+    u8BatteryPower = App_GetBatPower();
 
     App_LcdPortInit();
     App_LcdInit();
@@ -2476,12 +2480,12 @@ void App_AdcSglCfg(void)
     Adc_SGL_Start();
 }
 
-void App_GetBatVoltage(void)
+uint8_t App_GetBatPower(void)
 {
     uint32_t u32AdcResultTmp = 0;
 	uint32_t u32AdcResultTmpMax = 0;
 	uint32_t u32AdcResultTmpMin = 0xfff;
-    uint8_t u8Idx = 0;
+    uint8_t u8Idx = 0, u8RetVal = BATTERY_POWER_100;
 
     // 连续获取 6 次 ADC 结果, 然后去掉最大值和最小值, 剩下的 4 个值再求平均
     for(u8Idx = 0; u8Idx < 6; u8Idx++)
@@ -2505,24 +2509,26 @@ void App_GetBatVoltage(void)
 
     if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_0)
     {
-        u8BatteryPower = BATTERY_POWER_0;
+        u8RetVal = BATTERY_POWER_0;
     }
     else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_1)
     {
-        u8BatteryPower = BATTERY_POWER_25;
+        u8RetVal = BATTERY_POWER_25;
     }
     else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_2)
     {
-        u8BatteryPower = BATTERY_POWER_50;
+        u8RetVal = BATTERY_POWER_50;
     }
     else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_3)
     {
-        u8BatteryPower = BATTERY_POWER_75;
+        u8RetVal = BATTERY_POWER_75;
     }
     else
     {
-        u8BatteryPower = BATTERY_POWER_100;
+        u8RetVal = BATTERY_POWER_100;
     }
+
+    return u8RetVal;
 }
 /******************************************************************************
  * EOF (not truncated)

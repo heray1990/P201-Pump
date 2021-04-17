@@ -191,8 +191,6 @@ void PortD_IRQHandler(void)
             TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
         {
             bPortDIrFlag = TRUE;
-            u8BatteryPower = App_GetBatPower();
-            Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
             bLcdUpdate = TRUE;
             M0P_LCD->CR0_f.EN = LcdEnable;
             Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -250,8 +248,6 @@ void PortD_IRQHandler(void)
         u8PowerOnFlag = 1;
         enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
-        u8BatteryPower = App_GetBatPower();
-        Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
         bLcdUpdate = TRUE;
         M0P_LCD->CR0_f.EN = LcdEnable;
         Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -388,8 +384,6 @@ int32_t main(void)
                                             TRUE,
                                             enFocusOn);
 
-                    u8BatteryPower = App_GetBatPower();
-                    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
                     bLcdUpdate = TRUE;
                     M0P_LCD->CR0_f.EN = LcdEnable;
                     Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -2378,6 +2372,8 @@ void App_SysInitWakeUp(void)
     App_BatAdcPortInit();
     Adc_Enable();
     Bgr_BgrEnable();
+    u8BatteryPower = App_GetBatPower();
+    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
     Bt_M0_Run(TIM0);
 }
 
@@ -2409,13 +2405,13 @@ void App_DeepSleepModeEnter(void)
     // XTLI和XTLO两个口保持, 其它端口配置为端口下拉(1为下拉)
     M0P_GPIO->PAPD = 0xFFFF;
     M0P_GPIO->PBPD = 0xFFFF;
-    M0P_GPIO->PCPD = 0x3FFF;
+    M0P_GPIO->PCPD = 0x3FFD;
     M0P_GPIO->PDPD = 0xFF0C;
 
     // 端口清零
     M0P_GPIO->PABCLR=0XFFFF;
     M0P_GPIO->PBBCLR=0XFFFF;
-    M0P_GPIO->PCBCLR=0X3FFF;
+    M0P_GPIO->PCBCLR=0X3FFD;
     M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);

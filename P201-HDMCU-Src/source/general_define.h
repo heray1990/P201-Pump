@@ -43,6 +43,9 @@
 #define GPIO_PORT_BAT_ADC   GpioPortC
 #define GPIO_PIN_BAT_ADC    GpioPin1
 
+#define GPIO_PORT_CHAGRING  GpioPortC
+#define GPIO_PIN_CHAGRING   GpioPin2
+
 
 /******************************************************************************
  ** \brief 智能模式选择

@@ -143,6 +143,7 @@ void App_BatAdcInit(void);
 void App_AdcSglCfg(void);
 uint8_t App_GetBatPower(void);
 void App_LcdBatCharging(void);
+void App_ChargingPortInit(void);
 
 void Rtc_IRQHandler(void)
 {
@@ -159,6 +160,15 @@ void Tim0_IRQHandler(void)
     if(TRUE == Bt_GetIntFlag(TIM0, BtUevIrq))
     {
         App_KeyStateChkSet();
+
+        if(TRUE == Gpio_GetInputIO(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING))
+        {
+            bCharging = TRUE;
+        }
+        else
+        {
+            bCharging = FALSE;
+        }
 
         if(enFocusOn > Nothing)
         {
@@ -2331,6 +2341,7 @@ void App_SysInit(void)
     Sysctrl_SetPeripheralGate(SysctrlPeripheralLcd, TRUE);  // 开启LCD时钟
     Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE); // 开启GPIO外设时钟
     App_BatAdcPortInit();
+    App_ChargingPortInit();
     App_BatAdcInit();
     App_AdcSglCfg();
     u8BatteryPower = App_GetBatPower();
@@ -2409,13 +2420,13 @@ void App_DeepSleepModeEnter(void)
     // XTLI和XTLO两个口保持, 其它端口配置为端口下拉(1为下拉)
     M0P_GPIO->PAPD = 0xFFFF;
     M0P_GPIO->PBPD = 0xFFFF;
-    M0P_GPIO->PCPD = 0x3FFD;
+    M0P_GPIO->PCPD = 0x3FF9;
     M0P_GPIO->PDPD = 0xFF0C;
 
     // 端口清零
     M0P_GPIO->PABCLR=0XFFFF;
     M0P_GPIO->PBBCLR=0XFFFF;
-    M0P_GPIO->PCBCLR=0X3FFD;
+    M0P_GPIO->PCBCLR=0X3FF9;
     M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
@@ -2555,6 +2566,28 @@ void App_LcdBatCharging(void)
         u8Cnt = 0;
         u8Idx = 0;
     }
+}
+
+void App_ChargingPortInit(void)
+{
+    stc_gpio_cfg_t stcGpioCfg;
+
+    ///< 打开GPIO外设时钟门控
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralGpio, TRUE);
+
+    ///< 端口方向配置->输入
+    stcGpioCfg.enDir = GpioDirIn;
+    ///< 端口驱动能力配置->低驱动能力
+    stcGpioCfg.enDrv = GpioDrvL;
+    ///< 端口上下拉配置->无
+    stcGpioCfg.enPu = GpioPuDisable;
+    stcGpioCfg.enPd = GpioPdDisable;
+    ///< 端口开漏输出配置->开漏输出关闭
+    stcGpioCfg.enOD = GpioOdDisable;
+    ///< 端口输入/输出值寄存器总线控制模式配置->AHB
+    stcGpioCfg.enCtrlMode = GpioAHB;
+    ///< GPIO IO 初始化
+    Gpio_Init(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, &stcGpioCfg);
 }
 /******************************************************************************
  * EOF (not truncated)

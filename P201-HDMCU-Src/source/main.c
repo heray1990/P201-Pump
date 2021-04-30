@@ -1940,7 +1940,7 @@ void App_PumpInit(void)
 
 void App_PumpCtrl(void)
 {
-    if(0 == u8StopFlag)
+    if(0 == u8StopFlag && u8BatteryPower != BATTERY_POWER_0)
     {
         switch(u8PumpCtrl)
         {

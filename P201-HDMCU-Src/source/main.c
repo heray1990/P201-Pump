@@ -161,15 +161,6 @@ void Tim0_IRQHandler(void)
     {
         App_KeyStateChkSet();
 
-        if(TRUE == Gpio_GetInputIO(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING))
-        {
-            bCharging = TRUE;
-        }
-        else
-        {
-            bCharging = FALSE;
-        }
-
         if(enFocusOn > Nothing)
         {
             App_LcdStrobeControl();
@@ -2545,6 +2536,20 @@ uint8_t App_GetBatPower(void)
 void App_LcdBatCharging(void)
 {
     static uint8_t u8Cnt = 0, u8Idx = 0;
+
+    if(TRUE == Gpio_GetInputIO(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING))
+    {
+        bCharging = TRUE;
+    }
+    else
+    {
+        if(TRUE == bCharging)
+        {
+            Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+            bLcdUpdate = TRUE;
+        }
+        bCharging = FALSE;
+    }
 
     if(TRUE == bCharging && u8BatteryPower != BATTERY_POWER_100)
     {

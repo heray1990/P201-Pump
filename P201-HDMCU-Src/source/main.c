@@ -119,6 +119,7 @@ boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 boolean_t IsTimeToWater(boolean_t bJustWatered);
 void App_RecountRtcCntDaysAddUp(boolean_t bClearAll);
+void App_BoostIoInit(void);
 void App_LcdPortInit(void);
 void App_LcdInit(void);
 void App_LcdBlInit(void);
@@ -196,6 +197,7 @@ void PortD_IRQHandler(void)
         {
             bPortDIrFlag = TRUE;
             bLcdUpdate = TRUE;
+            Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
             M0P_LCD->CR0_f.EN = LcdEnable;
             Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
@@ -253,6 +255,7 @@ void PortD_IRQHandler(void)
         enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
+        Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
         M0P_LCD->CR0_f.EN = LcdEnable;
         Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
@@ -390,6 +393,7 @@ int32_t main(void)
                                             enFocusOn);
 
                     bLcdUpdate = TRUE;
+                    Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
                     M0P_LCD->CR0_f.EN = LcdEnable;
                     Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
@@ -1786,6 +1790,20 @@ void App_RecountRtcCntDaysAddUp(boolean_t bClearAll)
     }
 }
 
+void App_BoostIoInit(void)
+{
+    stc_gpio_cfg_t stcGpioCfg;
+
+    ///< 端口方向配置->输出(其它参数与以上（输入）配置参数一致)
+    stcGpioCfg.enDir = GpioDirOut;
+    ///< 端口上下拉配置->下拉
+    stcGpioCfg.enPu = GpioPuDisable;
+    stcGpioCfg.enPd = GpioPdEnable;
+
+    ///< GPIO IO LCD BL_ON 端口初始化
+    Gpio_Init(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO, &stcGpioCfg);
+}
+
 void App_LcdPortInit(void)
 {
     Gpio_SetAnalogMode(GpioPortA, GpioPin9);  //COM0
@@ -2337,6 +2355,8 @@ void App_SysInit(void)
     App_AdcSglCfg();
     u8BatteryPower = App_GetBatPower();
 
+    App_BoostIoInit();
+    Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
     App_LcdPortInit();
     App_LcdInit();
     App_LcdBlInit();
@@ -2371,6 +2391,7 @@ void App_SysInitWakeUp(void)
         enFocusOn = Nothing;
     }
 
+    App_BoostIoInit();
     Lcd_ClearDisp();
     App_LcdBlInit();
     Wdt_Feed();

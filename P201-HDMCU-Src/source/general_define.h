@@ -46,6 +46,9 @@
 #define GPIO_PORT_CHAGRING  GpioPortC
 #define GPIO_PIN_CHAGRING   GpioPin2
 
+#define GPIO_PORT_BOOST_IO  GpioPortA
+#define GPIO_PIN_BOOST_IO   GpioPin15
+
 
 /******************************************************************************
  ** \brief 智能模式选择

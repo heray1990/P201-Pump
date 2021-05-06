@@ -1800,7 +1800,7 @@ void App_BoostIoInit(void)
     stcGpioCfg.enPu = GpioPuDisable;
     stcGpioCfg.enPd = GpioPdEnable;
 
-    ///< GPIO IO LCD BL_ON 端口初始化
+    ///< GPIO IO BOOST IO 端口初始化
     Gpio_Init(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO, &stcGpioCfg);
 }
 

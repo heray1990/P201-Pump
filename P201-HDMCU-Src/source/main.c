@@ -184,6 +184,32 @@ void Tim0_IRQHandler(void)
     }
 }
 
+void PortC_IRQHandler(void)
+{
+    if(1 == u8PowerOnFlag &&
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING))
+    {
+        bLcdUpdate = TRUE;
+        Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
+        M0P_LCD->CR0_f.EN = LcdEnable;
+        Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+        Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+        Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+    }
+}
+
 void PortD_IRQHandler(void)
 {
     if(1 == u8PowerOnFlag)
@@ -213,6 +239,8 @@ void PortD_IRQHandler(void)
             Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
             Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
             Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+            Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+            Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
         }
     }
     else
@@ -411,6 +439,9 @@ int32_t main(void)
                     Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
                     Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
                     Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+
+                    Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+                    Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
                 }
             }
         }
@@ -2451,6 +2482,8 @@ void App_DeepSleepModeEnter(void)
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+        Gpio_EnableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+        EnableNvic(PORTC_IRQn, IrqLevel3, TRUE);
     }
     EnableNvic(PORTD_IRQn, IrqLevel3, TRUE);
 

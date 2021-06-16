@@ -2396,7 +2396,7 @@ void App_SysInitWakeUp(void)
     App_LcdBlInit();
     Wdt_Feed();
     App_PumpInit();
-    App_BatAdcPortInit();
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralAdcBgr, TRUE);
     Adc_Enable();
     Bgr_BgrEnable();
     u8BatteryPower = App_GetBatPower();
@@ -2413,20 +2413,22 @@ void App_DeepSleepModeEnter(void)
     Lcd_ClearDisp();
     u16NoKeyPressedCnt = 0;
     Bt_M0_Stop(TIM0);
-    Adc_Disable();
+    // ADC引脚进入深度休眠前后状态不变, 只关闭对应的使能位和时钟.
     Bgr_BgrDisable();
+    Adc_Disable();
+    Sysctrl_SetPeripheralGate(SysctrlPeripheralAdcBgr, FALSE);
 
     // PC14, PC15为RTC晶振输入脚, 进入深度休眠前不改变其状态
     // XTLI和XTLO两个口保持模拟, 其它端口配置为数字(0为数字)
     M0P_GPIO->PAADS = 0;
     M0P_GPIO->PBADS = 0;
-    M0P_GPIO->PCADS = 0xC000;
+    M0P_GPIO->PCADS = 0xC002;
     M0P_GPIO->PDADS = 0;
 
     // XTLI和XTLO两个口保持输出, 其它端口配置为输入
     M0P_GPIO->PADIR = 0XFFFF;
     M0P_GPIO->PBDIR = 0XFFFF;
-    M0P_GPIO->PCDIR = 0X3FFF;
+    M0P_GPIO->PCDIR = 0X3FFD;
     M0P_GPIO->PDDIR = 0XFFFF;
 
     // XTLI和XTLO两个口保持, 其它端口配置为端口下拉(1为下拉)

@@ -94,6 +94,7 @@ __IO en_working_mode_t enWorkingMode;
 __IO uint32_t u32GroupDataAuto[GROUP_NUM_MAX][AUTOMODE_GROUP_DATA_ELEMENT_MAX];
 __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
+__IO boolean_t bWaterMoreThanOnce[GROUP_NUM_MAX] = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE};
 __IO stc_rtc_time_t stcRtcTime;
 __IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16NoKeyPressedCnt, u16WTPump1, u16WTPump2;
@@ -118,7 +119,7 @@ void App_RtcInit(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 boolean_t IsTimeToWater(boolean_t bJustWatered);
-void App_RecountRtcCntDaysAddUp(boolean_t bClearAll);
+void App_ClearDaysAddUpCnt(boolean_t bClearAll);
 void App_BoostIoInit(void);
 void App_LcdPortInit(void);
 void App_LcdInit(void);
@@ -347,7 +348,7 @@ int32_t main(void)
     u8AdcFlag = 0;
     bCharging = FALSE;
 
-    App_RecountRtcCntDaysAddUp(TRUE);
+    App_ClearDaysAddUpCnt(TRUE);
 
     //while(Gpio_GetInputIO(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) == TRUE);
     Wdt_Start();
@@ -392,7 +393,7 @@ int32_t main(void)
 
             if(enFocusOn < RtcYear || enFocusOn > RtcMin)
             {
-                if(TRUE == IsTimeToWater(bJustWatered) && 1 == u8PowerOnFlag)
+                if(TRUE == IsTimeToWater(bJustWatered))
                 {
                     bJustWatered = TRUE;
                     u8StopFlag = 0;
@@ -848,7 +849,7 @@ void App_KeyHandler(void)
             {
                 App_ConvertUserData2FlashData();
                 Flash_Manager_Update();
-                App_RecountRtcCntDaysAddUp(FALSE);
+                App_ClearDaysAddUpCnt(FALSE);
             }
 
             switch(enFocusOn)
@@ -1042,7 +1043,7 @@ void App_KeyHandler(void)
 
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntDaysAddUp(FALSE);
+                        App_ClearDaysAddUpCnt(FALSE);
                         break;
 
                     case WateringTime:
@@ -1053,7 +1054,7 @@ void App_KeyHandler(void)
                                                     enFocusOn);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntDaysAddUp(FALSE);
+                        App_ClearDaysAddUpCnt(FALSE);
                         break;
 
                     case StartingTimeH:
@@ -1066,7 +1067,7 @@ void App_KeyHandler(void)
                                                     enFocusOn);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntDaysAddUp(FALSE);
+                        App_ClearDaysAddUpCnt(FALSE);
                         break;
 
                     case StartingTimeM:
@@ -1079,7 +1080,7 @@ void App_KeyHandler(void)
                                                     enFocusOn);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntDaysAddUp(FALSE);
+                        App_ClearDaysAddUpCnt(FALSE);
                         break;
 
                     case DaysApart:
@@ -1093,7 +1094,7 @@ void App_KeyHandler(void)
                         Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                         App_ConvertUserData2FlashData();
                         Flash_Manager_Update();
-                        App_RecountRtcCntDaysAddUp(FALSE);
+                        App_ClearDaysAddUpCnt(FALSE);
                         break;
 
                     default:
@@ -1740,19 +1741,23 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
             u8DaysAddUp[u8Idx]++;
         }
 
-        if(u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] &&
-            u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0)
+        if(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0 &&
+            1 == u8PowerOnFlag && FALSE == bJustWatered &&
+            ((u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] && TRUE == bWaterMoreThanOnce[u8Idx]) ||
+            FALSE == bWaterMoreThanOnce[u8Idx]))
         {
             if(stcRtcTime.u8Hour == DEC2BCD(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTHOUR]) &&
-                stcRtcTime.u8Minute == DEC2BCD(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN]) &&
-                FALSE == bJustWatered && 1 == u8PowerOnFlag)
+                stcRtcTime.u8Minute == DEC2BCD(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_STARTMIN]))
             {
+                u8DaysAddUp[u8Idx] = 0;
+                bWaterMoreThanOnce[u8Idx] = TRUE;
+
                 if(u16WTPump1 == 0 && u16WTPump2 == 0)
                 {
                     u8GroupNum = u8Idx;
                 }
                 /* 如果有多组是同一时间同一通道进行浇水, 那么激活浇水时间长的那一组
-                    如果有多组是同一时间不同通道进行浇水, 那么两路水泵都工作, 并且显示胶水时间长的那一组 */
+                    如果有多组是同一时间不同通道进行浇水, 那么两路水泵都工作, 并且显示浇水时间长的那一组 */
                 if(0 == u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_CHANNEL])
                 {
                     u8PumpCtrl |= 0x01;
@@ -1785,11 +1790,6 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
                 }
             }
         }
-
-        if(u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART])
-        {
-            u8DaysAddUp[u8Idx] = 0;
-        }
     }
 
     if(0x00 == u8PumpCtrl)
@@ -1802,7 +1802,7 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
     }
 }
 
-void App_RecountRtcCntDaysAddUp(boolean_t bClearAll)
+void App_ClearDaysAddUpCnt(boolean_t bClearAll)
 {
     uint8_t u8Idx = 0;
 
@@ -1813,11 +1813,13 @@ void App_RecountRtcCntDaysAddUp(boolean_t bClearAll)
         for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
         {
             u8DaysAddUp[u8Idx] = 0;
+            bWaterMoreThanOnce[u8Idx] = FALSE;
         }
     }
     else
     {
         u8DaysAddUp[u8GroupNum] = 0;
+        bWaterMoreThanOnce[u8GroupNum] = FALSE;
     }
 }
 

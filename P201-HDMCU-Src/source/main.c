@@ -1730,8 +1730,19 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
     }
 
     u16RtcCnt++;
-    u16WTPump1 = 0;
-    u16WTPump2 = 0;
+    if(0x00 == u8PumpCtrl)
+    {
+        u16WTPump1 = 0;
+        u16WTPump2 = 0;
+    }
+    else if(0x01 == u8PumpCtrl)
+    {
+        u16WTPump2 = 0;
+    }
+    else if(0x10 == u8PumpCtrl)
+    {
+        u16WTPump1 = 0;
+    }
 
     for(u8Idx = 0; u8Idx < GROUP_NUM_MAX; u8Idx++)
     {

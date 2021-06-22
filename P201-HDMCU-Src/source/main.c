@@ -26,16 +26,17 @@
 #include "bgr.h"
 
 /******************************************************************************
- * Local pre-processor symbols/macros ('#define')                            
+ * Local pre-processor symbols/macros ('#define')
+ * Timer0 每隔 40ms 中断溢出一次
  *****************************************************************************/
 #define MIN_KEY_COUNT               0
-#define KEY_LONG_PRESS_CNT          25  // 250ms
-#define LCD_CONTENT_FLASH_FREQ      50  // 500ms
-#define LCD_CONTENT_FLASH_DURATION  1000    // 10s
-#define MODE_KEY_LONG_PRESS_CNT     600 // 6s
-#define SET_OK_KEY_LONG_PRESS_CNT   200 // 2s
-#define TIMER0_CNT_WATER_TIME       100 // 1s
-#define AUTO_DEEP_SLEEP_CNT         1000    // 10s
+#define KEY_LONG_PRESS_CNT          7   // 280ms
+#define LCD_CONTENT_FLASH_FREQ      12  // 480ms
+#define LCD_CONTENT_FLASH_DURATION  250 // 10s
+#define MODE_KEY_LONG_PRESS_CNT     150 // 6s
+#define SET_OK_KEY_LONG_PRESS_CNT   50  // 2s
+#define TIMER0_CNT_WATER_TIME       25  // 1s
+#define AUTO_DEEP_SLEEP_CNT         250 // 10s
 
 // 2.4V ~ 4.2V
 #define COMPARE_VAL_VOLTAGE_0   1475    // 27 * 4096 / 75 -> 2.7V/3(分压)/2.5(Vref)*4096
@@ -596,7 +597,7 @@ void App_KeyStateChkSet(void)
         case WaitForRelease:
             ++u32Tim0Cnt;
 
-            if(u32Tim0Cnt > KEY_LONG_PRESS_CNT)  // 长按超过 (KEY_LONG_PRESS_CNT * 10)ms, 响应一次长按操作(Ok, Set, Up, Down)
+            if(u32Tim0Cnt > KEY_LONG_PRESS_CNT)  // 长按超过 (KEY_LONG_PRESS_CNT * 40)ms, 响应一次长按操作(Ok, Set, Up, Down)
             {
                 if(unKeyPressDetected.OK)
                 {
@@ -725,15 +726,15 @@ void App_KeyStateChkSet(void)
                 {
                     enKeyState = WaitForRelease;
                     /* 识别到长按上/下键, 按的时间越长, 执行动作的速度越快, 最终以最快的速度匀速执行
-                     * 在 (20 * KEY_LONG_PRESS_CNT * 10)ms 时达到最快速度.
-                     * u32Tim0Cnt = 15 表示每隔 ((KEY_LONG_PRESS_CNT - 15) * 10)ms 就响应一次按键*/
-                    if(u32UpDownCnt <= 20)
+                     * 在 (12 * KEY_LONG_PRESS_CNT * 40)ms 时达到最快速度.
+                     * u32Tim0Cnt = 6 表示每隔 ((KEY_LONG_PRESS_CNT - 6) * 40)ms 就响应一次按键*/
+                    if(u32UpDownCnt <= 12)
                     {
                         u32Tim0Cnt = u32UpDownCnt / 2;
                     }
                     else
                     {
-                        u32Tim0Cnt = 15;
+                        u32Tim0Cnt = 6;
                     }
                 }
                 else
@@ -2171,7 +2172,7 @@ void App_WateringTimeCntDown(void)
 {
     if(0x00 != u8PumpCtrl)
     {
-        if(++u8WTCntDown > TIMER0_CNT_WATER_TIME)
+        if(++u8WTCntDown >= TIMER0_CNT_WATER_TIME)
         {
             u8WTCntDown = 0;
             Wdt_Feed();
@@ -2385,7 +2386,7 @@ void App_SysInit(void)
 {
     App_ClkInit();
 
-    App_Timer0Init(160); //周期 = 160*(1/(4*1024)*256 = 10ms
+    App_Timer0Init(625); //周期 = 625*(1/(4000))*256 = 40ms
 
     Sysctrl_ClkSourceEnable(SysctrlClkXTL, TRUE);
     Sysctrl_ClkSourceEnable(SysctrlClkRCL, TRUE);   // 使能RCL时钟

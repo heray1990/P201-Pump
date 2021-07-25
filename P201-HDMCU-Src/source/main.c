@@ -39,10 +39,10 @@
 #define AUTO_DEEP_SLEEP_CNT         250 // 10s
 
 // 2.4V ~ 4.2V
-#define COMPARE_VAL_VOLTAGE_0   1475    // 27 * 4096 / 75 -> 2.7V/3(分压)/2.5(Vref)*4096
-#define COMPARE_VAL_VOLTAGE_1   1638    // 30 * 4096 / 75 -> 3.0V/3(分压)/2.5(Vref)*4096
-#define COMPARE_VAL_VOLTAGE_2   1857    // 34 * 4096 / 75 -> 3.4V/3(分压)/2.5(Vref)*4096
-#define COMPARE_VAL_VOLTAGE_3   2075    // 38 * 4096 / 75 -> 3.8V/3(分压)/2.5(Vref)*4096
+#define COMPARE_VAL_VOLTAGE_0   1857    // 34 * 4096 / 75 -> 3.4V/3(分压)/2.5(Vref)*4096
+#define COMPARE_VAL_VOLTAGE_1   1966    // 36 * 4096 / 75 -> 3.6V/3(分压)/2.5(Vref)*4096
+#define COMPARE_VAL_VOLTAGE_2   2075    // 38 * 4096 / 75 -> 3.8V/3(分压)/2.5(Vref)*4096
+#define COMPARE_VAL_VOLTAGE_3   2185    // 40 * 4096 / 75 -> 4.0V/3(分压)/2.5(Vref)*4096
 
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')

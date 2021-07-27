@@ -88,7 +88,7 @@ un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 __IO un_key_type unKeyPress;
 __IO en_focus_on enFocusOn;
 __IO en_lock_status_t enLockStatus;
-__IO uint8_t u8PowerOnFlag, u8RtcFlag, u8DeepSleepFlag;
+__IO uint8_t u8PowerOnState, u8RtcFlag, u8DeepSleepFlag;
 __IO uint32_t u32UpDownCnt;
 __IO uint8_t u8StopFlag, u8GroupNum, u8ChannelManual;
 __IO en_working_mode_t enWorkingMode;
@@ -188,7 +188,7 @@ void Tim0_IRQHandler(void)
 
 void PortC_IRQHandler(void)
 {
-    if(1 == u8PowerOnFlag &&
+    if(1 == u8PowerOnState &&
         TRUE == Gpio_GetIrqStatus(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING))
     {
         bLcdUpdate = TRUE;
@@ -214,7 +214,7 @@ void PortC_IRQHandler(void)
 
 void PortD_IRQHandler(void)
 {
-    if(1 == u8PowerOnFlag)
+    if(1 == u8PowerOnState)
     {
         if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) ||
             TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
@@ -281,7 +281,7 @@ void PortD_IRQHandler(void)
             }
         }
 
-        u8PowerOnFlag = 1;
+        u8PowerOnState = 1;
         enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
@@ -335,7 +335,7 @@ int32_t main(void)
     App_LcdRam_Init(u32LcdRamData);
 
     unKeyPress.Full = 0x0000;
-    u8PowerOnFlag = 1;
+    u8PowerOnState = 1;
     enFocusOn = Nothing;
     enLockStatus = Unlock;
     u32UpDownCnt = 0;
@@ -371,7 +371,7 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
-        if(1 == u8PowerOnFlag && (enFocusOn < RtcYear || enFocusOn > RtcMin))
+        if(1 == u8PowerOnState && (enFocusOn < RtcYear || enFocusOn > RtcMin))
         {
             if(TRUE == App_GetRtcTime())
             {
@@ -758,9 +758,9 @@ void App_KeyHandler(void)
 {
     if(enLockStatus < Lock  && unKeyPress.Power)
     {
-        if(0 == u8PowerOnFlag)
+        if(0 == u8PowerOnState)
         {
-            u8PowerOnFlag = 1;
+            u8PowerOnState = 1;
             enLockStatus = Unlock;
         }
         else
@@ -772,7 +772,7 @@ void App_KeyHandler(void)
                 Rtc_Cmd(TRUE);
             }
 
-            u8PowerOnFlag = 0;
+            u8PowerOnState = 0;
             enLockStatus = LockExceptPowerKey;
             u8DeepSleepFlag = 1;
         }
@@ -1754,7 +1754,7 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
         }
 
         if(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0 &&
-            1 == u8PowerOnFlag && FALSE == bJustWatered &&
+            1 == u8PowerOnState && FALSE == bJustWatered &&
             ((u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] && TRUE == bWaterMoreThanOnce[u8Idx]) ||
             FALSE == bWaterMoreThanOnce[u8Idx]))
         {
@@ -2489,7 +2489,7 @@ void App_DeepSleepModeEnter(void)
     M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
-    if(1 == u8PowerOnFlag)
+    if(1 == u8PowerOnState)
     {
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);

@@ -81,3 +81,54 @@ HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯
 **分区（Partition）数据**
 
 ![](./Data_in_one_Partition.PNG)
+
+### 系统状态转换原理
+
+#### 系统状态枚举：
+
+```C
+typedef union
+{
+    uint8_t SysStates;
+    struct
+    {
+        uint8_t PowerOn         :1; // 0x01
+        uint8_t PowerOnCharge   :1; // 0x02
+        uint8_t StandBy         :1; // 0x04
+        uint8_t StandByCharge   :1; // 0x08
+        uint8_t PowerOff        :1; // 0x10
+        uint8_t PowerOffCharge  :1; // 0x20
+        uint8_t                 :2;
+    };
+}un_sys_states;
+```
+
+#### 系统状态转换触发源：
+
+A: 按下 Power Key
+
+B: 5VIN IO（PC02）上升沿，即插入充电线
+
+C: 5VIN IO（PC02）下降沿，即拔掉充电线
+
+D: 10s 无操作倒计时
+
+#### 系统状态转换流程图
+
+```mermaid
+graph LR
+	PowerOn[PowerOn] -. A .-> PowerOff[PowerOff]
+	PowerOn[PowerOn] -. B .-> PowerOnCharge[PowerOnCharge]
+	PowerOn[PowerOn] -. D .-> StandBy[StandBy]
+	PowerOnCharge[PowerOnCharge] -. A .-> PowerOffCharge[PowerOffCharge]
+	PowerOnCharge[PowerOnCharge] -. C .-> PowerOn[PowerOn]
+	StandBy[StandBy] -. A .-> PowerOn[PowerOn]
+	StandBy[StandBy] -. B .-> StandByCharge[StandByCharge]
+	StandByCharge[StandByCharge] -. A .-> PowerOffCharge[PowerOffCharge]
+	StandByCharge[StandByCharge] -. C .-> StandBy[StandBy]
+	PowerOff[PowerOff] -. A .-> PowerOn[PowerOn]
+	PowerOff[PowerOff] -. B .-> PowerOffCharge[PowerOffCharge]
+	PowerOffCharge[PowerOffCharge] -. A .-> PowerOnCharge[PowerOnCharge]
+	PowerOffCharge[PowerOffCharge] -. C .-> PowerOff[PowerOff]
+```
+

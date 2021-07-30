@@ -87,20 +87,17 @@ HC32L136K8TA-LQFP64 包含一块 64K Bytes 容量的 Flash 存储器（详见芯
 #### 系统状态枚举：
 
 ```C
-typedef union
+typedef enum
 {
-    uint8_t SysStates;
-    struct
-    {
-        uint8_t PowerOn         :1; // 0x01
-        uint8_t PowerOnCharge   :1; // 0x02
-        uint8_t StandBy         :1; // 0x04
-        uint8_t StandByCharge   :1; // 0x08
-        uint8_t PowerOff        :1; // 0x10
-        uint8_t PowerOffCharge  :1; // 0x20
-        uint8_t                 :2;
-    };
-}un_sys_states;
+    PowerOn = 0u,
+    PowerOnCharge = 1u,
+    StandBy = 2u,
+    StandByChargeEarly = 3u,
+    StandByCharge = 4u,
+    PowerOff = 5u,
+    PowerOffChargeEarly = 6u,
+    PowerOffCharge = 7u
+}en_sys_states;
 ```
 
 #### 系统状态转换触发源：
@@ -113,22 +110,31 @@ C: 5VIN IO（PC02）下降沿，即拔掉充电线
 
 D: 10s 无操作倒计时
 
+E: 其它按键触发
+
 #### 系统状态转换流程图
 
 ```mermaid
 graph LR
-	PowerOn[PowerOn] -. A .-> PowerOff[PowerOff]
-	PowerOn[PowerOn] -. B .-> PowerOnCharge[PowerOnCharge]
-	PowerOn[PowerOn] -. D .-> StandBy[StandBy]
-	PowerOnCharge[PowerOnCharge] -. A .-> PowerOffCharge[PowerOffCharge]
-	PowerOnCharge[PowerOnCharge] -. C .-> PowerOn[PowerOn]
-	StandBy[StandBy] -. A .-> PowerOn[PowerOn]
-	StandBy[StandBy] -. B .-> StandByCharge[StandByCharge]
-	StandByCharge[StandByCharge] -. A .-> PowerOffCharge[PowerOffCharge]
-	StandByCharge[StandByCharge] -. C .-> StandBy[StandBy]
-	PowerOff[PowerOff] -. A .-> PowerOn[PowerOn]
-	PowerOff[PowerOff] -. B .-> PowerOffCharge[PowerOffCharge]
-	PowerOffCharge[PowerOffCharge] -. A .-> PowerOnCharge[PowerOnCharge]
-	PowerOffCharge[PowerOffCharge] -. C .-> PowerOff[PowerOff]
+	0u[PowerOn] -. A .-> 5u[PowerOff]
+	0u[PowerOn] -. B .-> 1u[PowerOnCharge]
+	0u[PowerOn] -. D .-> 2u[StandBy]
+	1u[PowerOnCharge] -. A .-> 7u[PowerOffCharge]
+	1u[PowerOnCharge] -. C .-> 0u[PowerOn]
+	1u[PowerOnCharge] -. D .-> 4u[StandByCharge]
+	2u[StandBy] -. A or E .-> 0u[PowerOn]
+	2u[StandBy] -. B .-> 3u[StandByChargeEarly]
+	3u[StandByChargeEarly] -. A .-> 7u[PowerOffCharge]
+	3u[StandByChargeEarly] -. C .-> 2u[StandBy]
+	3u[StandByChargeEarly] -. D .-> 4u[StandByCharge]
+	4u[StandByCharge] -. A .-> 7u[PowerOffCharge]
+	4u[StandByCharge] -. C .-> 2u[StandBy]
+	4u[StandByCharge] -. E .-> 3u[StandByChargeEarly]
+	5u[PowerOff] -. A .-> 0u[PowerOn]
+	5u[PowerOff] -. B .-> 6u[PowerOffChargeEarly]
+	6u[PowerOffChargeEarly] -. A or D .-> 7u[PowerOffCharge]
+	6u[PowerOffChargeEarly] -. C .-> 5u[PowerOff]
+	7u[PowerOffCharge] -. A .-> 1u[PowerOnCharge]
+	7u[PowerOffCharge] -. C .-> 5u[PowerOff]
 ```
 

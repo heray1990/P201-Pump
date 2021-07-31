@@ -102,24 +102,26 @@ typedef enum
 
 * **PowerOn**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应
 * **PowerOnCharge**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应；电量动画
-* **StandBy**：LCD+BL Off; RTC、水泵正常工作；Timer 停止；按键和充电唤醒
+* **StandBy**（休眠模式）：LCD+BL Off; RTC、水泵正常工作；Timer 停止；按键和充电唤醒
 * **StandByChargeEarly**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应；电量动画
 * **StandByCharge**：LCD On+BL Off；RTC、Timer和水泵正常工作；按键正常响应；电量动画
-* **PowerOff**：LCD+BL Off; RTC正常工作；Timer和水泵不工作；Power按键和充电唤醒
+* **PowerOff**（休眠模式）：LCD+BL Off; RTC正常工作；Timer和水泵不工作；Power按键和充电唤醒
 * **PowerOffChargeEarly**：LCD+BL On；RTC和Time正常工作；水泵不工作；只响应Power按键；LCD只显示电量动画
 * **PowerOffCharge**：LCD On+BL Off；RTC和Time正常工作；水泵不工作；只响应Power按键；LCD只显示电量动画
 
 #### 系统状态转换触发源：
 
-A: 按下 Power Key
+A：按下 Power Key
 
-B: 5VIN IO（PC02）上升沿，即插入充电线
+B：5VIN IO（PC02）上升沿，即插入充电线
 
-C: 5VIN IO（PC02）下降沿，即拔掉充电线
+C：5VIN IO（PC02）下降沿，即拔掉充电线
 
-D: 10s 无操作倒计时
+D：10s 无操作倒计时
 
-E: 其它按键触发
+E：其它按键触发
+
+F：RTC 计时到点
 
 #### 系统状态转换流程图
 
@@ -129,9 +131,9 @@ graph LR
 	0u[PowerOn] -. B .-> 1u[PowerOnCharge]
 	0u[PowerOn] -. D .-> 2u((StandBy))
 	1u[PowerOnCharge] -. A .-> 7u[PowerOffCharge]
-	1u[PowerOnCharge] -. C .-> 0u[PowerOn]
+	1u[PowerOnCharge] -. C or F .-> 0u[PowerOn]
 	1u[PowerOnCharge] -. D .-> 4u[StandByCharge]
-	2u((StandBy)) == A_Wakeup or E_Wakeup ==> 0u[PowerOn]
+	2u((StandBy)) == A_Wakeup or E_Wakeup or F_Wakeup ==> 0u[PowerOn]
 	2u((StandBy)) == B_Wakeup ==> 3u[StandByChargeEarly]
 	3u[StandByChargeEarly] -. A .-> 7u[PowerOffCharge]
 	3u[StandByChargeEarly] -. C .-> 2u((StandBy))

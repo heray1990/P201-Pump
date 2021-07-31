@@ -110,7 +110,7 @@ __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
 __IO boolean_t bWaterMoreThanOnce[GROUP_NUM_MAX] = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE};
 __IO stc_rtc_time_t stcRtcTime;
 __IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging;
-__IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16NoKeyPressedCnt, u16WTPump1, u16WTPump2;
+__IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16TenSecondCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl, u8WTCntDown;
 uint32_t u32AdcRestult;
@@ -146,7 +146,7 @@ void App_PumpCtrl(void);
 void App_LcdRamFlipCtrl(boolean_t bFlipFlag);
 void App_LcdStrobeControl(void);
 void App_WateringTimeCntDown(void);
-void App_AutoDeepSleepCnt(void);
+void App_10sCntDown(void);
 void App_Timer0Init(uint16_t u16Period);
 void App_UserDataSetDefaultVal(void);
 void App_ConvertFlashData2UserData(void);
@@ -196,8 +196,8 @@ void Tim0_IRQHandler(void)
 
         if((enFocusOn == Nothing || enFocusOn == ChildLock) && (enKeyState < WaitForRelease) && (0x00 == u8PumpCtrl))
         {
-            // 无操作且水泵没工作, 倒计时10s进入深度休眠.
-            App_AutoDeepSleepCnt();
+            // 无操作且水泵没工作, 倒计时10s后系统状态切换.
+            App_10sCntDown();
         }
 
         Bt_ClearIntFlag(TIM0, BtUevIrq); //中断标志清零
@@ -390,7 +390,7 @@ int32_t main(void)
             App_KeyHandler();
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;
-            u16NoKeyPressedCnt = 0;
+            u16TenSecondCnt = 0;
 
             if(StandByCharge == enSysStates && unKeyPress.Power != 1)
             {
@@ -2293,7 +2293,7 @@ void App_WateringTimeCntDown(void)
 
                 if(0 == u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME])
                 {
-                    u16NoKeyPressedCnt = 0;
+                    u16TenSecondCnt = 0;
 
                     u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
                         (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
@@ -2333,7 +2333,7 @@ void App_WateringTimeCntDown(void)
                 if(0 == u16WateringTimeManual[u8ChannelManual])
                 {
                     u8PumpCtrl = 0x00;
-                    u16NoKeyPressedCnt = 0;
+                    u16TenSecondCnt = 0;
                     u8StopFlag = 1;
 
                     if(0 == u8ChannelManual)
@@ -2356,18 +2356,18 @@ void App_WateringTimeCntDown(void)
     }
 }
 
-void App_AutoDeepSleepCnt(void)
+void App_10sCntDown(void)
 {
     if(PowerOn == enSysStates ||
         PowerOnCharge == enSysStates ||
         StandByChargeEarly == enSysStates ||
         PowerOffChargeEarly == enSysStates)
     {
-        u16NoKeyPressedCnt++;
+        u16TenSecondCnt++;
 
-        if(u16NoKeyPressedCnt >= AUTO_DEEP_SLEEP_CNT)
+        if(u16TenSecondCnt >= AUTO_DEEP_SLEEP_CNT)
         {
-            u16NoKeyPressedCnt = 0;
+            u16TenSecondCnt = 0;
 
             if(PowerOn == enSysStates)
             {
@@ -2388,7 +2388,7 @@ void App_AutoDeepSleepCnt(void)
     }
     else
     {
-        u16NoKeyPressedCnt = 0;
+        u16TenSecondCnt = 0;
     }
 }
 
@@ -2557,7 +2557,7 @@ void App_SysInit(void)
 
 void App_SysInitWakeUp(void)
 {
-    u16NoKeyPressedCnt = 0;
+    u16TenSecondCnt = 0;
     u8DeepSleepFlag = 0;
 
     App_LcdPortInit();
@@ -2597,7 +2597,7 @@ void App_DeepSleepModeEnter(void)
 
     M0P_LCD->CR0_f.EN = LcdDisable;
     Lcd_ClearDisp();
-    u16NoKeyPressedCnt = 0;
+    u16TenSecondCnt = 0;
     Bt_M0_Stop(TIM0);
     // ADC引脚进入深度休眠前后状态不变, 只关闭对应的使能位和时钟.
     Bgr_BgrDisable();
@@ -2754,7 +2754,7 @@ void App_LcdBatCharging(void)
         if(FALSE == bCharging && PowerOn == enSysStates)
         {
             enSysStates = PowerOnCharge;
-            u16NoKeyPressedCnt = 0;
+            u16TenSecondCnt = 0;
         }
         bCharging = TRUE;
     }
@@ -2768,7 +2768,7 @@ void App_LcdBatCharging(void)
             if(PowerOnCharge == enSysStates)
             {
                 enSysStates = PowerOn;
-                u16NoKeyPressedCnt = 0;
+                u16TenSecondCnt = 0;
             }
             else if(StandByCharge == enSysStates || StandByChargeEarly == enSysStates)
             {

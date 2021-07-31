@@ -77,6 +77,18 @@ typedef enum
     Update = 3u
 }en_key_states;
 
+typedef enum
+{
+    PowerOn = 0u,
+    PowerOnCharge = 1u,
+    StandBy = 2u,
+    StandByChargeEarly = 3u,
+    StandByCharge = 4u,
+    PowerOff = 5u,
+    PowerOffChargeEarly = 6u,
+    PowerOffCharge = 7u
+}en_sys_states;
+
 /******************************************************************************
  * Local function prototypes ('static')
  *****************************************************************************/
@@ -88,7 +100,7 @@ un_Ram_Data u32LcdRamData[LCDRAM_INDEX_MAX];
 __IO un_key_type unKeyPress;
 __IO en_focus_on enFocusOn;
 __IO en_lock_status_t enLockStatus;
-__IO uint8_t u8PowerOnState, u8RtcFlag, u8DeepSleepFlag;
+__IO uint8_t u8RtcFlag, u8DeepSleepFlag;
 __IO uint32_t u32UpDownCnt;
 __IO uint8_t u8StopFlag, u8GroupNum, u8ChannelManual;
 __IO en_working_mode_t enWorkingMode;
@@ -103,6 +115,7 @@ static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl, u8WTCntDown;
 uint32_t u32AdcRestult;
 __IO uint8_t u8BatteryPower, u8AdcFlag;
+__IO en_sys_states enSysStates;
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -188,8 +201,8 @@ void Tim0_IRQHandler(void)
 
 void PortC_IRQHandler(void)
 {
-    if(1 == u8PowerOnState &&
-        TRUE == Gpio_GetIrqStatus(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING))
+    if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING) &&
+        (PowerOff == enSysStates || StandBy == enSysStates))
     {
         bLcdUpdate = TRUE;
         Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
@@ -209,43 +222,52 @@ void PortC_IRQHandler(void)
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+
+        if(PowerOff == enSysStates)
+        {
+            enSysStates = PowerOffChargeEarly;
+        }
+        else if(StandBy == enSysStates)
+        {
+            enSysStates = StandByChargeEarly;
+        }
     }
 }
 
 void PortD_IRQHandler(void)
 {
-    if(1 == u8PowerOnState)
+    if(StandBy == enSysStates &&
+        (TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_SET) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_OK) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN) ||
+        TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP)))
     {
-        if(TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER) ||
-            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE) ||
-            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_SET) ||
-            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_OK) ||
-            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN) ||
-            TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_UP))
-        {
-            bPortDIrFlag = TRUE;
-            bLcdUpdate = TRUE;
-            Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
-            M0P_LCD->CR0_f.EN = LcdEnable;
-            Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+        enSysStates = PowerOn;
+        bPortDIrFlag = TRUE;
+        bLcdUpdate = TRUE;
+        Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
+        M0P_LCD->CR0_f.EN = LcdEnable;
+        Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
-            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
-            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
-            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
-            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
-            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
-            Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
-            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
-            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
-            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
-            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
-            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
-            Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
-            Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
-            Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
-        }
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+        Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
+        Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+        Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+        Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
     }
-    else
+
+    if(PowerOff == enSysStates && TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER))
     {
         if(0x00 != u8PumpCtrl)
         {
@@ -281,7 +303,7 @@ void PortD_IRQHandler(void)
             }
         }
 
-        u8PowerOnState = 1;
+        enSysStates = PowerOn;
         enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
@@ -335,7 +357,6 @@ int32_t main(void)
     App_LcdRam_Init(u32LcdRamData);
 
     unKeyPress.Full = 0x0000;
-    u8PowerOnState = 1;
     enFocusOn = Nothing;
     enLockStatus = Unlock;
     u32UpDownCnt = 0;
@@ -348,6 +369,7 @@ int32_t main(void)
     u16WTPump2 = 0;
     u8AdcFlag = 0;
     bCharging = FALSE;
+    enSysStates = PowerOn;
 
     App_ClearDaysAddUpCnt(TRUE);
 
@@ -364,6 +386,12 @@ int32_t main(void)
             unKeyPress.Full = 0x0000;
             u16LcdFlickerCnt = 0;
             u16NoKeyPressedCnt = 0;
+
+            if(StandByCharge == enSysStates && unKeyPress.Power != 1)
+            {
+                enSysStates = StandByChargeEarly;
+                Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+            }
         }
 
         if(Nothing == enFocusOn && u16LcdFlickerCnt != 0)
@@ -371,7 +399,7 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
-        if(1 == u8PowerOnState && (enFocusOn < RtcYear || enFocusOn > RtcMin))
+        if(enSysStates != PowerOff && enSysStates != StandBy && (enFocusOn < RtcYear || enFocusOn > RtcMin))
         {
             if(TRUE == App_GetRtcTime())
             {
@@ -758,12 +786,7 @@ void App_KeyHandler(void)
 {
     if(enLockStatus < Lock  && unKeyPress.Power)
     {
-        if(0 == u8PowerOnState)
-        {
-            u8PowerOnState = 1;
-            enLockStatus = Unlock;
-        }
-        else
+        if(PowerOn == enSysStates)
         {
             if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)
             {
@@ -772,9 +795,24 @@ void App_KeyHandler(void)
                 Rtc_Cmd(TRUE);
             }
 
-            u8PowerOnState = 0;
             enLockStatus = LockExceptPowerKey;
             u8DeepSleepFlag = 1;
+            enSysStates = PowerOff;
+        }
+        else if(StandByCharge == enSysStates ||
+            StandByChargeEarly == enSysStates ||
+            PowerOnCharge == enSysStates ||
+            PowerOffChargeEarly == enSysStates)
+        {
+            enLockStatus = LockExceptPowerKey;
+            enSysStates = PowerOffCharge;
+            Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+        }
+        else if(PowerOffCharge == enSysStates)
+        {
+            enLockStatus = Unlock;
+            enSysStates = PowerOnCharge;
+            Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
         }
     }
 
@@ -1753,8 +1791,8 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
             u8DaysAddUp[u8Idx]++;
         }
 
-        if(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0 &&
-            1 == u8PowerOnState && FALSE == bJustWatered &&
+        if(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0 && FALSE == bJustWatered &&
+            enSysStates != PowerOff && enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge &&
             ((u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] && TRUE == bWaterMoreThanOnce[u8Idx]) ||
             FALSE == bWaterMoreThanOnce[u8Idx]))
         {
@@ -2003,7 +2041,11 @@ void App_PumpInit(void)
 
 void App_PumpCtrl(void)
 {
-    if(0 == u8StopFlag && u8BatteryPower != BATTERY_POWER_0)
+    if(0 == u8StopFlag &&
+        u8BatteryPower != BATTERY_POWER_0 &&
+        enSysStates != PowerOff &&
+        enSysStates != PowerOffChargeEarly &&
+        enSysStates != PowerOffCharge)
     {
         switch(u8PumpCtrl)
         {
@@ -2251,11 +2293,37 @@ void App_WateringTimeCntDown(void)
 
 void App_AutoDeepSleepCnt(void)
 {
-    u16NoKeyPressedCnt++;
-    if(u16NoKeyPressedCnt >= AUTO_DEEP_SLEEP_CNT)
+    if(PowerOn == enSysStates ||
+        PowerOnCharge == enSysStates ||
+        StandByChargeEarly == enSysStates ||
+        PowerOffChargeEarly == enSysStates)
+    {
+        u16NoKeyPressedCnt++;
+
+        if(u16NoKeyPressedCnt >= AUTO_DEEP_SLEEP_CNT)
+        {
+            u16NoKeyPressedCnt = 0;
+
+            if(PowerOn == enSysStates)
+            {
+                u8DeepSleepFlag = 1;
+                enSysStates = StandBy;
+            }
+            else if(PowerOnCharge == enSysStates || StandByChargeEarly == enSysStates)
+            {
+                enSysStates = StandByCharge;
+                Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+            }
+            else
+            {
+                enSysStates = PowerOffCharge;
+                Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+            }
+        }
+    }
+    else
     {
         u16NoKeyPressedCnt = 0;
-        u8DeepSleepFlag = 1;
     }
 }
 
@@ -2489,17 +2557,18 @@ void App_DeepSleepModeEnter(void)
     M0P_GPIO->PDBCLR=0XFF0C;
 
     Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
-    if(1 == u8PowerOnState)
+    if(StandBy == enSysStates)
     {
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
         Gpio_EnableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
-        Gpio_EnableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
-        EnableNvic(PORTC_IRQn, IrqLevel3, TRUE);
     }
     EnableNvic(PORTD_IRQn, IrqLevel3, TRUE);
+
+    Gpio_EnableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+    EnableNvic(PORTC_IRQn, IrqLevel3, TRUE);
 
     Rtc_StartWait();
     delay1ms(10);
@@ -2609,6 +2678,11 @@ void App_LcdBatCharging(void)
 
     if(TRUE == Gpio_GetInputIO(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING))
     {
+        if(FALSE == bCharging && PowerOn == enSysStates)
+        {
+            enSysStates = PowerOnCharge;
+            u16NoKeyPressedCnt = 0;
+        }
         bCharging = TRUE;
     }
     else
@@ -2617,6 +2691,22 @@ void App_LcdBatCharging(void)
         {
             Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
             bLcdUpdate = TRUE;
+
+            if(PowerOnCharge == enSysStates)
+            {
+                enSysStates = PowerOn;
+                u16NoKeyPressedCnt = 0;
+            }
+            else if(StandByCharge == enSysStates || StandByChargeEarly == enSysStates)
+            {
+                enSysStates = StandBy;
+                u8DeepSleepFlag = 1;
+            }
+            else if(PowerOffCharge == enSysStates || PowerOffChargeEarly == enSysStates)
+            {
+                enSysStates = PowerOff;
+                u8DeepSleepFlag = 1;
+            }
         }
         bCharging = FALSE;
     }

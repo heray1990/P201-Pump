@@ -100,6 +100,15 @@ typedef enum
 }en_sys_states;
 ```
 
+* **PowerOn**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应
+* **PowerOnCharge**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应；电量动画
+* **StandBy**：LCD+BL Off; RTC、水泵正常工作；Timer 停止；按键和充电唤醒
+* **StandByChargeEarly**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应；电量动画
+* **StandByCharge**：LCD On+BL Off；RTC、Timer和水泵正常工作；按键正常响应；电量动画
+* **PowerOff**：LCD+BL Off; RTC正常工作；Timer和水泵不工作；Power按键和充电唤醒
+* **PowerOffChargeEarly**：LCD+BL On；RTC和Time正常工作；水泵不工作；只响应Power按键；LCD只显示电量动画
+* **PowerOffCharge**：LCD On+BL Off；RTC和Time正常工作；水泵不工作；只响应Power按键；LCD只显示电量动画
+
 #### 系统状态转换触发源：
 
 A: 按下 Power Key
@@ -116,25 +125,25 @@ E: 其它按键触发
 
 ```mermaid
 graph LR
-	0u[PowerOn] -. A .-> 5u[PowerOff]
+	0u[PowerOn] -. A .-> 5u((PowerOff))
 	0u[PowerOn] -. B .-> 1u[PowerOnCharge]
-	0u[PowerOn] -. D .-> 2u[StandBy]
+	0u[PowerOn] -. D .-> 2u((StandBy))
 	1u[PowerOnCharge] -. A .-> 7u[PowerOffCharge]
 	1u[PowerOnCharge] -. C .-> 0u[PowerOn]
 	1u[PowerOnCharge] -. D .-> 4u[StandByCharge]
-	2u[StandBy] -. A or E .-> 0u[PowerOn]
-	2u[StandBy] -. B .-> 3u[StandByChargeEarly]
+	2u((StandBy)) == A_Wakeup or E_Wakeup ==> 0u[PowerOn]
+	2u((StandBy)) == B_Wakeup ==> 3u[StandByChargeEarly]
 	3u[StandByChargeEarly] -. A .-> 7u[PowerOffCharge]
-	3u[StandByChargeEarly] -. C .-> 2u[StandBy]
+	3u[StandByChargeEarly] -. C .-> 2u((StandBy))
 	3u[StandByChargeEarly] -. D .-> 4u[StandByCharge]
 	4u[StandByCharge] -. A .-> 7u[PowerOffCharge]
-	4u[StandByCharge] -. C .-> 2u[StandBy]
+	4u[StandByCharge] -. C .-> 2u((StandBy))
 	4u[StandByCharge] -. E .-> 3u[StandByChargeEarly]
-	5u[PowerOff] -. A .-> 0u[PowerOn]
-	5u[PowerOff] -. B .-> 6u[PowerOffChargeEarly]
+	5u((PowerOff)) == A_Wakeup ==> 0u[PowerOn]
+	5u((PowerOff)) == B_Wakeup ==> 6u[PowerOffChargeEarly]
 	6u[PowerOffChargeEarly] -. A or D .-> 7u[PowerOffCharge]
-	6u[PowerOffChargeEarly] -. C .-> 5u[PowerOff]
+	6u[PowerOffChargeEarly] -. C .-> 5u((PowerOff))
 	7u[PowerOffCharge] -. A .-> 1u[PowerOnCharge]
-	7u[PowerOffCharge] -. C .-> 5u[PowerOff]
+	7u[PowerOffCharge] -. C .-> 5u((PowerOff))
 ```
 

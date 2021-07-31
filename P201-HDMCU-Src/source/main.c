@@ -167,7 +167,7 @@ void Rtc_IRQHandler(void)
     if(Rtc_GetPridItStatus() == TRUE)
     {
         u8RtcFlag = 1;
-        Rtc_ClearPrdfItStatus();             //清除中断标志位
+        Rtc_ClearPrdfItStatus();    //清除中断标志位
     }
 }
 
@@ -439,6 +439,14 @@ int32_t main(void)
                 {
                     bJustWatered = TRUE;
                     u8StopFlag = 0;
+
+                    if(PowerOnCharge == enSysStates ||
+                        StandBy == enSysStates ||
+                        StandByChargeEarly == enSysStates ||
+                        StandByCharge == enSysStates)
+                    {
+                        enSysStates = PowerOn;
+                    }
 
                     Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
                     Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);

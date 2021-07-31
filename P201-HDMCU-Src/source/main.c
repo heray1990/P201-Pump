@@ -181,11 +181,19 @@ void Tim0_IRQHandler(void)
 
         if(enFocusOn > Nothing)
         {
-            App_LcdStrobeControl();
+            if(enSysStates != PowerOff &&
+                enSysStates != PowerOffChargeEarly &&
+                enSysStates != PowerOffCharge)
+            {
+                App_LcdStrobeControl();
+            }
         }
         else
         {
-            App_BatLevelStrobe();
+            if(PowerOn == enSysStates)
+            {
+                App_BatLevelStrobe();
+            }
         }
 
         App_LcdBatCharging();

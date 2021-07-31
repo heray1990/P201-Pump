@@ -331,6 +331,8 @@ void PortD_IRQHandler(void)
 
         Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+        Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+        Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
     }
 }
 

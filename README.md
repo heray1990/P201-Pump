@@ -138,9 +138,11 @@ graph LR
 	3u[StandByChargeEarly] -. A .-> 7u[PowerOffCharge]
 	3u[StandByChargeEarly] -. C .-> 2u((StandBy))
 	3u[StandByChargeEarly] -. D .-> 4u[StandByCharge]
+	3u[StandByChargeEarly] -. F .-> 0u[PowerOn]
 	4u[StandByCharge] -. A .-> 7u[PowerOffCharge]
 	4u[StandByCharge] -. C .-> 2u((StandBy))
 	4u[StandByCharge] -. E .-> 3u[StandByChargeEarly]
+	4u[StandByCharge] -. F .-> 0u[PowerOn]
 	5u((PowerOff)) == A_Wakeup ==> 0u[PowerOn]
 	5u((PowerOff)) == B_Wakeup ==> 6u[PowerOffChargeEarly]
 	6u[PowerOffChargeEarly] -. A or D .-> 7u[PowerOffCharge]

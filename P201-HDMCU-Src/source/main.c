@@ -139,6 +139,7 @@ void App_LcdPortInit(void);
 void App_LcdInit(void);
 void App_LcdBlInit(void);
 void App_LcdRam_Init(un_Ram_Data* pu32Data);
+void App_Lcd_Only_Battery_Level(un_Ram_Data* pu32Data, boolean_t bOnlyDisBatLevel);
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data);
 void App_PumpInit(void);
 void App_PumpCtrl(void);
@@ -184,7 +185,11 @@ void Tim0_IRQHandler(void)
 
         App_LcdBatCharging();
 
-        if(0 == u8StopFlag)
+        if(0 == u8StopFlag &&
+            u8BatteryPower != BATTERY_POWER_0 &&
+            enSysStates != PowerOff &&
+            enSysStates != PowerOffChargeEarly &&
+            enSysStates != PowerOffCharge)
         {
             App_WateringTimeCntDown();
         }
@@ -420,7 +425,8 @@ int32_t main(void)
             u8RtcFlag = 0;
             Wdt_Feed();
 
-            if(enFocusOn < RtcYear || enFocusOn > RtcMin)
+            if((enFocusOn < RtcYear || enFocusOn > RtcMin) &&
+                enSysStates != PowerOff && enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge)
             {
                 if(TRUE == IsTimeToWater(bJustWatered))
                 {
@@ -812,6 +818,7 @@ void App_KeyHandler(void)
         {
             enLockStatus = Unlock;
             enSysStates = PowerOnCharge;
+            App_Lcd_Only_Battery_Level(u32LcdRamData, FALSE);
             Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
         }
     }
@@ -1792,7 +1799,6 @@ boolean_t IsTimeToWater(boolean_t bJustWatered)
         }
 
         if(u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_WATER_TIME] != 0 && FALSE == bJustWatered &&
-            enSysStates != PowerOff && enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge &&
             ((u8DaysAddUp[u8Idx] >= u32GroupDataAuto[u8Idx][AUTOMODE_GROUP_DATA_DAYSAPART] && TRUE == bWaterMoreThanOnce[u8Idx]) ||
             FALSE == bWaterMoreThanOnce[u8Idx]))
         {
@@ -2013,6 +2019,50 @@ void App_LcdRam_Init(un_Ram_Data* pu32Data)
     Lcd_D61593A_GenRam_Wifi_Icon(pu32Data, WifiSignalStrong, FALSE);
     Lcd_D61593A_GenRam_Battery_Icon(pu32Data, u8BatteryPower, TRUE);
     Lcd_D61593A_GenRam_Date_And_Time(pu32Data, &stcRtcTime, TRUE, enFocusOn);
+}
+
+void App_Lcd_Only_Battery_Level(un_Ram_Data* pu32Data, boolean_t bOnlyDisBatLevel)
+{
+    Lcd_D61593A_GenRam_WorkingMode(pu32Data, enWorkingMode, !bOnlyDisBatLevel);
+    Lcd_D61593A_GenRam_GroupNum(pu32Data, u8GroupNum + 1, enWorkingMode, !bOnlyDisBatLevel, enFocusOn);
+    if(ModeAutomatic == enWorkingMode)
+    {
+        Lcd_D61593A_GenRam_Channel(pu32Data,
+                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
+                            !bOnlyDisBatLevel,
+                            enFocusOn);
+        Lcd_D61593A_GenRam_Watering_Time(pu32Data,
+                                    (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                    !bOnlyDisBatLevel,
+                                    enFocusOn);
+    }
+    else
+    {
+        Lcd_D61593A_GenRam_Channel(pu32Data, u8ChannelManual + 1, !bOnlyDisBatLevel, enFocusOn);
+        Lcd_D61593A_GenRam_Watering_Time(pu32Data, u16WateringTimeManual[u8ChannelManual], !bOnlyDisBatLevel, enFocusOn);
+    }
+    Lcd_D61593A_GenRam_Starting_Time(pu32Data,
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
+                                enWorkingMode,
+                                !bOnlyDisBatLevel,
+                                enFocusOn);
+    Lcd_D61593A_GenRam_Days_Apart(pu32Data,
+                            (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART],
+                            enWorkingMode,
+                            !bOnlyDisBatLevel,
+                            enFocusOn);
+    if(bOnlyDisBatLevel)
+    {
+        Lcd_D61593A_GenRam_Stop(pu32Data, 0);
+    }
+    else
+    {
+        Lcd_D61593A_GenRam_Stop(pu32Data, u8StopFlag);
+    }
+    Lcd_D61593A_GenRam_Lock_Icon(pu32Data, enLockStatus, !bOnlyDisBatLevel);
+    Lcd_D61593A_GenRam_Battery_Icon(pu32Data, u8BatteryPower, TRUE);
+    Lcd_D61593A_GenRam_Date_And_Time(pu32Data, &stcRtcTime, !bOnlyDisBatLevel, enFocusOn);
 }
 
 void App_Lcd_Display_Update(un_Ram_Data* pu32Data)
@@ -2513,7 +2563,15 @@ void App_SysInitWakeUp(void)
     Adc_Enable();
     Bgr_BgrEnable();
     u8BatteryPower = App_GetBatPower();
-    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+    //Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+    if(PowerOffChargeEarly == enSysStates)
+    {
+        App_Lcd_Only_Battery_Level(u32LcdRamData, TRUE);
+    }
+    else
+    {
+        Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+    }
     Bt_M0_Run(TIM0);
 }
 
@@ -2705,6 +2763,7 @@ void App_LcdBatCharging(void)
             else if(PowerOffCharge == enSysStates || PowerOffChargeEarly == enSysStates)
             {
                 enSysStates = PowerOff;
+                App_Lcd_Only_Battery_Level(u32LcdRamData, FALSE);
                 u8DeepSleepFlag = 1;
             }
         }

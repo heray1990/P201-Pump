@@ -145,6 +145,7 @@ void App_PumpInit(void);
 void App_PumpCtrl(void);
 void App_LcdRamFlipCtrl(boolean_t bFlipFlag);
 void App_LcdStrobeControl(void);
+void App_BatLevelStrobe(void);
 void App_WateringTimeCntDown(void);
 void App_10sCntDown(void);
 void App_Timer0Init(uint16_t u16Period);
@@ -181,6 +182,10 @@ void Tim0_IRQHandler(void)
         if(enFocusOn > Nothing)
         {
             App_LcdStrobeControl();
+        }
+        else
+        {
+            App_BatLevelStrobe();
         }
 
         App_LcdBatCharging();
@@ -2252,6 +2257,10 @@ void App_LcdStrobeControl(void)
                 (enFocusOn == ChildLock && enKeyState == WaitForRelease))
             {
                 // 当焦点处于会闪烁的控件并且没有处理按键时, 刷新LCD显示.
+                if(BATTERY_POWER_0 == u8BatteryPower && FALSE == bCharging)
+                {
+                    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+                }
                 bLcdUpdate = TRUE;
             }
         }
@@ -2272,6 +2281,30 @@ void App_LcdStrobeControl(void)
             }
             enFocusOn = Nothing;
         }
+    }
+}
+
+void App_BatLevelStrobe(void)
+{
+    static uint8_t u8Cnt = 0;
+    static boolean_t bFlipFlag = TRUE;
+
+    if(BATTERY_POWER_0 == u8BatteryPower && FALSE == bCharging)
+    {
+        u8Cnt++;
+    }
+    else
+    {
+        u8Cnt = 0;
+    }
+
+    if(u8Cnt > LCD_CONTENT_FLASH_FREQ)
+    {
+        u8Cnt = 0;
+        bFlipFlag = !bFlipFlag;
+
+        Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, bFlipFlag);
+        bLcdUpdate = TRUE;
     }
 }
 

@@ -815,6 +815,8 @@ void App_KeyHandler(void)
 {
     if(enLockStatus < Lock  && unKeyPress.Power)
     {
+        enFocusOn = Nothing;
+
         if(PowerOn == enSysStates)
         {
             if(enFocusOn >= RtcYear && enFocusOn <= RtcMin)

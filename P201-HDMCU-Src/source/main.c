@@ -438,7 +438,10 @@ int32_t main(void)
             Wdt_Feed();
 
             if((enFocusOn < RtcYear || enFocusOn > RtcMin) &&
-                enSysStates != PowerOff && enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge)
+                u8BatteryPower != BATTERY_POWER_0 &&
+                enSysStates != PowerOff &&
+                enSysStates != PowerOffChargeEarly &&
+                enSysStates != PowerOffCharge)
             {
                 if(TRUE == IsTimeToWater(bJustWatered))
                 {
@@ -832,6 +835,7 @@ void App_KeyHandler(void)
         {
             enLockStatus = LockExceptPowerKey;
             enSysStates = PowerOffCharge;
+            App_Lcd_Only_Battery_Level(u32LcdRamData, TRUE);
             Gpio_ClrIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
         }
         else if(PowerOffCharge == enSysStates)
@@ -2611,7 +2615,6 @@ void App_SysInitWakeUp(void)
     Adc_Enable();
     Bgr_BgrEnable();
     u8BatteryPower = App_GetBatPower();
-    //Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
     if(PowerOffChargeEarly == enSysStates)
     {
         App_Lcd_Only_Battery_Level(u32LcdRamData, TRUE);

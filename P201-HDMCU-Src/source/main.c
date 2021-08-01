@@ -419,21 +419,22 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
-        if(enSysStates != PowerOff &&
-            enSysStates != PowerOffChargeEarly &&
-            enSysStates != PowerOffCharge &&
-            enSysStates != StandBy &&
-            (enFocusOn < RtcYear || enFocusOn > RtcMin))
+        if(enSysStates != PowerOff && (enFocusOn < RtcYear || enFocusOn > RtcMin))
         {
             if(TRUE == App_GetRtcTime())
             {
-                if(PowerOn == enSysStates)
+                u8BatteryPower = App_GetBatPower();
+
+                if(enSysStates != StandBy)
                 {
-                    u8BatteryPower = App_GetBatPower();
                     Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+
+                    if(enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge)
+                    {
+                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                    }
+                    bLcdUpdate = TRUE;
                 }
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                bLcdUpdate = TRUE;
 
                 if(TRUE == bJustWatered)
                 {

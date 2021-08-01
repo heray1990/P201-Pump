@@ -428,14 +428,13 @@ int32_t main(void)
                     u8BatteryPower = App_GetBatPower();
                 }
 
-                if(enSysStates != StandBy)
-                {
-                    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
 
-                    if(enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge)
-                    {
-                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                    }
+                if(enSysStates != StandBy &&
+                    enSysStates != PowerOffChargeEarly &&
+                    enSysStates != PowerOffCharge)
+                {
                     bLcdUpdate = TRUE;
                 }
 

@@ -825,7 +825,15 @@ void App_KeyHandler(void)
 {
     if(enLockStatus < Lock  && unKeyPress.Power)
     {
-        enFocusOn = Nothing;
+        // 按下Power进入不显示的状态时, 把原本闪烁的LCD控件强制成显示再隐藏
+        if(enSysStates < PowerOff && enSysStates != StandBy)
+        {
+            if(enFocusOn != Nothing)
+            {
+                App_LcdRamFlipCtrl(TRUE);
+                enFocusOn = Nothing;
+            }
+        }
 
         if(PowerOn == enSysStates)
         {

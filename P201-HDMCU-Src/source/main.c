@@ -223,6 +223,7 @@ void PortC_IRQHandler(void)
         (PowerOff == enSysStates || StandBy == enSysStates))
     {
         bLcdUpdate = TRUE;
+        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
         Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
         M0P_LCD->CR0_f.EN = LcdEnable;
         Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -265,6 +266,7 @@ void PortD_IRQHandler(void)
         enSysStates = PowerOn;
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
+        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
         Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
         M0P_LCD->CR0_f.EN = LcdEnable;
         Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -325,6 +327,7 @@ void PortD_IRQHandler(void)
         enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
         bLcdUpdate = TRUE;
+        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
         Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
         M0P_LCD->CR0_f.EN = LcdEnable;
         Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
@@ -493,18 +496,12 @@ int32_t main(void)
             }
         }
 
-        if(enSysStates != PowerOff && (enFocusOn < RtcYear || enFocusOn > RtcMin))
+        if(enFocusOn < RtcYear || enFocusOn > RtcMin)
         {
             if(TRUE == App_GetRtcTime())
             {
-                if(bAdcIsBusy == FALSE)
-                {
-                    u8BatteryPower = App_GetBatPower();
-                }
-
-                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
-
                 if(enSysStates != StandBy &&
+                    enSysStates != PowerOff &&
                     enSysStates != PowerOffChargeEarly &&
                     enSysStates != PowerOffCharge)
                 {
@@ -516,6 +513,12 @@ int32_t main(void)
                 {
                     bJustWatered = FALSE;
                 }
+
+                if(bAdcIsBusy == FALSE)
+                {
+                    u8BatteryPower = App_GetBatPower();
+                }
+                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
             }
         }
 
@@ -2641,11 +2644,6 @@ void App_SysInitWakeUp(void)
     Adc_Enable();
     Bgr_BgrEnable();
 
-    if(bAdcIsBusy == FALSE)
-    {
-        u8BatteryPower = App_GetBatPower();
-    }
-
     if(PowerOffChargeEarly == enSysStates)
     {
         App_Lcd_Only_Battery_Level(u32LcdRamData, TRUE);
@@ -2654,6 +2652,7 @@ void App_SysInitWakeUp(void)
     {
         Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
     }
+
     Bt_M0_Run(TIM0);
 }
 

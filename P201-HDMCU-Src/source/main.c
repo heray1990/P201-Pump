@@ -419,32 +419,6 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
-        if(enSysStates != PowerOff && (enFocusOn < RtcYear || enFocusOn > RtcMin))
-        {
-            if(TRUE == App_GetRtcTime())
-            {
-                if(bAdcIsBusy == FALSE)
-                {
-                    u8BatteryPower = App_GetBatPower();
-                }
-
-                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
-                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-
-                if(enSysStates != StandBy &&
-                    enSysStates != PowerOffChargeEarly &&
-                    enSysStates != PowerOffCharge)
-                {
-                    bLcdUpdate = TRUE;
-                }
-
-                if(TRUE == bJustWatered)
-                {
-                    bJustWatered = FALSE;
-                }
-            }
-        }
-
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
@@ -491,6 +465,7 @@ int32_t main(void)
                                             ModeAutomatic,
                                             TRUE,
                                             enFocusOn);
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
 
                     bLcdUpdate = TRUE;
                     Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
@@ -514,6 +489,32 @@ int32_t main(void)
 
                     Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
                     Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
+                }
+            }
+        }
+
+        if(enSysStates != PowerOff && (enFocusOn < RtcYear || enFocusOn > RtcMin))
+        {
+            if(TRUE == App_GetRtcTime())
+            {
+                if(bAdcIsBusy == FALSE)
+                {
+                    u8BatteryPower = App_GetBatPower();
+                }
+
+                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+
+                if(enSysStates != StandBy &&
+                    enSysStates != PowerOffChargeEarly &&
+                    enSysStates != PowerOffCharge)
+                {
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                    bLcdUpdate = TRUE;
+                }
+
+                if(TRUE == bJustWatered)
+                {
+                    bJustWatered = FALSE;
                 }
             }
         }

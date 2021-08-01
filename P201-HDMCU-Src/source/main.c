@@ -109,12 +109,12 @@ __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
 __IO boolean_t bWaterMoreThanOnce[GROUP_NUM_MAX] = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE};
 __IO stc_rtc_time_t stcRtcTime;
-__IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging;
+__IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging, bAdcIsBusy;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16TenSecondCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl, u8WTCntDown;
 uint32_t u32AdcRestult;
-__IO uint8_t u8BatteryPower, u8AdcFlag;
+__IO uint8_t u8BatteryPower;
 __IO en_sys_states enSysStates;
 
 /******************************************************************************
@@ -346,7 +346,7 @@ void Adc_IRQHandler(void)
         u32AdcRestult = Adc_GetSglResult();   ///< 获取采样值
 
         Adc_SGL_Stop();                       ///< ADC 单次转换停止
-        u8AdcFlag = 1;
+        bAdcIsBusy = FALSE;
     }
 }
 
@@ -387,7 +387,7 @@ int32_t main(void)
     bPortDIrFlag = FALSE;
     u16WTPump1 = 0;
     u16WTPump2 = 0;
-    u8AdcFlag = 0;
+    bAdcIsBusy = FALSE;
     bCharging = FALSE;
     enSysStates = PowerOn;
 
@@ -423,7 +423,10 @@ int32_t main(void)
         {
             if(TRUE == App_GetRtcTime())
             {
-                u8BatteryPower = App_GetBatPower();
+                if(bAdcIsBusy == FALSE)
+                {
+                    u8BatteryPower = App_GetBatPower();
+                }
 
                 if(enSysStates != StandBy)
                 {
@@ -2637,7 +2640,12 @@ void App_SysInitWakeUp(void)
     Sysctrl_SetPeripheralGate(SysctrlPeripheralAdcBgr, TRUE);
     Adc_Enable();
     Bgr_BgrEnable();
-    u8BatteryPower = App_GetBatPower();
+
+    if(bAdcIsBusy == FALSE)
+    {
+        u8BatteryPower = App_GetBatPower();
+    }
+
     if(PowerOffChargeEarly == enSysStates)
     {
         App_Lcd_Only_Battery_Level(u32LcdRamData, TRUE);
@@ -2763,9 +2771,9 @@ uint8_t App_GetBatPower(void)
     // 连续获取 6 次 ADC 结果, 然后去掉最大值和最小值, 剩下的 4 个值再求平均
     for(u8Idx = 0; u8Idx < 6; u8Idx++)
     {
+        bAdcIsBusy = TRUE;
         Adc_SGL_Start();
-        u8AdcFlag = 0;
-        while(u8AdcFlag == 0); // 等待执行完 ADC 中断
+        while(bAdcIsBusy == TRUE); // 等待执行完 ADC 中断
 
         u32AdcResultTmp += u32AdcRestult;
         if(u32AdcResultTmpMax < u32AdcRestult)

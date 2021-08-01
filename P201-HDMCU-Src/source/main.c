@@ -1220,7 +1220,8 @@ void App_KeyHandler(void)
         }
     }
 
-    if(Unlock == enLockStatus && unKeyPress.Down)
+    if(Unlock == enLockStatus && unKeyPress.Down &&
+        !(ModeAutomatic == enWorkingMode && u8PumpCtrl != 0x00 && 0 == u8StopFlag))
     {
         switch(enFocusOn)
         {
@@ -1463,7 +1464,8 @@ void App_KeyHandler(void)
         }
     }
 
-    if(Unlock == enLockStatus && unKeyPress.Up)
+    if(Unlock == enLockStatus && unKeyPress.Up &&
+        !(ModeAutomatic == enWorkingMode && u8PumpCtrl != 0x00 && 0 == u8StopFlag))
     {
         switch(enFocusOn)
         {

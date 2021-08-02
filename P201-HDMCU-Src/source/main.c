@@ -303,7 +303,7 @@ void PortD_IRQHandler(void)
         Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
         Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
 
-        if(Rtc_GetPridItStatus() == FALSE)
+        if(Rtc_GetPridItStatus() == FALSE && ModeAutomatic == enWorkingMode)
         {
             u8RtcFlag = 1;
             bJustWatered = FALSE;
@@ -847,6 +847,8 @@ void App_KeyHandler(void)
                     }
 
                     Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+                    u8StopFlag = 1;
+                    Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
                 }
             }
         }
@@ -881,7 +883,7 @@ void App_KeyHandler(void)
             App_Lcd_Only_Battery_Level(u32LcdRamData, FALSE);
             Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
 
-            if(Rtc_GetPridItStatus() == FALSE)
+            if(Rtc_GetPridItStatus() == FALSE && ModeAutomatic == enWorkingMode)
             {
                 u8RtcFlag = 1;
                 bJustWatered = FALSE;

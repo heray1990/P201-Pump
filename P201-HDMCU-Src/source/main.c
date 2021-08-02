@@ -109,7 +109,7 @@ __IO uint16_t u16WateringTimeManual[CHANNEL_NUM_MAX] = {0, 0};
 __IO uint8_t u8DaysAddUp[GROUP_NUM_MAX] = {0, 0, 0, 0, 0, 0};
 __IO boolean_t bWaterMoreThanOnce[GROUP_NUM_MAX] = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE};
 __IO stc_rtc_time_t stcRtcTime;
-__IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging, bAdcIsBusy;
+__IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging, bAdcIsBusy, bJustWatered;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16TenSecondCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl, u8WTCntDown;
@@ -302,6 +302,12 @@ void PortD_IRQHandler(void)
         Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
         Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
         Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
+
+        if(Rtc_GetPridItStatus() == FALSE)
+        {
+            u8RtcFlag = 1;
+            bJustWatered = FALSE;
+        }
     }
 }
 
@@ -321,8 +327,7 @@ void Adc_IRQHandler(void)
 
 int32_t main(void)
 {
-    static boolean_t bJustWatered = FALSE;
-
+    bJustWatered = FALSE;
     u32AdcRestult = 1;
     u8BatteryPower = BATTERY_POWER_100;
     App_SysInit();
@@ -443,8 +448,6 @@ int32_t main(void)
                     Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
                     M0P_LCD->CR0_f.EN = LcdEnable;
                     Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
-
-                    bPortDIrFlag = FALSE;
 
                     Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
                     Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
@@ -813,7 +816,7 @@ void App_KeyHandler(void)
 
         if(PowerOn == enSysStates || PowerOnCharge == enSysStates)
         {
-            if(u8PumpCtrl != 0x00)
+            if(u8PumpCtrl != 0x00 && FALSE == bPortDIrFlag)
             {
                 u8PumpCtrl = 0x00;
                 u16TenSecondCnt = 0;
@@ -877,6 +880,12 @@ void App_KeyHandler(void)
             enSysStates = PowerOnCharge;
             App_Lcd_Only_Battery_Level(u32LcdRamData, FALSE);
             Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+
+            if(Rtc_GetPridItStatus() == FALSE)
+            {
+                u8RtcFlag = 1;
+                bJustWatered = FALSE;
+            }
         }
     }
 

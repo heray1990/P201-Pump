@@ -289,40 +289,6 @@ void PortD_IRQHandler(void)
 
     if(PowerOff == enSysStates && TRUE == Gpio_GetIrqStatus(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER))
     {
-        if(0x00 != u8PumpCtrl)
-        {
-            u8PumpCtrl = 0x00;
-            u8WTCntDown = 0;
-
-            if(ModeAutomatic == enWorkingMode)
-            {
-                u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
-                        (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
-
-                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                        (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                        TRUE,
-                                        enFocusOn);
-            }
-            else
-            {
-                if(0 == u8ChannelManual)
-                {
-                    u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
-                                        ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
-                }
-                else
-                {
-                    u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
-                                        (stcFlashManager.u32FlashData[4] << 2);
-                }
-
-                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
-                u8StopFlag = 1;
-                Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-            }
-        }
-
         enSysStates = PowerOn;
         enLockStatus = Unlock;
         bPortDIrFlag = TRUE;
@@ -439,9 +405,12 @@ int32_t main(void)
                     u8StopFlag = 0;
 
                     if(PowerOnCharge == enSysStates ||
-                        StandBy == enSysStates ||
                         StandByChargeEarly == enSysStates ||
                         StandByCharge == enSysStates)
+                    {
+                        enSysStates = PowerOnCharge;
+                    }
+                    else if(StandBy == enSysStates)
                     {
                         enSysStates = PowerOn;
                     }
@@ -839,6 +808,43 @@ void App_KeyHandler(void)
             {
                 App_LcdRamFlipCtrl(TRUE);
                 enFocusOn = Nothing;
+            }
+        }
+
+        if(PowerOn == enSysStates || PowerOnCharge == enSysStates)
+        {
+            if(u8PumpCtrl != 0x00)
+            {
+                u8PumpCtrl = 0x00;
+                u16TenSecondCnt = 0;
+                u16WTPump1 = 0;
+                u16WTPump2 = 0;
+                u8WTCntDown = 0;
+
+                if(ModeAutomatic == enWorkingMode)
+                {
+                    u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
+                        (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
+                                    (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                    TRUE,
+                                    enFocusOn);
+                }
+                else
+                {
+                    if(0 == u8ChannelManual)
+                    {
+                        u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
+                                            ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
+                    }
+                    else
+                    {
+                        u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
+                                            (stcFlashManager.u32FlashData[4] << 2);
+                    }
+
+                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+                }
             }
         }
 

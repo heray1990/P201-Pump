@@ -102,7 +102,7 @@ typedef enum
 
 * **PowerOn**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应
 * **PowerOnCharge**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应；电量动画
-* **StandBy**（休眠模式）：LCD+BL Off; RTC、水泵正常工作；Timer 停止；按键和充电唤醒
+* **StandBy**（休眠模式）：LCD+BL Off; RTC、水泵不工作；Timer 停止；按键和充电唤醒
 * **StandByChargeEarly**：LCD+BL On；RTC、Timer和水泵正常工作；按键正常响应；电量动画
 * **StandByCharge**：LCD On+BL Off；RTC、Timer和水泵正常工作；按键正常响应；电量动画
 * **PowerOff**（休眠模式）：LCD+BL Off; RTC正常工作；Timer和水泵不工作；Power按键和充电唤醒
@@ -131,18 +131,19 @@ graph LR
 	0u[PowerOn] -. B .-> 1u[PowerOnCharge]
 	0u[PowerOn] -. D .-> 2u((StandBy))
 	1u[PowerOnCharge] -. A .-> 7u[PowerOffCharge]
-	1u[PowerOnCharge] -. C or F .-> 0u[PowerOn]
+	1u[PowerOnCharge] -. C .-> 0u[PowerOn]
 	1u[PowerOnCharge] -. D .-> 4u[StandByCharge]
+	1u[PowerOnCharge] -. F .-> 1u[PowerOnCharge]
 	2u((StandBy)) == A_Wakeup or E_Wakeup or F_Wakeup ==> 0u[PowerOn]
 	2u((StandBy)) == B_Wakeup ==> 3u[StandByChargeEarly]
 	3u[StandByChargeEarly] -. A .-> 7u[PowerOffCharge]
 	3u[StandByChargeEarly] -. C .-> 2u((StandBy))
 	3u[StandByChargeEarly] -. D .-> 4u[StandByCharge]
-	3u[StandByChargeEarly] -. F .-> 0u[PowerOn]
+	3u[StandByChargeEarly] -. F .-> 1u[PowerOnCharge]
 	4u[StandByCharge] -. A .-> 7u[PowerOffCharge]
 	4u[StandByCharge] -. C .-> 2u((StandBy))
 	4u[StandByCharge] -. E .-> 3u[StandByChargeEarly]
-	4u[StandByCharge] -. F .-> 0u[PowerOn]
+	4u[StandByCharge] -. F .-> 1u[PowerOnCharge]
 	5u((PowerOff)) == A_Wakeup ==> 0u[PowerOn]
 	5u((PowerOff)) == B_Wakeup ==> 6u[PowerOffChargeEarly]
 	6u[PowerOffChargeEarly] -. A or D .-> 7u[PowerOffCharge]

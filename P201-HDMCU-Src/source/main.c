@@ -913,19 +913,6 @@ void App_KeyHandler(void)
                 u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
                     (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
             }
-            else
-            {
-                if(0 == u8ChannelManual)
-                {
-                    u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
-                                    ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
-                }
-                else
-                {
-                    u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
-                                    (stcFlashManager.u32FlashData[4] << 2);
-                }
-            }
         }
 
         if(ModeAutomatic == enWorkingMode)
@@ -937,6 +924,17 @@ void App_KeyHandler(void)
         }
         else
         {
+            if(0 == u8ChannelManual)
+            {
+                u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
+                                ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
+            }
+            else
+            {
+                u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
+                                (stcFlashManager.u32FlashData[4] << 2);
+            }
+
             enWorkingMode = ModeAutomatic;
             u8StopFlag = 0;
             Lcd_D61593A_GenRam_Channel(u32LcdRamData,

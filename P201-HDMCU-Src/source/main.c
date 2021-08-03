@@ -116,6 +116,7 @@ __IO uint8_t u8PumpCtrl, u8WTCntDown;
 uint32_t u32AdcRestult;
 __IO uint8_t u8BatteryPower;
 __IO en_sys_states enSysStates;
+__IO uint8_t Charging_Error_VAL = 109;  //插入充电时电压抬高0.2V
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -2877,20 +2878,30 @@ uint8_t App_GetBatPower(void)
     u32AdcResultTmp -= (u32AdcResultTmpMax + u32AdcResultTmpMin);
     u32AdcResultTmp >>= 2;
 
+    //如果检测到充电状态，电压值降低才是实际值
+    if(TRUE == bCharging)
+    {
+        u32AdcResultTmp -= Charging_Error_VAL;
+    }
+
     if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_0)
     {
+        Charging_Error_VAL = 220;
         u8RetVal = BATTERY_POWER_0;
     }
     else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_1)
     {
+        Charging_Error_VAL = 200;
         u8RetVal = BATTERY_POWER_25;
     }
     else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_2)
     {
+        Charging_Error_VAL = 160;
         u8RetVal = BATTERY_POWER_50;
     }
     else if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_3)
     {
+        Charging_Error_VAL = 100;
         u8RetVal = BATTERY_POWER_75;
     }
     else

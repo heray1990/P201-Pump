@@ -2271,6 +2271,43 @@ void App_PumpCtrl(void)
     }
     else
     {
+        // 处理水泵工作过程中电池电量变为0格的特殊情况
+        if(BATTERY_POWER_0 == u8BatteryPower && u8PumpCtrl != 0x00 && (PowerOn == enSysStates || PowerOnCharge == enSysStates))
+        {
+            u16TenSecondCnt = 0;
+            u16WTPump1 = 0;
+            u16WTPump2 = 0;
+            u8WTCntDown = 0;
+
+            if(ModeAutomatic == enWorkingMode)
+            {
+                bJustWatered = TRUE;    // 自动模式下跳过当前分钟的浇水时间检测
+                u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME] = ((stcFlashManager.u32FlashData[7 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] & 0xC0) >> 6) |
+                                (stcFlashManager.u32FlashData[8 + (AUTOMODE_GROUP_DATA_ELEMENT_MAX - 1) * u8GroupNum] << 2);
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
+                                (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                TRUE,
+                                enFocusOn);
+            }
+            else
+            {
+                if(0 == u8ChannelManual)
+                {
+                    u16WateringTimeManual[0] = stcFlashManager.u32FlashData[2] |
+                                    ((stcFlashManager.u32FlashData[3] & 0x03) << 8);
+                }
+                else
+                {
+                    u16WateringTimeManual[1] = ((stcFlashManager.u32FlashData[3] & 0xC0) >> 6) |
+                                    (stcFlashManager.u32FlashData[4] << 2);
+                }
+
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData, u16WateringTimeManual[u8ChannelManual], TRUE, enFocusOn);
+                u8StopFlag = 1;
+                Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+            }
+        }
+        u8PumpCtrl = 0x00;
         Gpio_ClrIO(GPIO_PORT_PUMP_1, GPIO_PIN_PUMP_1);
         Gpio_ClrIO(GPIO_PORT_PUMP_2, GPIO_PIN_PUMP_2);
     }

@@ -44,6 +44,7 @@
 #define COMPARE_VAL_VOLTAGE_2   2075    // 38 * 4096 / 75 -> 3.8V/3(分压)/2.5(Vref)*4096
 #define COMPARE_VAL_VOLTAGE_3   2185    // 40 * 4096 / 75 -> 4.0V/3(分压)/2.5(Vref)*4096
 
+#define RTC_DETECTION_CYCLE     30      // 每隔 30 个 RTC 周期检测一次是否到点浇水
 /******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
  *****************************************************************************/
@@ -112,7 +113,7 @@ __IO stc_rtc_time_t stcRtcTime;
 __IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging, bAdcIsBusy, bJustWatered;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16TenSecondCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
-__IO uint8_t u8PumpCtrl, u8WTCntDown;
+__IO uint8_t u8PumpCtrl, u8WTCntDown, u8RtcCnt;
 uint32_t u32AdcRestult;
 __IO uint8_t u8BatteryPower;
 __IO en_sys_states enSysStates;
@@ -131,6 +132,7 @@ un_key_type App_KeyDetect(void);
 void App_KeyStateChkSet(void);
 void App_KeyHandler(void);
 void App_RtcInit(void);
+void App_RtcHandler(void);
 boolean_t App_GetRtcTime(void);
 uint8_t App_DaysInAMonth(stc_rtc_time_t *time);
 boolean_t IsTimeToWater(boolean_t bJustWatered);
@@ -307,7 +309,7 @@ void PortD_IRQHandler(void)
 
         if(Rtc_GetPridItStatus() == FALSE && ModeAutomatic == enWorkingMode)
         {
-            u8RtcFlag = 1;
+            u8RtcCnt = RTC_DETECTION_CYCLE;
             bJustWatered = FALSE;
         }
     }
@@ -366,6 +368,7 @@ int32_t main(void)
     bAdcIsBusy = FALSE;
     bCharging = FALSE;
     enSysStates = PowerOn;
+    u8RtcCnt = 0;
 
     App_ClearDaysAddUpCnt(TRUE);
 
@@ -395,106 +398,11 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
-        if(enFocusOn < RtcYear || enFocusOn > RtcMin)
-        {
-            if(TRUE == App_GetRtcTime())
-            {
-                if(bAdcIsBusy == FALSE)
-                {
-                    u8BatteryPower = App_GetBatPower();
-                }
-
-                if(enSysStates != StandBy && enSysStates != PowerOff)
-                {
-                    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
-
-                    if(enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge)
-                    {
-                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                        bLcdUpdate = TRUE;
-                    }
-                }
-
-                if(TRUE == bJustWatered)
-                {
-                    bJustWatered = FALSE;
-                }
-            }
-        }
-
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
             Wdt_Feed();
-
-            if((enFocusOn < RtcYear || enFocusOn > RtcMin) &&
-                u8BatteryPower != BATTERY_POWER_0 &&
-                enSysStates != PowerOff &&
-                enSysStates != PowerOffChargeEarly &&
-                enSysStates != PowerOffCharge)
-            {
-                if(TRUE == IsTimeToWater(bJustWatered))
-                {
-                    bJustWatered = TRUE;
-                    u8StopFlag = 0;
-
-                    if(PowerOnCharge == enSysStates ||
-                        StandByChargeEarly == enSysStates ||
-                        StandByCharge == enSysStates)
-                    {
-                        enSysStates = PowerOnCharge;
-                    }
-                    else if(StandBy == enSysStates)
-                    {
-                        enSysStates = PowerOn;
-                    }
-
-                    Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
-                    Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
-                    Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, ModeAutomatic, TRUE, enFocusOn);
-                    Lcd_D61593A_GenRam_Channel(u32LcdRamData,
-                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
-                                    TRUE,
-                                    enFocusOn);
-                    Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
-                                    (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
-                                    TRUE,
-                                    enFocusOn);
-                    Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
-                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
-                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
-                                    ModeAutomatic,
-                                    TRUE,
-                                    enFocusOn);
-                    Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
-                                    (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] - u8DaysAddUp[u8GroupNum],
-                                    ModeAutomatic,
-                                    TRUE,
-                                    enFocusOn);
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-
-                    bLcdUpdate = TRUE;
-                    Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
-                    M0P_LCD->CR0_f.EN = LcdEnable;
-                    Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
-
-                    Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
-                    Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
-                    Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
-                    Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
-                    Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
-                    Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
-                    Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
-                    Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
-                    Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
-                    Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
-                    Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
-                    Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
-
-                    Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
-                    Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
-                }
-            }
+            App_RtcHandler();
         }
 
         if(1 == u8DeepSleepFlag)
@@ -885,7 +793,7 @@ void App_KeyHandler(void)
 
             if(Rtc_GetPridItStatus() == FALSE && ModeAutomatic == enWorkingMode)
             {
-                u8RtcFlag = 1;
+                u8RtcCnt = RTC_DETECTION_CYCLE;
                 bJustWatered = FALSE;
             }
         }
@@ -968,7 +876,7 @@ void App_KeyHandler(void)
         // 从手动切换到自动时, 马上检测一下当前时间是否已经到了浇水时间, 如果到了就激活浇水动作
         if(Rtc_GetPridItStatus() == FALSE && ModeAutomatic == enWorkingMode && 0x00 == u8PumpCtrl)
         {
-            u8RtcFlag = 1;
+            u8RtcCnt = RTC_DETECTION_CYCLE;
             bJustWatered = FALSE;
         }
     }
@@ -1142,7 +1050,7 @@ void App_KeyHandler(void)
             Nothing == enFocusOn &&
             0x00 == u8PumpCtrl)
         {
-            u8RtcFlag = 1;
+            u8RtcCnt = RTC_DETECTION_CYCLE;
             bJustWatered = FALSE;
         }
     }
@@ -1186,7 +1094,7 @@ void App_KeyHandler(void)
 
                     if(Rtc_GetPridItStatus() == FALSE && 0x00 == u8PumpCtrl)
                     {
-                        u8RtcFlag = 1;
+                        u8RtcCnt = RTC_DETECTION_CYCLE;
                         bJustWatered = FALSE;
                     }
                 }
@@ -1280,7 +1188,7 @@ void App_KeyHandler(void)
 
                     if(Rtc_GetPridItStatus() == FALSE && 0x00 == u8PumpCtrl)
                     {
-                        u8RtcFlag = 1;
+                        u8RtcCnt = RTC_DETECTION_CYCLE;
                         bJustWatered = FALSE;
                     }
                     break;
@@ -1830,7 +1738,7 @@ void App_RtcInit(void)
     RtcInitStruct.rtcAmpm = RtcPm;                          //24小时制
     RtcInitStruct.rtcClksrc = RtcClkXtl;                    //外部低速时钟
     RtcInitStruct.rtcPrdsel.rtcPrdsel = RtcPrdx;            //周期中断类型PRDX
-    RtcInitStruct.rtcPrdsel.rtcPrdx = 0x3B;                 //周期中断事件间隔, 0x3B -> 30s
+    RtcInitStruct.rtcPrdsel.rtcPrdx = 0x01;                 //周期中断事件间隔, 0x01 -> 1s
     RtcInitStruct.rtcTime.u8Second = 0x00;
     RtcInitStruct.rtcTime.u8Minute = 0x00;
     RtcInitStruct.rtcTime.u8Hour   = 0x00;
@@ -1845,6 +1753,112 @@ void App_RtcInit(void)
     EnableNvic(RTC_IRQn, IrqLevel3, TRUE);                  //使能RTC中断向量
     Rtc_Cmd(TRUE);                                          //使能RTC开始计数
     Rtc_StartWait();                                        //启动RTC计数，如果要立即切换到低功耗，需要执行此函数
+}
+
+void App_RtcHandler(void)
+{
+    u8RtcCnt++;
+
+    if(enFocusOn < RtcYear || enFocusOn > RtcMin)
+    {
+        // 每隔1s更新一次stcRtcTime, 每隔1分钟更新电池读数和时间显示
+        if(TRUE == App_GetRtcTime())
+        {
+            if(bAdcIsBusy == FALSE)
+            {
+                u8BatteryPower = App_GetBatPower();
+            }
+
+            if(enSysStates != StandBy && enSysStates != PowerOff)
+            {
+                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+
+                if(enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge)
+                {
+                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                    bLcdUpdate = TRUE;
+                }
+            }
+
+            if(TRUE == bJustWatered)
+            {
+                bJustWatered = FALSE;
+            }
+        }
+
+        // 每隔 RTC_DETECTION_CYCLE 秒检测一次是否到点浇水
+        if(u8RtcCnt >= RTC_DETECTION_CYCLE &&
+            u8BatteryPower != BATTERY_POWER_0 &&
+            enSysStates != PowerOff &&
+            enSysStates != PowerOffChargeEarly &&
+            enSysStates != PowerOffCharge)
+        {
+            u8RtcCnt = 0;
+
+            if(TRUE == IsTimeToWater(bJustWatered))
+            {
+                bJustWatered = TRUE;
+                u8StopFlag = 0;
+
+                if(PowerOnCharge == enSysStates ||
+                    StandByChargeEarly == enSysStates ||
+                    StandByCharge == enSysStates)
+                {
+                    enSysStates = PowerOnCharge;
+                }
+                else if(StandBy == enSysStates)
+                {
+                    enSysStates = PowerOn;
+                }
+
+                Lcd_D61593A_GenRam_WorkingMode(u32LcdRamData, ModeAutomatic, TRUE);
+                Lcd_D61593A_GenRam_Stop(u32LcdRamData, u8StopFlag);
+                Lcd_D61593A_GenRam_GroupNum(u32LcdRamData, u8GroupNum + 1, ModeAutomatic, TRUE, enFocusOn);
+                Lcd_D61593A_GenRam_Channel(u32LcdRamData,
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_CHANNEL] + 1,
+                                TRUE,
+                                enFocusOn);
+                Lcd_D61593A_GenRam_Watering_Time(u32LcdRamData,
+                                (uint16_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_WATER_TIME],
+                                TRUE,
+                                enFocusOn);
+                Lcd_D61593A_GenRam_Starting_Time(u32LcdRamData,
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTHOUR],
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_STARTMIN],
+                                ModeAutomatic,
+                                TRUE,
+                                enFocusOn);
+                Lcd_D61593A_GenRam_Days_Apart(u32LcdRamData,
+                                (uint8_t)u32GroupDataAuto[u8GroupNum][AUTOMODE_GROUP_DATA_DAYSAPART] - u8DaysAddUp[u8GroupNum],
+                                ModeAutomatic,
+                                TRUE,
+                                enFocusOn);
+                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+                Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+
+                bLcdUpdate = TRUE;
+                Gpio_SetIO(GPIO_PORT_BOOST_IO, GPIO_PIN_BOOST_IO);
+                M0P_LCD->CR0_f.EN = LcdEnable;
+                Gpio_SetIO(GPIO_PORT_LCD_BL, GPIO_PIN_LCD_BL);
+
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN, GpioIrqFalling);
+                Gpio_DisableIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP, GpioIrqFalling);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_MODE);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_SET);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_OK);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_DOWN);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_UP);
+                Gpio_ClearIrq(GPIO_PORT_KEY, GPIO_PIN_KEY_POWER);
+
+                Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
+                Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
+            }
+        }
+    }
 }
 
 // 当分钟, 小时, 日月年有更新时, 才返回 TRUE

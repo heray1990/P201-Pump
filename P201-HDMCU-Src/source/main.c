@@ -39,6 +39,8 @@
 #define AUTO_DEEP_SLEEP_CNT         250 // 10s
 
 // 2.4V ~ 4.2V
+#define BATTERY_VOLTAGE_MIN     1311    // 24 * 4096 / 75 -> 2.4V/3(分压)/2.5(Vref)*4096
+#define BATTERY_VOLTAGE_MAX     2294    // 42 * 4096 / 75 -> 4.2V/3(分压)/2.5(Vref)*4096
 #define COMPARE_VAL_VOLTAGE_0   1857    // 34 * 4096 / 75 -> 3.4V/3(分压)/2.5(Vref)*4096
 #define COMPARE_VAL_VOLTAGE_1   1966    // 36 * 4096 / 75 -> 3.6V/3(分压)/2.5(Vref)*4096
 #define COMPARE_VAL_VOLTAGE_2   2075    // 38 * 4096 / 75 -> 3.8V/3(分压)/2.5(Vref)*4096
@@ -114,10 +116,11 @@ __IO boolean_t bLcdUpdate, bPortDIrFlag, bCharging, bAdcIsBusy, bJustWatered;
 __IO uint16_t u16LcdFlickerCnt, u16RtcCnt, u16TenSecondCnt, u16WTPump1, u16WTPump2;
 static en_key_states enKeyState = Waiting;
 __IO uint8_t u8PumpCtrl, u8WTCntDown, u8RtcCnt;
-uint32_t u32AdcRestult;
+__IO uint32_t u32AdcRestult, u32AdcRestultTmp;
 __IO uint8_t u8BatteryPower;
 __IO en_sys_states enSysStates;
 __IO uint8_t Charging_Error_VAL = 109;  //插入充电时电压抬高0.2V
+__IO uint8_t PumpWork_Error_VAL = 28;   //一个水泵工作时电压降低0.05V
 
 /******************************************************************************
  * Local pre-processor symbols/macros ('#define')                             
@@ -322,7 +325,13 @@ void Adc_IRQHandler(void)
     {
         Adc_ClrIrqStatus(AdcMskIrqSgl);       ///< 清除中断标志位
 
+        u32AdcRestultTmp = u32AdcRestult;
         u32AdcRestult = Adc_GetSglResult();   ///< 获取采样值
+
+        if(u32AdcRestult < BATTERY_VOLTAGE_MIN || u32AdcRestult > BATTERY_VOLTAGE_MAX)
+        {
+            u32AdcRestult = u32AdcRestultTmp;
+        }
 
         Adc_SGL_Stop();                       ///< ADC 单次转换停止
         bAdcIsBusy = FALSE;
@@ -332,7 +341,8 @@ void Adc_IRQHandler(void)
 int32_t main(void)
 {
     bJustWatered = FALSE;
-    u32AdcRestult = 1;
+    u32AdcRestult = BATTERY_VOLTAGE_MIN;
+    u32AdcRestultTmp = BATTERY_VOLTAGE_MIN;
     u8BatteryPower = BATTERY_POWER_100;
     App_SysInit();
 
@@ -2933,6 +2943,16 @@ uint8_t App_GetBatPower(void)
     if(TRUE == bCharging && u32AdcResultTmp >= Charging_Error_VAL)
     {
         u32AdcResultTmp -= Charging_Error_VAL;
+    }
+
+    //如果水泵工作，电压值抬高才是实际值
+    if(u8PumpCtrl == 0x01 || u8PumpCtrl == 0x10)
+    {
+        u32AdcResultTmp += PumpWork_Error_VAL;
+    }
+    else if(u8PumpCtrl == 0x11)
+    {
+        u32AdcResultTmp += PumpWork_Error_VAL * 2;
     }
 
     if(u32AdcResultTmp <= COMPARE_VAL_VOLTAGE_0)

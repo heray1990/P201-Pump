@@ -182,7 +182,8 @@ void Tim0_IRQHandler(void)
 
         if(enFocusOn > Nothing)
         {
-            if(enSysStates != PowerOff &&
+            if(enSysStates != StandBy &&
+                enSysStates != PowerOff &&
                 enSysStates != PowerOffChargeEarly &&
                 enSysStates != PowerOffCharge)
             {
@@ -394,6 +395,33 @@ int32_t main(void)
             u16LcdFlickerCnt = 0;
         }
 
+        if(enFocusOn < RtcYear || enFocusOn > RtcMin)
+        {
+            if(TRUE == App_GetRtcTime())
+            {
+                if(bAdcIsBusy == FALSE)
+                {
+                    u8BatteryPower = App_GetBatPower();
+                }
+
+                if(enSysStates != StandBy && enSysStates != PowerOff)
+                {
+                    Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
+
+                    if(enSysStates != PowerOffChargeEarly && enSysStates != PowerOffCharge)
+                    {
+                        Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
+                        bLcdUpdate = TRUE;
+                    }
+                }
+
+                if(TRUE == bJustWatered)
+                {
+                    bJustWatered = FALSE;
+                }
+            }
+        }
+
         if(1 == u8RtcFlag)
         {
             u8RtcFlag = 0;
@@ -466,32 +494,6 @@ int32_t main(void)
                     Gpio_DisableIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING, GpioIrqRising);
                     Gpio_ClearIrq(GPIO_PORT_CHAGRING, GPIO_PIN_CHAGRING);
                 }
-            }
-        }
-
-        if(enFocusOn < RtcYear || enFocusOn > RtcMin)
-        {
-            if(TRUE == App_GetRtcTime())
-            {
-                if(enSysStates != StandBy &&
-                    enSysStates != PowerOff &&
-                    enSysStates != PowerOffChargeEarly &&
-                    enSysStates != PowerOffCharge)
-                {
-                    Lcd_D61593A_GenRam_Date_And_Time(u32LcdRamData, &stcRtcTime, TRUE, enFocusOn);
-                    bLcdUpdate = TRUE;
-                }
-
-                if(TRUE == bJustWatered)
-                {
-                    bJustWatered = FALSE;
-                }
-
-                if(bAdcIsBusy == FALSE)
-                {
-                    u8BatteryPower = App_GetBatPower();
-                }
-                Lcd_D61593A_GenRam_Battery_Icon(u32LcdRamData, u8BatteryPower, TRUE);
             }
         }
 
@@ -2914,7 +2916,7 @@ uint8_t App_GetBatPower(void)
     u32AdcResultTmp >>= 2;
 
     //如果检测到充电状态，电压值降低才是实际值
-    if(TRUE == bCharging)
+    if(TRUE == bCharging && u32AdcResultTmp >= Charging_Error_VAL)
     {
         u32AdcResultTmp -= Charging_Error_VAL;
     }

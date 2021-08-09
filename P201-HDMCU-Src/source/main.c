@@ -1732,7 +1732,8 @@ void App_KeyHandler(void)
     {
         Flash_Manager_Erase_All_Data();
         delay1ms(10);
-        // Reset MCU
+        // 关闭总中断, Reset MCU
+        //__set_PRIMASK(1);
         NVIC_SystemReset();
     }
 

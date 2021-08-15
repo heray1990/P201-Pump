@@ -92,18 +92,17 @@ typedef enum
 {
     Nothing = 0u,
     Group = 1u,
-    Channel = 2u,
-    WateringTime = 3u,
-    StartingTimeH = 4u,
-    StartingTimeM = 5u,
-    DaysApart = 6u,
-    RtcYear = 7u,
-    RtcMonth = 8u,
-    RtcDay = 9u,
-    RtcHour = 10u,
-    RtcMin = 11u,
-    Mode = 12u,
-    ChildLock = 13u
+    WateringTime = 2u,
+    StartingTimeH = 3u,
+    StartingTimeM = 4u,
+    DaysApart = 5u,
+    RtcYear = 6u,
+    RtcMonth = 7u,
+    RtcDay = 8u,
+    RtcHour = 9u,
+    RtcMin = 10u,
+    Mode = 11u,
+    ChildLock = 12u
 }en_focus_on;
 
 #endif /* __GENERAL_DEFINE_H__ */

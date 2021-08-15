@@ -97,13 +97,6 @@ void Lcd_D61593A_GenRam_Channel(
             punRamData[LCDRAM_INDEX_2].u8_dis[1] |= (u8Num1To11Table[10] | 0x01);    // Display "E"(Error)
         }
     }
-    else
-    {
-        if(Channel == enFocusOn)
-        {
-            punRamData[LCDRAM_INDEX_2].u8_dis[1] |= 0x01;
-        }
-    }
 }
 
 /******************************************************************************

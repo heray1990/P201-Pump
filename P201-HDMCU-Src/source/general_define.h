@@ -13,6 +13,7 @@
 #define GROUP_NUM_MIN   0
 #define GROUP_NUM_MAX   6
 #define CHANNEL_NUM_MAX    2
+#define AUTOMODE_GROUP_DATA_BYTES       4   // 自动模式下每组数据占 4 Bytes
 #define AUTOMODE_GROUP_DATA_ELEMENT_MAX 5
 #define AUTOMODE_GROUP_DATA_DAYSAPART   0
 #define AUTOMODE_GROUP_DATA_CHANNEL     1
